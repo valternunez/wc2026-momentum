@@ -49,3 +49,11 @@ def test_build_editorial_page():
     assert 'id="mb-modal"' in html and 'id="mb-data"' in html
     assert "data-mid=" in html        # clickable cards
     assert '"series"' in html and '"explain"' in html  # embedded momentum + per-match note
+    # social meta + favicon
+    assert 'property="og:image"' in html and 'name="twitter:card"' in html
+    assert 'rel="apple-touch-icon"' in html and 'rel="icon"' in html
+    # momentum explainer (we read it, not compute it)
+    assert "we don't compute it" in html or "we don't compute our own" in html
+    # §05 two same-units placebos + §06 heat note
+    assert "2025 Club World Cup" in html and "2022 World Cup" in html
+    assert "Did they even need them" in html and "WBGT" in html

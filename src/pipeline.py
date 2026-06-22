@@ -23,7 +23,7 @@ import polars as pl
 
 from src.features.momentum_features import COLUMNS, expand_stoppage_rows
 from src.parse.stoppages import detect_stoppages
-from src.paths import DATA, PROCESSED, RAW_FOTMOB, RAW_SOFASCORE, STOPPAGES_PARQUET, ensure_dirs
+from src.paths import DATA, PROCESSED, RAW, RAW_FOTMOB, RAW_SOFASCORE, STOPPAGES_PARQUET, ensure_dirs
 from src.scrape import commentary as comm
 from src.scrape import espn, fotmob, sofascore
 from src.snapshot import write_snapshot
@@ -290,6 +290,24 @@ def build_cwc_placebo() -> pl.DataFrame:
     return df
 
 
+def build_wc2022_placebo() -> pl.DataFrame:
+    """Build the 2022-WC same-units placebo parquet via FotMob (occasional run)."""
+    from datetime import date
+
+    from src.analysis.fotmob_placebo import build_fotmob_placebo, summarize_placebo
+    from src.scrape.fotmob import WORLD_CUP_PRIMARY_ID
+
+    print("[wc2022-placebo] discovering + scraping WC 2022 (FotMob)…")
+    df = build_fotmob_placebo(WORLD_CUP_PRIMARY_ID, date(2022, 11, 20), date(2022, 12, 18),
+                              RAW / "fotmob_wc2022")
+    out = PROCESSED / "wc2022_placebo.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
+    print(f"[wc2022-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
+    print(f"[wc2022-placebo] summary: {summarize_placebo(df)}")
+    return df
+
+
 def _parse_ids(args: argparse.Namespace) -> list[str]:
     ids: list[str] = [str(i) for i in (args.match_ids or [])]
     if args.ids_file:
@@ -314,6 +332,8 @@ def main() -> None:
     ap.add_argument("--historical-placebo", action="store_true", help="build the 2022-WC placebo parquet and exit")
     ap.add_argument("--hp-limit", type=int, default=None, help="limit StatsBomb matches for --historical-placebo")
     ap.add_argument("--cwc-placebo", action="store_true", help="build the CWC 2025 same-units placebo parquet and exit")
+    ap.add_argument("--wc2022-placebo", action="store_true", help="build the 2022-WC FotMob same-units placebo and exit")
+    ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
     args = ap.parse_args()
@@ -322,6 +342,14 @@ def main() -> None:
         return
     if args.cwc_placebo:
         build_cwc_placebo()
+        return
+    if args.wc2022_placebo:
+        build_wc2022_placebo()
+        return
+    if args.og_card:
+        from src.viz.social import build_share_card
+
+        print("[og-card]", build_share_card())
         return
     ids = _parse_ids(args)
     if args.discover_days:

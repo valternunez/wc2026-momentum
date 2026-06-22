@@ -19,7 +19,24 @@ TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Do hydration breaks really kill momentum? — WC2026 Stoppage Momentum</title>
-<meta name="description" content="Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A living, data-driven analysis.">
+<meta name="description" content="Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A living, data-driven analysis — and a surprising answer.">
+<link rel="canonical" href="https://valternunez.github.io/wc2026-momentum/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="WC2026 Stoppage Momentum">
+<meta property="og:title" content="Do hydration breaks really kill momentum?">
+<meta property="og:description" content="FIFA made hydration breaks mandatory at the 2026 World Cup. The team on top drops ~24 momentum points after one — but a tournament with no breaks shows the same drop. A living, data-driven analysis.">
+<meta property="og:url" content="https://valternunez.github.io/wc2026-momentum/">
+<meta property="og:image" content="https://valternunez.github.io/wc2026-momentum/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Do hydration breaks really kill momentum? -24 after a break vs -23 with no break.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Do hydration breaks really kill momentum?">
+<meta name="twitter:description" content="The team on top drops ~24 momentum points after a hydration break — but a no-breaks tournament shows the same drop. It's regression to the mean.">
+<meta name="twitter:image" content="https://valternunez.github.io/wc2026-momentum/og.png">
+<meta name="theme-color" content="#EFEBDF">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%231A1813'/><circle cx='16' cy='16' r='6' fill='%23E5482E'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -87,6 +104,10 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- 02 — MONEY CHART -->
   <section style="max-width:840px;margin:0 auto;padding:50px 40px 30px">
     <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">02 — What every stoppage does</h2>
+    <div style="border-left:3px solid #DDD6C5;padding:2px 0 2px 20px;margin:0 0 28px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#948D7C;margin-bottom:8px">What "momentum" means here</div>
+      <p style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#46412F">A per-minute index from <strong style="font-weight:600">FotMob</strong> of which side is on top — built from the flow of attacks, shots and dangerous moves, not the scoreline. Positive means the home team is pressing, negative the away team. We <em style="font-style:italic">read</em> FotMob's number, we don't compute our own; all we do is measure how it moves in the five minutes either side of a stoppage.</p>
+    </div>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.58;color:#2B2820;margin-bottom:40px">For the team on top before a break, here's how much momentum it loses in the next five minutes — by what kind of stoppage interrupted it. Every bar points the same way. The hydration break points furthest.</p>
 
     <div style="border-top:2px solid #1A1813;padding-top:30px">
@@ -170,16 +191,39 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
     <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">05 — The catch worth stating out loud</h2>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em> — break or no break. That's regression to the mean, and it's the single biggest threat to reading too much into the bars above.</p>
-    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">The cleanest check is last summer's Club World Cup — played in the same US heat, measured on the <em style="font-style:italic">same</em> momentum scale, but with no break mandated at the 22′/67′ marks. Window there and the team on top still slides — and lands strikingly close to the 2026 figure beside it. Most of that headline −24 is regression to the mean, not the water bottle.</p>
+    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">So run the same test on two tournaments with no mandated breaks — measured on the <em style="font-style:italic">same</em> FotMob scale — at the fake 22′/67′ marks. Both show the team on top sliding anyway. And the closest comparison, last summer's Club World Cup in the same US heat, lands almost exactly on the 2026 figure. Most of that headline −24 is regression to the mean, not the water bottle.</p>
     <div style="background:#1A1813;color:#EFEBDF;padding:30px 32px;margin:30px 0;border-radius:2px">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#E5C9A0;margin-bottom:14px">2025 CLUB WORLD CUP · SAME US SUMMER · NO MANDATED BREAK</div>
-      <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:baseline">
-        <div><span style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#EFEBDF">{{CWC_MEAN}}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#948D7C;margin-left:10px">momentum pts</span></div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#C9C3B2;line-height:1.6">{{CWC_CI}}<br>{{CWC_N}} · same scale as the −24</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#E5C9A0;margin-bottom:18px">NO MANDATED BREAK · SAME FOTMOB SCALE AS THE −24</div>
+      <div style="display:flex;gap:48px;flex-wrap:wrap">
+        <div>
+          <span style="font-family:'Newsreader',serif;font-size:46px;font-weight:500;color:#EFEBDF">{{CWC_MEAN}}</span>
+          <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;margin-top:4px;color:#EFEBDF">2025 Club World Cup</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#948D7C;margin-top:4px;line-height:1.6">{{CWC_CI}}<br>{{CWC_N}} · same US summer</div>
+        </div>
+        <div>
+          <span style="font-family:'Newsreader',serif;font-size:46px;font-weight:500;color:#E5C9A0">{{WC22F_MEAN}}</span>
+          <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;margin-top:4px;color:#EFEBDF">2022 World Cup</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#948D7C;margin-top:4px;line-height:1.6">{{WC22F_CI}}<br>{{WC22F_N}} · cooler Qatar winter</div>
+        </div>
       </div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7E776A;margin-top:16px;line-height:1.6">EARLIER BASELINE · QATAR 2022, NO BREAKS (EVENT-xT PROXY, DIFFERENT SCALE): {{PLACEBO_MEAN}} · {{PLACEBO_CI}} · {{PLACEBO_N}}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7E776A;margin-top:18px;line-height:1.6">Both at the 22′/67′ marks where no break was taken. (An event-xT cross-check on 2022 agrees the slide is real.)</div>
     </div>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820">Which is exactly why the model controls for pre-break momentum, clusters its errors by match, and won't print a causal headline until the live sample is big enough. The interaction regression-to-the-mean <em style="font-style:italic">can't</em> explain — a break hitting harder precisely when a team is on top — is the part still being watched.</p>
+  </section>
+
+  <!-- 06 — DO THEY NEED THEM -->
+  <section style="border-top:1px solid #DDD6C5;background:#EAE5D6">
+    <div style="max-width:840px;margin:0 auto;padding:60px 40px 56px">
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">06 — Did they even need them?</h2>
+      <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820;margin-bottom:30px;text-wrap:pretty">If the momentum case against the breaks is thin, the heat case <em style="font-style:italic">for</em> them is thinner than you'd think. FIFA mandates a break in every match — but cooling breaks were designed for genuine heat stress, and most of these games weren't close to it.</p>
+      <div style="display:flex;gap:30px;flex-wrap:wrap;border-top:2px solid #1A1813;border-bottom:1px solid #DDD6C5;padding:26px 0;margin-bottom:26px">
+        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#E5482E;line-height:1">{{HEAT_HOT32}}/{{HEAT_N}}</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">matches reached <strong style="font-weight:600">WBGT 32°C</strong>, the level that traditionally triggers a cooling break</div></div>
+        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_DOMED}}</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">were played in <strong style="font-weight:600">air-conditioned domes</strong> — climate already controlled</div></div>
+        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_MEDIAN}}°</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">median match WBGT — short of the <strong style="font-weight:600">28°C</strong> high-risk line ({{HEAT_HOT28}} cleared it)</div></div>
+      </div>
+      <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820">So most matches got a mandatory three-minute interruption with neither a momentum effect nor a heat reason. The breaks may still be worth it for the handful of genuinely brutal afternoons — but a fixed, every-match rule looks blunt against the weather.</p>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;color:#948D7C;margin-top:20px;line-height:1.6">WBGT (wet-bulb globe temperature) approximated from Open-Meteo temperature + humidity at each venue and kickoff. Altitude — Mexico City and Guadalajara sit above 1,500 m — shapes fatigue, not hydration need; the signal for a cooling break is heat and humidity.</p>
+    </div>
   </section>
 
   <!-- LIVING / TREND -->
@@ -199,7 +243,7 @@ TEMPLATE = """<!DOCTYPE html>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px 40px">
         <div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:#E5C9A0;margin-bottom:12px">OUTCOME</div>
-          <p style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.62">FotMob per-minute momentum (home-positive), reframed per team, aggregated to 5-minute pre/post windows around each stoppage.</p>
+          <p style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.62">FotMob's per-minute momentum index — their model of which side is on top, from the flow of attacks and chances. We read it, we don't compute it. Reframed per team, windowed 5 minutes either side of each stoppage.</p>
         </div>
         <div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:#E5C9A0;margin-bottom:12px">IDENTIFICATION</div>
@@ -226,12 +270,12 @@ TEMPLATE = """<!DOCTYPE html>
 
 <!-- MATCH MODAL -->
 <div id="mb-modal" hidden style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(26,24,19,.55);padding:20px">
-  <div role="dialog" aria-modal="true" aria-labelledby="mb-title" style="background:#FCFAF3;color:#1A1813;width:min(780px,96vw);max-height:92vh;overflow:auto;border-radius:4px;box-shadow:0 24px 70px rgba(26,24,19,.4);position:relative;padding:30px 32px 28px">
+  <div role="dialog" aria-modal="true" aria-labelledby="mb-title" style="background:#FCFAF3;color:#1A1813;width:min(780px,96vw);max-width:96vw;max-height:92vh;overflow-y:auto;overflow-x:hidden;border-radius:4px;box-shadow:0 24px 70px rgba(26,24,19,.4);position:relative;padding:30px 32px 28px">
     <button id="mb-close" aria-label="Close" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#E5482E">CLOSE ✕</button>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">Match momentum</div>
     <h3 id="mb-title" style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(24px,4vw,34px);line-height:1.1;margin-bottom:6px"></h3>
     <div id="mb-sub" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;letter-spacing:.06em;margin-bottom:18px"></div>
-    <div id="mb-chart" style="position:relative;width:100%"></div>
+    <div id="mb-chart" style="position:relative;width:100%;overflow:hidden"></div>
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;color:#5A5547">
       <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#9CC4E0;display:inline-block;border-radius:1px"></span>HOME ON TOP</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#EBC09A;display:inline-block;border-radius:1px"></span>AWAY ON TOP</span>
@@ -299,7 +343,10 @@ TEMPLATE = """<!DOCTYPE html>
       var near=(m.stoppages||[]).filter(function(st){return Math.abs(st[0]-best[0])<1.5;}).map(function(st){return st[1].replace(/_/g,' ');});
       var who=best[1]>=0?(m.home):(m.away);
       tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(near.length?' · '+near[0]:'');
-      tip.style.left=(x/W*r.width)+'px'; tip.style.top=(y/H*r.height)+'px'; tip.style.opacity=1;
+      tip.style.opacity=1;
+      var tl=x/W*r.width, hw=tip.offsetWidth/2+4;        // clamp so the tooltip never overflows
+      tl=Math.max(hw, Math.min(r.width-hw, tl));
+      tip.style.left=tl+'px'; tip.style.top=(y/H*r.height)+'px';
     });
     hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity',0); dot.setAttribute('opacity',0); tip.style.opacity=0; });
     chart.appendChild(svg);

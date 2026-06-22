@@ -193,6 +193,36 @@ def _cwc_placebo_tokens() -> dict[str, str]:
     }
 
 
+def _wc2022_placebo_tokens() -> dict[str, str]:
+    """2022 WC placebo via FotMob (same momentum scale as CWC/2026)."""
+    p = PROCESSED / "wc2022_placebo.parquet"
+    if not p.exists():
+        return {"WC22F_MEAN": "—", "WC22F_CI": "pending", "WC22F_N": ""}
+    df = pl.read_parquet(p)
+    top = on_top_rows(df)
+    mean, lo, hi = cluster_bootstrap_ci(top)
+    return {
+        "WC22F_MEAN": f"{mean:+.1f}",
+        "WC22F_CI": f"95% CI {lo:+.1f} … {hi:+.1f}",
+        "WC22F_N": f"{top.height} on-top · {top['match_id'].n_unique()} matches",
+    }
+
+
+def _heat_tokens(df: pl.DataFrame) -> dict[str, str]:
+    """Per-match heat distribution for the 'did they need them?' note."""
+    m = (df.group_by("match_id").agg(pl.col("wbgt").first(), pl.col("dome").first())
+         .drop_nulls("wbgt"))
+    if m.is_empty():
+        return {"HEAT_N": "0", "HEAT_HOT32": "0", "HEAT_HOT28": "0", "HEAT_DOMED": "0", "HEAT_MEDIAN": "—"}
+    return {
+        "HEAT_N": str(m.height),
+        "HEAT_HOT32": str(m.filter(pl.col("wbgt") >= 32).height),
+        "HEAT_HOT28": str(m.filter(pl.col("wbgt") >= 28).height),
+        "HEAT_DOMED": str(m.filter(pl.col("dome") == True).height),  # noqa: E712
+        "HEAT_MEDIAN": f"{m['wbgt'].median():.0f}",
+    }
+
+
 def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str) -> str:
     est = f"−{abs(hyd_mean):.1f}" if hyd_mean is not None else "—"
     extra = ""
@@ -211,6 +241,11 @@ def build() -> str:
     SITE.mkdir(parents=True, exist_ok=True)
     site_figures = SITE / "figures"
     site_figures.mkdir(parents=True, exist_ok=True)
+    # social/share assets live at the site root for absolute OG URLs (generated locally, committed)
+    for icon in ("og.png", "apple-touch-icon.png"):
+        src = REPORTS / "figures" / icon
+        if src.exists():
+            shutil.copyfile(src, SITE / icon)
 
     if not STOPPAGES_PARQUET.exists() or load_processed().is_empty():
         out = SITE / "index.html"
@@ -248,6 +283,8 @@ def build() -> str:
         "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
         **_placebo_tokens(),
         **_cwc_placebo_tokens(),
+        **_wc2022_placebo_tokens(),
+        **_heat_tokens(df),
         "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated),
         "PAGES_URL": PAGES_URL,
         "SNAPSHOT_DATE": snap_date or updated,
