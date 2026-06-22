@@ -31,7 +31,7 @@ def test_build_editorial_page():
     html = Path(build_site.build()).read_text(encoding="utf-8")
     if "No data yet" in html:
         pytest.skip("no processed data committed")
-    assert "Do water breaks really kill momentum" in html
+    assert "Do hydration breaks really kill momentum" in html
     assert "{{" not in html  # every token substituted
     assert "SofaScore" not in html and "FotMob" in html  # accuracy: FotMob, not SofaScore
     assert "mb-card" in html  # match grid present

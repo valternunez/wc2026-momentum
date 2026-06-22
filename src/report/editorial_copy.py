@@ -18,7 +18,7 @@ TEMPLATE = """<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Do water breaks really kill momentum? — WC2026 Stoppage Momentum</title>
+<title>Do hydration breaks really kill momentum? — WC2026 Stoppage Momentum</title>
 <meta name="description" content="Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A living, data-driven analysis.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- HERO -->
   <section style="max-width:840px;margin:0 auto;padding:56px 40px 30px">
     <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:26px">The Hydration-Break Experiment</div>
-    <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(46px,7.4vw,104px);line-height:.95;letter-spacing:-.015em;max-width:15ch;text-wrap:balance">Do water breaks really kill momentum?</h1>
+    <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(46px,7.4vw,104px);line-height:.95;letter-spacing:-.015em;max-width:15ch;text-wrap:balance">Do hydration breaks really kill momentum?</h1>
     <p style="font-family:'Newsreader',serif;font-size:clamp(20px,2.4vw,28px);line-height:1.45;max-width:760px;margin-top:30px;color:#332F26;text-wrap:pretty">FIFA made in-match hydration breaks mandatory at the 2026 World Cup. Coaches and pundits call them momentum killers. With {{N_MATCHES}} matches in, the data is starting to agree — though maybe not for the reason you'd think.</p>
     <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:34px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
       <span>BY THE WC2026 MOMENTUM PROJECT</span>
