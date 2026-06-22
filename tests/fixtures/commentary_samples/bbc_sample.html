@@ -1,0 +1,58 @@
+<!--
+  SMALL hand-crafted sample mirroring BBC Sport live-text commentary markup.
+  BBC renders each post as an <article> (or <li>) with a time/minute label and a
+  body paragraph. Real pages carry far more chrome; we keep only what the parser
+  keys on (a minute marker element + the text body) so the test is stable.
+-->
+<html>
+<head><title>Live text - BBC Sport</title></head>
+<body>
+<main>
+  <div class="lx-stream" data-testid="stream">
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">14'</span>
+      <div class="lx-stream-post__body">
+        <p>GOAL! Brazil 1-0 Croatia. Vinicius Jr slots it into the bottom corner.</p>
+      </div>
+    </article>
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">22'</span>
+      <div class="lx-stream-post__body">
+        <p>The referee signals a cooling break as temperatures climb above 35C in the desert heat.</p>
+      </div>
+    </article>
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">39'</span>
+      <div class="lx-stream-post__body">
+        <p>VAR is checking a possible penalty for a handball in the box.</p>
+      </div>
+    </article>
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">55'</span>
+      <div class="lx-stream-post__body">
+        <p>Modric is down injured and receiving treatment from the medical staff.</p>
+      </div>
+    </article>
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">67'</span>
+      <div class="lx-stream-post__body">
+        <p>Another hydration break here as the players gather round their coaches.</p>
+      </div>
+    </article>
+
+    <article class="lx-stream-post">
+      <span class="lx-stream-post__meta-time">73'</span>
+      <div class="lx-stream-post__body">
+        <p>A lovely passing move from Brazil ends with a shot dragged wide.</p>
+      </div>
+    </article>
+
+  </div>
+</main>
+</body>
+</html>

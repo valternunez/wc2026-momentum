@@ -1,0 +1,55 @@
+name: Publish report site
+
+# Rebuilds site/index.html from the COMMITTED parquet + snapshots and deploys to
+# GitHub Pages. This job NEVER scrapes (scraping runs locally from a residential
+# IP), so it can't be IP-blocked and uses trivial Actions minutes.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/processed/**"
+      - "snapshots/**"
+      - "reports/**"
+      - "src/**"
+      - ".github/workflows/publish.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync deps
+        run: uv sync
+
+      - name: Build site
+        run: uv run python -m src.report.build_site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

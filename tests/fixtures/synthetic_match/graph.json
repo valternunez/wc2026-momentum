@@ -1,0 +1,392 @@
+{
+"graphPoints": [
+{
+"minute": 1.0,
+"value": 11
+},
+{
+"minute": 2.0,
+"value": 13
+},
+{
+"minute": 3.0,
+"value": 12
+},
+{
+"minute": 4.0,
+"value": 14
+},
+{
+"minute": 5.0,
+"value": 16
+},
+{
+"minute": 6.0,
+"value": 15
+},
+{
+"minute": 7.0,
+"value": 17
+},
+{
+"minute": 8.0,
+"value": 19
+},
+{
+"minute": 9.0,
+"value": 18
+},
+{
+"minute": 10.0,
+"value": 20
+},
+{
+"minute": 11.0,
+"value": 22
+},
+{
+"minute": 12.0,
+"value": 21
+},
+{
+"minute": 13.0,
+"value": 23
+},
+{
+"minute": 14.0,
+"value": 25
+},
+{
+"minute": 15.0,
+"value": 24
+},
+{
+"minute": 16.0,
+"value": 26
+},
+{
+"minute": 17.0,
+"value": 28
+},
+{
+"minute": 18.0,
+"value": 27
+},
+{
+"minute": 19.0,
+"value": 29
+},
+{
+"minute": 20.0,
+"value": 31
+},
+{
+"minute": 21.0,
+"value": 30
+},
+{
+"minute": 22.0,
+"value": -15
+},
+{
+"minute": 23.0,
+"value": -14
+},
+{
+"minute": 24.0,
+"value": -16
+},
+{
+"minute": 25.0,
+"value": -15
+},
+{
+"minute": 26.0,
+"value": -14
+},
+{
+"minute": 27.0,
+"value": 7
+},
+{
+"minute": 28.0,
+"value": 8
+},
+{
+"minute": 29.0,
+"value": 9
+},
+{
+"minute": 30.0,
+"value": 7
+},
+{
+"minute": 31.0,
+"value": 8
+},
+{
+"minute": 32.0,
+"value": 9
+},
+{
+"minute": 33.0,
+"value": 7
+},
+{
+"minute": 34.0,
+"value": 8
+},
+{
+"minute": 35.0,
+"value": 9
+},
+{
+"minute": 36.0,
+"value": 7
+},
+{
+"minute": 37.0,
+"value": 8
+},
+{
+"minute": 38.0,
+"value": 9
+},
+{
+"minute": 39.0,
+"value": 7
+},
+{
+"minute": 40.0,
+"value": 8
+},
+{
+"minute": 41.0,
+"value": 9
+},
+{
+"minute": 42.0,
+"value": 7
+},
+{
+"minute": 43.0,
+"value": 8
+},
+{
+"minute": 44.0,
+"value": 9
+},
+{
+"minute": 45.0,
+"value": 7
+},
+{
+"minute": 46.0,
+"value": 8
+},
+{
+"minute": 47.0,
+"value": 9
+},
+{
+"minute": 48.0,
+"value": 7
+},
+{
+"minute": 49.0,
+"value": 8
+},
+{
+"minute": 50.0,
+"value": 9
+},
+{
+"minute": 51.0,
+"value": 7
+},
+{
+"minute": 52.0,
+"value": 8
+},
+{
+"minute": 53.0,
+"value": 9
+},
+{
+"minute": 54.0,
+"value": 7
+},
+{
+"minute": 55.0,
+"value": 8
+},
+{
+"minute": 56.0,
+"value": 9
+},
+{
+"minute": 57.0,
+"value": 7
+},
+{
+"minute": 58.0,
+"value": 8
+},
+{
+"minute": 59.0,
+"value": 9
+},
+{
+"minute": 60.0,
+"value": 7
+},
+{
+"minute": 61.0,
+"value": 8
+},
+{
+"minute": 62.0,
+"value": 9
+},
+{
+"minute": 63.0,
+"value": 7
+},
+{
+"minute": 64.0,
+"value": 8
+},
+{
+"minute": 65.0,
+"value": 9
+},
+{
+"minute": 66.0,
+"value": 7
+},
+{
+"minute": 67.0,
+"value": -18
+},
+{
+"minute": 68.0,
+"value": -17
+},
+{
+"minute": 69.0,
+"value": -19
+},
+{
+"minute": 70.0,
+"value": -18
+},
+{
+"minute": 71.0,
+"value": -17
+},
+{
+"minute": 72.0,
+"value": 4
+},
+{
+"minute": 73.0,
+"value": 5
+},
+{
+"minute": 74.0,
+"value": 6
+},
+{
+"minute": 75.0,
+"value": 4
+},
+{
+"minute": 76.0,
+"value": 5
+},
+{
+"minute": 77.0,
+"value": 6
+},
+{
+"minute": 78.0,
+"value": 4
+},
+{
+"minute": 79.0,
+"value": 5
+},
+{
+"minute": 80.0,
+"value": 6
+},
+{
+"minute": 81.0,
+"value": 4
+},
+{
+"minute": 82.0,
+"value": 5
+},
+{
+"minute": 83.0,
+"value": 6
+},
+{
+"minute": 84.0,
+"value": 4
+},
+{
+"minute": 85.0,
+"value": 5
+},
+{
+"minute": 86.0,
+"value": 6
+},
+{
+"minute": 87.0,
+"value": 4
+},
+{
+"minute": 88.0,
+"value": 5
+},
+{
+"minute": 89.0,
+"value": 6
+},
+{
+"minute": 90.0,
+"value": 4
+},
+{
+"minute": 91.0,
+"value": 5
+},
+{
+"minute": 92.0,
+"value": 6
+},
+{
+"minute": 93.0,
+"value": 4
+},
+{
+"minute": 94.0,
+"value": 5
+},
+{
+"minute": 95.0,
+"value": 6
+},
+{
+"minute": 45.5,
+"value": 7
+},
+{
+"minute": 90.5,
+"value": 4
+}
+]
+}

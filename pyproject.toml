@@ -1,0 +1,51 @@
+[project]
+name = "wc2026-momentum"
+version = "0.1.0"
+description = "Quantifying how in-match stoppages (esp. mandatory hydration breaks) affect momentum at the 2026 FIFA World Cup."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "polars>=1.0",
+    "pyarrow>=16.0",
+    "httpx>=0.27",
+    "selectolax>=0.3",
+    "statsmodels>=0.14",
+    "scipy>=1.13",
+    "plotly>=5.22",
+    "mplsoccer>=1.4",
+    "markdown>=3.6",
+    "python-dateutil>=2.9",
+    "curl-cffi>=0.15.0",
+    "browser-cookie3>=0.20.1",
+]
+
+[project.optional-dependencies]
+# socceraction pulls heavy deps (pandas/scikit); keep it optional so the daily
+# scrape pipeline stays lean. Install with: uv sync --extra events
+events = [
+    "socceraction>=1.5",
+    "pandas>=2.2",
+    "multimethod<2",
+]
+notebook = ["marimo>=0.7"]
+dev = ["pytest>=8.0"]
+browser = [
+    "playwright>=1.60.0",
+]
+sources = [
+    "scraperfc>=3.2.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

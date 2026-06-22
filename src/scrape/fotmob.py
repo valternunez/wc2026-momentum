@@ -1,0 +1,294 @@
+"""FotMob scraper — PRIMARY momentum source (SofaScore IP-blocks the user).
+
+FotMob exposes a per-minute, home-positive momentum series plus structured events,
+and — unlike SofaScore — does not Cloudflare-block us. Its `/api/data/*` endpoints
+require an `x-mas` auth header: base64 of `{"body":{"url","code"},"signature"}`,
+where `code` is a unix-ms timestamp and `signature = MD5(json(body) + SECRET)`
+uppercased. `SECRET` is FotMob's easter-egg lyrics ("Three Lions"), stored verbatim
+in `fotmob_secret_lyrics.txt` (byte-exact, including no trailing newline) — if FotMob
+rotates it, replace that file.
+
+Runtime is light: plain curl_cffi + the computed header. No browser, no cookie — good
+for the unattended daily job.
+
+Caveats vs SofaScore: FotMob matchDetails has NO commentary text and NO VAR/hydration
+event types. So in FotMob mode we mark the mandatory WC2026 hydration breaks at their
+nominal minutes (~22'/67'); exact-timing + VAR/injury detection needs the BBC/ESPN
+commentary adapters (`commentary_sources.py`) layered on later.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from src.paths import HYDRATION_NOMINAL_MINUTES, RAW_FOTMOB, WINDOW_MIN
+
+BASE = "https://www.fotmob.com"
+_SECRET_PATH = Path(__file__).with_name("fotmob_secret_lyrics.txt")
+_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
+
+# --- auth -------------------------------------------------------------------
+def _secret() -> str:
+    return _SECRET_PATH.read_text(encoding="utf-8")
+
+
+def x_mas(api_path: str, *, code: int | None = None) -> str:
+    """Build the FotMob `x-mas` header for an `/api/...` path (incl. query string).
+
+    `code` (unix-ms) is injectable for deterministic tests.
+    """
+    code = int(time.time() * 1000) if code is None else code
+    body = {"url": api_path, "code": code}
+    payload = json.dumps(body, separators=(",", ":"), ensure_ascii=False)
+    signature = hashlib.md5((payload + _secret()).encode("utf-8")).hexdigest().upper()
+    token = json.dumps({"body": body, "signature": signature}, separators=(",", ":"))
+    return base64.b64encode(token.encode("utf-8")).decode("ascii")
+
+
+def make_client():
+    """Plain curl_cffi session (FotMob needs no browser/cookie)."""
+    from curl_cffi import requests as creq
+
+    sess = creq.Session(impersonate="chrome131")
+    sess.headers.update({"User-Agent": _UA, "Accept": "application/json"})
+    return sess
+
+
+def _get(client, api_path: str, *, retries: int = 3) -> dict[str, Any]:
+    last = None
+    for attempt in range(retries):
+        r = client.get(BASE + api_path, headers={"x-mas": x_mas(api_path)}, timeout=25)
+        if r.status_code == 200:
+            return r.json()
+        last = f"{r.status_code} {r.text[:80]}"
+        time.sleep(1.5 * (attempt + 1))
+    raise RuntimeError(f"FotMob GET failed: {api_path} :: {last}")
+
+
+# --- fetch / persist --------------------------------------------------------
+def fetch_match_details(match_id: int | str, *, client=None, force: bool = False) -> dict[str, Any]:
+    """Fetch + persist FotMob matchDetails. Idempotent (reads disk unless force)."""
+    RAW_FOTMOB.mkdir(parents=True, exist_ok=True)
+    path = RAW_FOTMOB / f"{match_id}.json"
+    if path.exists() and not force:
+        return json.loads(path.read_text(encoding="utf-8"))
+    data = _get(client or make_client(), f"/api/data/matchDetails?matchId={match_id}")
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return data
+
+
+def load_raw(match_id: int | str) -> dict[str, Any]:
+    path = RAW_FOTMOB / f"{match_id}.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+# --- discovery --------------------------------------------------------------
+def list_wc_events(date_str: str, *, client=None) -> list[dict[str, Any]]:
+    """World Cup matches on a date (date_str = 'YYYYMMDD'). [] on none."""
+    data = _get(client or make_client(), f"/api/data/matches?date={date_str}")
+    out = []
+    for lg in data.get("leagues", []) or []:
+        name = (lg.get("name") or "").lower()
+        if "world cup" not in name and lg.get("primaryId") != 77 and lg.get("parentLeagueId") != 77:
+            continue
+        for m in lg.get("matches", []) or []:
+            out.append(
+                {
+                    "id": m.get("id"),
+                    "home": (m.get("home") or {}).get("name"),
+                    "away": (m.get("away") or {}).get("name"),
+                    "status": (m.get("status") or {}).get("reason", {}).get("short")
+                    or (m.get("status") or {}).get("utcTime"),
+                }
+            )
+    return out
+
+
+def list_wc_event_ids(date_str: str, *, client=None) -> list[int]:
+    return [e["id"] for e in list_wc_events(date_str, client=client) if e["id"] is not None]
+
+
+# --- parsers (match the shapes sofascore.parse_* produce) -------------------
+def parse_momentum(details_json: dict[str, Any]) -> list[dict[str, float]]:
+    """Per-minute momentum, home-positive (verified: positive skews to home)."""
+    content = details_json.get("content") or {}
+    main = (content.get("momentum") or {}).get("main") or {}
+    out = []
+    for p in main.get("data") or []:
+        m, v = p.get("minute"), p.get("value")
+        if m is not None and v is not None:
+            out.append({"minute": float(m), "value": float(v)})
+    return out
+
+
+def parse_match_meta(details_json: dict[str, Any]) -> dict[str, Any]:
+    g = details_json.get("general") or {}
+    info = ((details_json.get("content") or {}).get("matchFacts") or {}).get("infoBox") or {}
+    stadium = info.get("Stadium") or {}
+    teams = (details_json.get("header") or {}).get("teams") or [{}, {}]
+    return {
+        "match_id": g.get("matchId"),
+        "start_timestamp": _epoch(g.get("matchTimeUTCDate")),
+        "home_team": (g.get("homeTeam") or {}).get("name"),
+        "away_team": (g.get("awayTeam") or {}).get("name"),
+        "home_team_id": (g.get("homeTeam") or {}).get("id"),
+        "away_team_id": (g.get("awayTeam") or {}).get("id"),
+        "tournament": g.get("leagueName"),
+        "stage": g.get("leagueRoundName") or g.get("matchRound"),
+        "venue_city": stadium.get("city"),
+        "venue_stadium": stadium.get("name"),
+        "home_score": teams[0].get("score") if len(teams) > 0 else None,
+        "away_score": teams[1].get("score") if len(teams) > 1 else None,
+    }
+
+
+def parse_incidents(details_json: dict[str, Any]) -> list[dict[str, Any]]:
+    """Normalize FotMob events to the same shape as sofascore.parse_incidents.
+
+    FotMob events have no VAR/hydration types; we map goals, cards, subs.
+    """
+    mf = (details_json.get("content") or {}).get("matchFacts") or {}
+    events = (mf.get("events") or {}).get("events") or []
+    kind_map = {"Goal": "goal", "Card": "card", "Substitution": "substitution"}
+    out: list[dict[str, Any]] = []
+    for e in events:
+        kind = kind_map.get(e.get("type"))
+        if not kind:
+            continue
+        out.append(
+            {
+                "kind": kind,
+                "raw_type": e.get("type"),
+                "minute": e.get("time"),
+                "added": e.get("overloadTime"),
+                "is_home": e.get("isHome"),
+                "detail": (e.get("card") or e.get("goalDescription") or "").lower() or None,
+                "length": None,
+                "home_score": e.get("homeScore"),
+                "away_score": e.get("awayScore"),
+            }
+        )
+    out.sort(key=lambda r: (r["minute"] if r["minute"] is not None else 1e9, r.get("added") or 0))
+    return out
+
+
+def nominal_hydration_commentary(momentum: list[dict[str, float]]) -> list[dict[str, Any]]:
+    """Synthetic hydration markers at nominal WC2026 minutes the match actually reached.
+
+    FotMob has no commentary, so we mark the mandatory breaks at ~22'/67' (only if the
+    match ran long enough to form a post-window). Returned pre-normalized so
+    detect_stoppages picks them up exactly like real commentary.
+    """
+    if not momentum:
+        return []
+    max_min = max(p["minute"] for p in momentum)
+    lines = []
+    for mark in HYDRATION_NOMINAL_MINUTES:
+        if max_min >= mark + WINDOW_MIN:
+            lines.append(
+                {"minute": float(mark), "text": "mandatory hydration break (nominal)", "type": "hydration"}
+            )
+    return lines
+
+
+def match_inputs(match_id: int | str) -> tuple[dict, list, list, list]:
+    """(meta, momentum, incidents, commentary) for one match, from persisted raw."""
+    raw = load_raw(match_id)
+    if not raw:
+        return {}, [], [], []
+    momentum = parse_momentum(raw)
+    return parse_match_meta(raw), momentum, parse_incidents(raw), nominal_hydration_commentary(momentum)
+
+
+def _epoch(iso: str | None) -> int | None:
+    if not iso:
+        return None
+    try:
+        return int(datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp())
+    except Exception:
+        return None
+
+
+# --- cross-check (kept) -----------------------------------------------------
+def correlation_with(sofa_series: list[dict[str, float]], fot_series: list[dict[str, float]]) -> float | None:
+    """Pearson r between two momentum series on overlapping minutes (SofaScore vs FotMob)."""
+    if not sofa_series or not fot_series:
+        return None
+    a = {round(p["minute"]): p["value"] for p in sofa_series}
+    b = {round(p["minute"]): p["value"] for p in fot_series}
+    common = sorted(set(a) & set(b))
+    if len(common) < 3:
+        return None
+    import statistics
+
+    try:
+        return statistics.correlation([a[m] for m in common], [b[m] for m in common])
+    except statistics.StatisticsError:
+        return None
+
+
+# --- diagnostic -------------------------------------------------------------
+def _diagnostic(match_id: str) -> int:
+    from src.parse.stoppages import detect_stoppages
+
+    print(f"[diag] FotMob matchDetails {match_id} …")
+    try:
+        fetch_match_details(match_id, force=True)
+    except Exception as e:
+        print(f"[diag] FAIL: {type(e).__name__}: {e}")
+        return 1
+    meta, momentum, incidents, commentary = match_inputs(match_id)
+    stoppages = detect_stoppages(meta, incidents, commentary)
+    print(f"[diag] OK  {meta.get('home_team')} {meta.get('home_score')}–{meta.get('away_score')} "
+          f"{meta.get('away_team')}  ({meta.get('stage')})")
+    print(f"[diag] momentum points: {len(momentum)} | incidents: {len(incidents)}")
+    print(f"[diag] stoppages: {len(stoppages)} -> {sorted({s['stoppage_type'] for s in stoppages})}")
+    return 0 if momentum else 1
+
+
+def _check_secret() -> int:
+    """Reproduce the documented signature vector? (Note: that vector used FotMob's OLD
+    secret, so a mismatch is expected with the current Three Lions secret — the real
+    gate is a live 200.)"""
+    sig = x_mas("/api/leagueseasondeepstats?id=67&season=22583&type=players&stat=expected_goals",
+                code=1730380499852)
+    print("[secret] header built OK; secret md5-len bytes:", len(_secret()))
+    print("[secret] (live 200 from --diagnostic is the authoritative check)")
+    return 0
+
+
+def _list_date(date_str: str) -> int:
+    client = make_client()
+    events = list_wc_events(date_str, client=client)
+    print(f"{date_str}: {len(events)} World Cup match(es)")
+    for e in events:
+        print(f"  {e['id']}  {e['home']} vs {e['away']}  [{e['status']}]")
+    ids = [e["id"] for e in events if e["id"]]
+    if ids:
+        print(f"event ids: {json.dumps(sorted(set(ids)))}")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    if "--check-secret" in sys.argv:
+        raise SystemExit(_check_secret())
+    date = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--date=")), None)
+    if date:
+        raise SystemExit(_list_date(date))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if len(args) != 1:
+        print("usage: python -m src.scrape.fotmob <match_id> | --date=YYYYMMDD | --check-secret")
+        raise SystemExit(2)
+    raise SystemExit(_diagnostic(args[0]))

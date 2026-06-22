@@ -1,0 +1,34 @@
+{
+"event": {
+"id": 9999001,
+"startTimestamp": 1781000000,
+"homeTeam": {
+"id": 1001,
+"name": "Testland"
+},
+"awayTeam": {
+"id": 1002,
+"name": "Mockovia"
+},
+"tournament": {
+"name": "Synthetic WC 2026"
+},
+"roundInfo": {
+"name": "Group A"
+},
+"venue": {
+"city": {
+"name": "Testville"
+},
+"stadium": {
+"name": "Fixture Arena"
+}
+},
+"homeScore": {
+"current": 1
+},
+"awayScore": {
+"current": 0
+}
+}
+}

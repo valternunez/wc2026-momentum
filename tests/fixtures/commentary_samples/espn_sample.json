@@ -1,0 +1,35 @@
+{
+  "_note": "SMALL hand-crafted sample mirroring ESPN's site-API commentary shape (sports.core.api / site.api.espn.com summary?event=...). ESPN nests timestamped lines under commentary[], each with a `time.displayValue` ('22\\'') and a `text` body. Some lines also carry a `play` object; we ignore everything except time + text.",
+  "commentary": [
+    {
+      "sequence": 1,
+      "time": { "displayValue": "14'" },
+      "text": "Goal! Brazil 1, Croatia 0. Vinicius Junior finishes low into the corner."
+    },
+    {
+      "sequence": 2,
+      "time": { "displayValue": "22'" },
+      "text": "Cooling break. The officials pause play for a drinks break with the heat index soaring."
+    },
+    {
+      "sequence": 3,
+      "time": { "displayValue": "40'" },
+      "text": "On-field review under way as the referee is sent to the monitor for a possible penalty."
+    },
+    {
+      "sequence": 4,
+      "time": { "displayValue": "62'" },
+      "text": "Petkovic stays down after a heavy challenge and the physio is on to treat the knock."
+    },
+    {
+      "sequence": 5,
+      "time": { "displayValue": "67'" },
+      "text": "We have a hydration break in the second half, the players taking on fluids."
+    },
+    {
+      "sequence": 6,
+      "time": { "displayValue": "78'" },
+      "text": "Croatia work it out from the back but the final ball is overhit."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+"incidents": [
+{
+"incidentType": "period",
+"time": 45,
+"text": "HT"
+},
+{
+"incidentType": "injuryTime",
+"time": 45,
+"length": 2
+},
+{
+"incidentType": "card",
+"time": 82,
+"isHome": true,
+"incidentClass": "red"
+},
+{
+"incidentType": "substitution",
+"time": 70,
+"isHome": false,
+"playerIn": {
+"name": "Sub B"
+},
+"playerOut": {
+"name": "Starter B"
+}
+},
+{
+"incidentType": "substitution",
+"time": 56,
+"isHome": true,
+"playerIn": {
+"name": "Sub A"
+},
+"playerOut": {
+"name": "Starter A"
+}
+},
+{
+"incidentType": "varDecision",
+"time": 40,
+"isHome": true,
+"incidentClass": "penaltyNotAwarded"
+},
+{
+"incidentType": "card",
+"time": 35,
+"isHome": false,
+"incidentClass": "yellow"
+},
+{
+"incidentType": "goal",
+"time": 30,
+"isHome": true,
+"homeScore": 1,
+"awayScore": 0,
+"incidentClass": "regular"
+}
+]
+}

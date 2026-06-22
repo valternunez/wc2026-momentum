@@ -1,0 +1,11 @@
+{
+  "commentary": [
+    {"sequence": 1, "time": {"value": 0, "displayValue": ""}, "text": "Lineups are announced and players are warming up."},
+    {"sequence": 2, "time": {"value": 60, "displayValue": "1'"}, "text": "First Half begins."},
+    {"sequence": 3, "time": {"value": 1300, "displayValue": "22'"}, "text": "The referee signals a cooling break as players take on drinks in the heat."},
+    {"sequence": 4, "time": {"value": 2100, "displayValue": "35'"}, "text": "VAR is reviewing a possible penalty; the referee checks the pitchside monitor."},
+    {"sequence": 5, "time": {"value": 3300, "displayValue": "55'"}, "text": "Delay in match as a player is down injured and receiving treatment from the physio."},
+    {"sequence": 6, "time": {"value": 4000, "displayValue": "67'"}, "text": "Another hydration break with temperatures soaring."},
+    {"sequence": 7, "time": {"value": 4800, "displayValue": "80'"}, "text": "A lovely passing move ends with a shot over the bar."}
+  ]
+}
