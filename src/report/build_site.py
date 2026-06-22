@@ -92,8 +92,8 @@ def _match_cards(site_figures: Path) -> str:
         shutil.copyfile(png, dest / f"{m['id']}.png")
         home, away = m.get("home") or "?", m.get("away") or "?"
         cards.append(f"""
-          <div class="mb-card" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B0A78F">M{idx:02d}</span></div>
+          <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{home} v {away} — open chart" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B0A78F">M{idx:02d}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
             <div style="display:flex;flex-direction:column;gap:4px">
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></div>
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
@@ -122,6 +122,48 @@ def _compare_sentence(effects: list[dict]) -> str:
             f"more data arrives, the less it moves.")
 
 
+def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str) -> str:
+    """Short, purely descriptive note on this match's momentum (no causal claims)."""
+    if df is None or df.is_empty():
+        return f"Per-minute momentum for {home} (home, blue) vs {away} (away, orange)."
+    rows = (df.filter((pl.col("match_id") == str(mid)) & (pl.col("is_home") == True))  # noqa: E712
+            .sort("clock_minute").to_dicts())
+    if not rows:
+        return f"Per-minute momentum for {home} (blue) vs {away} (orange). No stoppages detected."
+    parts = [f"Blue marks {home} on top, orange marks {away}."]
+    for r in rows:
+        if r["stoppage_type"] != "hydration":
+            continue
+        pre, d = r.get("momentum_pre_5min_mean"), r.get("momentum_delta")
+        if pre is None or d is None:
+            continue
+        leader = home if pre > 0 else away
+        lead_delta = d if pre > 0 else -d  # from the leader's perspective
+        m = int(r["clock_minute"])
+        if lead_delta < 0:
+            parts.append(f"At the {m}' hydration break {leader} were on top, then lost "
+                         f"{abs(lead_delta):.0f} momentum over the next five minutes.")
+        else:
+            parts.append(f"At the {m}' hydration break {leader} were on top and pushed "
+                         f"{abs(lead_delta):.0f} further ahead.")
+    sw = max(rows, key=lambda r: abs(r.get("momentum_delta") or 0))
+    if sw.get("momentum_delta") is not None:
+        parts.append(f"Biggest post-stoppage swing: {abs(sw['momentum_delta']):.0f} at the "
+                     f"{int(sw['clock_minute'])}' {sw['stoppage_type'].replace('_', ' ')}.")
+    return " ".join(parts)
+
+
+def _mb_data(df: pl.DataFrame) -> str:
+    """Augment committed momentum.json with a per-match explanation; return JSON for the modal."""
+    p = PROCESSED / "momentum.json"
+    if not p.exists():
+        return "[]"
+    data = json.loads(p.read_text(encoding="utf-8"))
+    for m in data:
+        m["explain"] = _match_explanation(df, m["id"], m.get("home") or "Home", m.get("away") or "Away")
+    return json.dumps(data, ensure_ascii=False)
+
+
 def _placebo_tokens() -> dict[str, str]:
     p = PROCESSED / "historical_placebo.parquet"
     if not p.exists():
@@ -133,6 +175,21 @@ def _placebo_tokens() -> dict[str, str]:
         "PLACEBO_MEAN": f"{mean:+.3f}",
         "PLACEBO_CI": f"95% CI {lo:+.3f} … {hi:+.3f}",
         "PLACEBO_N": f"{top.height} on-top stoppages · {top['match_id'].n_unique()} matches",
+    }
+
+
+def _cwc_placebo_tokens() -> dict[str, str]:
+    """CWC 2025 same-units placebo (FotMob momentum scale, directly comparable to 2026)."""
+    p = PROCESSED / "cwc2025_placebo.parquet"
+    if not p.exists():
+        return {"CWC_MEAN": "—", "CWC_CI": "pending", "CWC_N": ""}
+    df = pl.read_parquet(p)
+    top = on_top_rows(df)
+    mean, lo, hi = cluster_bootstrap_ci(top)
+    return {
+        "CWC_MEAN": f"{mean:+.1f}",
+        "CWC_CI": f"95% CI {lo:+.1f} … {hi:+.1f}",
+        "CWC_N": f"{top.height} on-top stoppages · {top['match_id'].n_unique()} matches",
     }
 
 
@@ -190,9 +247,11 @@ def build() -> str:
         "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
         "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
         **_placebo_tokens(),
+        **_cwc_placebo_tokens(),
         "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated),
         "PAGES_URL": PAGES_URL,
         "SNAPSHOT_DATE": snap_date or updated,
+        "MB_DATA": _mb_data(df),
     }
 
     html = TEMPLATE

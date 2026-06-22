@@ -27,6 +27,7 @@ TEMPLATE = """<!DOCTYPE html>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#EFEBDF}
   a{color:inherit}
+  [hidden]{display:none!important}
   ::selection{background:#E5482E;color:#FCFAF3}
   @keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
@@ -169,13 +170,14 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
     <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">05 — The catch worth stating out loud</h2>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em> — break or no break. That's regression to the mean, and it's the single biggest threat to reading too much into the bars above.</p>
-    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">So the same test was run on the 2022 World Cup, which had no mandated breaks at all, at the fake 22′ and 67′ marks. The team on top still slipped — a small, non-zero amount whose confidence interval excludes zero. Some of the 2026 effect is gravity, not the water bottle.</p>
+    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">The cleanest check is last summer's Club World Cup — played in the same US heat, measured on the <em style="font-style:italic">same</em> momentum scale, but with no break mandated at the 22′/67′ marks. Window there and the team on top still slides — and lands strikingly close to the 2026 figure beside it. Most of that headline −24 is regression to the mean, not the water bottle.</p>
     <div style="background:#1A1813;color:#EFEBDF;padding:30px 32px;margin:30px 0;border-radius:2px">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#E5C9A0;margin-bottom:14px">2022 PLACEBO · NO BREAKS EXISTED</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#E5C9A0;margin-bottom:14px">2025 CLUB WORLD CUP · SAME US SUMMER · NO MANDATED BREAK</div>
       <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:baseline">
-        <div><span style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#EFEBDF">{{PLACEBO_MEAN}}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#948D7C;margin-left:10px">xT units</span></div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#C9C3B2;line-height:1.6">{{PLACEBO_CI}}<br>{{PLACEBO_N}}</div>
+        <div><span style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#EFEBDF">{{CWC_MEAN}}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#948D7C;margin-left:10px">momentum pts</span></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#C9C3B2;line-height:1.6">{{CWC_CI}}<br>{{CWC_N}} · same scale as the −24</div>
       </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7E776A;margin-top:16px;line-height:1.6">EARLIER BASELINE · QATAR 2022, NO BREAKS (EVENT-xT PROXY, DIFFERENT SCALE): {{PLACEBO_MEAN}} · {{PLACEBO_CI}} · {{PLACEBO_N}}</div>
     </div>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820">Which is exactly why the model controls for pre-break momentum, clusters its errors by match, and won't print a causal headline until the live sample is big enough. The interaction regression-to-the-mean <em style="font-style:italic">can't</em> explain — a break hitting harder precisely when a team is on top — is the part still being watched.</p>
   </section>
@@ -187,7 +189,7 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="max-width:840px;margin:0 auto;padding:46px 40px 20px">
     <div style="border-top:2px solid #1A1813;border-bottom:2px solid #1A1813;padding:44px 0">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:24px">The bottom line — so far</div>
-      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:24ch">The momentum killer looks real — and it might be a coaching timeout in disguise. But the sample is young, the intervals are wide, and the verdict stays open until the final.</p>
+      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">On the surface the momentum killer is real. But a summer of football with no mandated breaks shows the same drop — so most of it is regression to the mean, and any effect of the break itself is small and unproven. The verdict stays open until the final.</p>
     </div>
   </section>
 
@@ -221,5 +223,104 @@ TEMPLATE = """<!DOCTYPE html>
     </div>
   </footer>
 </article>
+
+<!-- MATCH MODAL -->
+<div id="mb-modal" hidden style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(26,24,19,.55);padding:20px">
+  <div role="dialog" aria-modal="true" aria-labelledby="mb-title" style="background:#FCFAF3;color:#1A1813;width:min(780px,96vw);max-height:92vh;overflow:auto;border-radius:4px;box-shadow:0 24px 70px rgba(26,24,19,.4);position:relative;padding:30px 32px 28px">
+    <button id="mb-close" aria-label="Close" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#E5482E">CLOSE ✕</button>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">Match momentum</div>
+    <h3 id="mb-title" style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(24px,4vw,34px);line-height:1.1;margin-bottom:6px"></h3>
+    <div id="mb-sub" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;letter-spacing:.06em;margin-bottom:18px"></div>
+    <div id="mb-chart" style="position:relative;width:100%"></div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;color:#5A5547">
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#9CC4E0;display:inline-block;border-radius:1px"></span>HOME ON TOP</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#EBC09A;display:inline-block;border-radius:1px"></span>AWAY ON TOP</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
+    </div>
+    <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:#A89F88;margin-top:14px">Per-minute momentum, FotMob (home-positive). Hover the chart for values.</p>
+  </div>
+</div>
+
+<script type="application/json" id="mb-data">{{MB_DATA}}</script>
+<script>
+(function(){
+  var DATA = {}, MARK = {hydration:'#3E88C7', var:'#2E8B57', injury_huddle:'#E08A4B', injury_no_huddle:'#E08A4B', other:'#9A927E'};
+  try { JSON.parse(document.getElementById('mb-data').textContent).forEach(function(m){ DATA[m.id]=m; }); } catch(e){}
+  var modal=document.getElementById('mb-modal'), chart=document.getElementById('mb-chart');
+  var SVGNS='http://www.w3.org/2000/svg';
+
+  function el(tag, attrs){ var e=document.createElementNS(SVGNS,tag); for(var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  function render(m){
+    chart.innerHTML='';
+    var W=720, H=300, pad={l:8,r:8,t:18,b:24};
+    var s=m.series; if(!s||!s.length) return;
+    var maxMin=s[s.length-1][0], minMin=s[0][0];
+    var ymax=1; s.forEach(function(p){ ymax=Math.max(ymax, Math.abs(p[1])); }); ymax*=1.08;
+    var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+    function X(min){ return pad.l + (min-minMin)/(maxMin-minMin||1)*pw; }
+    function Y(v){ return pad.t + (1-(v+ymax)/(2*ymax))*ph; }
+    var zeroY=Y(0);
+    var svg=el('svg',{viewBox:'0 0 '+W+' '+H, width:'100%', style:'display:block;font-family:IBM Plex Mono,monospace'});
+
+    // two-colour area (blue above zero, orange below) via clip
+    var d='M '+X(s[0][0])+' '+zeroY; s.forEach(function(p){ d+=' L '+X(p[0])+' '+Y(p[1]); }); d+=' L '+X(s[s.length-1][0])+' '+zeroY+' Z';
+    var defs=el('defs',{});
+    defs.appendChild((function(){var c=el('clipPath',{id:'mbUp'});c.appendChild(el('rect',{x:0,y:0,width:W,height:zeroY}));return c;})());
+    defs.appendChild((function(){var c=el('clipPath',{id:'mbDn'});c.appendChild(el('rect',{x:0,y:zeroY,width:W,height:H-zeroY}));return c;})());
+    svg.appendChild(defs);
+    svg.appendChild(el('path',{d:d, fill:'#9CC4E0', 'clip-path':'url(#mbUp)'}));
+    svg.appendChild(el('path',{d:d, fill:'#EBC09A', 'clip-path':'url(#mbDn)'}));
+    svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:'#1A1813','stroke-width':1.1}));
+
+    (m.stoppages||[]).forEach(function(st){
+      var x=X(st[0]);
+      svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':'4 3'}));
+    });
+    // minute ticks
+    [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var t=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:'#9A927E'}); t.textContent=mm+"'"; svg.appendChild(t); }});
+
+    // hover layer
+    var cross=el('line',{y1:pad.t,y2:H-pad.b, stroke:'#1A1813','stroke-width':1,opacity:0}); svg.appendChild(cross);
+    var dot=el('circle',{r:4, fill:'#1A1813', stroke:'#FCFAF3','stroke-width':2, opacity:0}); svg.appendChild(dot);
+    var tip=document.createElement('div'); tip.style.cssText='position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-120%);background:#1A1813;color:#EFEBDF;font-family:IBM Plex Mono,monospace;font-size:11px;padding:5px 8px;border-radius:3px;white-space:nowrap;transition:opacity .08s';
+    chart.appendChild(tip);
+    var hit=el('rect',{x:pad.l,y:pad.t,width:pw,height:ph,fill:'transparent',style:'cursor:crosshair'}); svg.appendChild(hit);
+    hit.addEventListener('mousemove', function(ev){
+      var r=svg.getBoundingClientRect(); var px=(ev.clientX-r.left)/r.width*W;
+      var min=minMin+(px-pad.l)/pw*(maxMin-minMin);
+      var best=s[0]; for(var i=0;i<s.length;i++){ if(Math.abs(s[i][0]-min)<Math.abs(best[0]-min)) best=s[i]; }
+      var x=X(best[0]), y=Y(best[1]);
+      cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity',.5);
+      dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('opacity',1);
+      var near=(m.stoppages||[]).filter(function(st){return Math.abs(st[0]-best[0])<1.5;}).map(function(st){return st[1].replace(/_/g,' ');});
+      var who=best[1]>=0?(m.home):(m.away);
+      tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(near.length?' · '+near[0]:'');
+      tip.style.left=(x/W*r.width)+'px'; tip.style.top=(y/H*r.height)+'px'; tip.style.opacity=1;
+    });
+    hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity',0); dot.setAttribute('opacity',0); tip.style.opacity=0; });
+    chart.appendChild(svg);
+  }
+
+  function open(id){
+    var m=DATA[id]; if(!m) return;
+    document.getElementById('mb-title').textContent=m.home+' '+(m.hs!=null?m.hs:'')+(m.hs!=null?'–'+m.as:'')+' '+m.away;
+    document.getElementById('mb-sub').textContent=(m.series.length)+' minutes tracked · '+(m.stoppages?m.stoppages.length:0)+' stoppages detected';
+    document.getElementById('mb-explain').textContent=m.explain||'';
+    render(m); modal.hidden=false; document.body.style.overflow='hidden';
+  }
+  function close(){ modal.hidden=true; document.body.style.overflow=''; }
+
+  document.addEventListener('click', function(ev){
+    var card=ev.target.closest('[data-mid]'); if(card){ open(card.getAttribute('data-mid')); }
+  });
+  document.getElementById('mb-close').addEventListener('click', close);
+  modal.addEventListener('click', function(ev){ if(ev.target===modal) close(); });
+  document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && !modal.hidden) close(); });
+})();
+</script>
 </body></html>
 """

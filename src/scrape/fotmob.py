@@ -76,10 +76,15 @@ def _get(client, api_path: str, *, retries: int = 3) -> dict[str, Any]:
 
 
 # --- fetch / persist --------------------------------------------------------
-def fetch_match_details(match_id: int | str, *, client=None, force: bool = False) -> dict[str, Any]:
-    """Fetch + persist FotMob matchDetails. Idempotent (reads disk unless force)."""
-    RAW_FOTMOB.mkdir(parents=True, exist_ok=True)
-    path = RAW_FOTMOB / f"{match_id}.json"
+def fetch_match_details(match_id: int | str, *, client=None, force: bool = False, dest_dir=None) -> dict[str, Any]:
+    """Fetch + persist FotMob matchDetails. Idempotent (reads disk unless force).
+
+    `dest_dir` defaults to RAW_FOTMOB (the WC2026 raw dir). Other competitions (e.g.
+    CWC 2025) MUST pass a separate dir so the daily build doesn't ingest them as WC2026.
+    """
+    dest_dir = dest_dir or RAW_FOTMOB
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    path = dest_dir / f"{match_id}.json"
     if path.exists() and not force:
         return json.loads(path.read_text(encoding="utf-8"))
     data = _get(client or make_client(), f"/api/data/matchDetails?matchId={match_id}")
@@ -93,13 +98,15 @@ def load_raw(match_id: int | str) -> dict[str, Any]:
 
 
 # --- discovery --------------------------------------------------------------
-def list_wc_events(date_str: str, *, client=None) -> list[dict[str, Any]]:
-    """World Cup matches on a date (date_str = 'YYYYMMDD'). [] on none."""
+WORLD_CUP_PRIMARY_ID = 77  # FotMob primaryId for the men's FIFA World Cup
+
+
+def list_competition_events(date_str: str, primary_id: int, *, client=None) -> list[dict[str, Any]]:
+    """Matches for a competition (FotMob `primaryId`) on a date ('YYYYMMDD'). [] on none."""
     data = _get(client or make_client(), f"/api/data/matches?date={date_str}")
     out = []
     for lg in data.get("leagues", []) or []:
-        name = (lg.get("name") or "").lower()
-        if "world cup" not in name and lg.get("primaryId") != 77 and lg.get("parentLeagueId") != 77:
+        if lg.get("primaryId") != primary_id and lg.get("parentLeagueId") != primary_id:
             continue
         for m in lg.get("matches", []) or []:
             out.append(
@@ -112,6 +119,11 @@ def list_wc_events(date_str: str, *, client=None) -> list[dict[str, Any]]:
                 }
             )
     return out
+
+
+def list_wc_events(date_str: str, *, client=None) -> list[dict[str, Any]]:
+    """Men's World Cup matches on a date (date_str = 'YYYYMMDD'). [] on none."""
+    return list_competition_events(date_str, WORLD_CUP_PRIMARY_ID, client=client)
 
 
 def list_wc_event_ids(date_str: str, *, client=None) -> list[int]:

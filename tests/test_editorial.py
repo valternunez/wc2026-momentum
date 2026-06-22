@@ -45,3 +45,7 @@ def test_build_editorial_page():
     assert "SofaScore" not in html and "FotMob" in html  # accuracy: FotMob, not SofaScore
     assert "mb-card" in html  # match grid present
     assert "Hydration break" in html  # money chart / mechanism labels
+    # interactive modal wiring
+    assert 'id="mb-modal"' in html and 'id="mb-data"' in html
+    assert "data-mid=" in html        # clickable cards
+    assert '"series"' in html and '"explain"' in html  # embedded momentum + per-match note

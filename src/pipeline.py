@@ -170,10 +170,39 @@ def run(
 
             ids = build_match_panels()
             _write_matches_json(all_ids)
-            print(f"[per-match] {len(ids)} panels + matches.json ({len(all_ids)} matches)")
+            _write_momentum_json(all_ids, df)
+            print(f"[per-match] {len(ids)} panels + matches.json + momentum.json ({len(all_ids)} matches)")
         except Exception as e:
             print(f"[per-match] skipped: {type(e).__name__}: {e}")
     return df
+
+
+def _write_momentum_json(match_ids: list[str], df: pl.DataFrame) -> None:
+    """Committed per-match momentum series + stoppage markers, for the interactive modal.
+
+    Publishes FotMob's derived momentum index (user-approved, non-commercial + attributed).
+    Compact arrays keep it small. CI embeds this; raw stays local.
+    """
+    out = []
+    for mid in match_ids:
+        raw = fotmob.load_raw(mid)
+        if not raw:
+            continue
+        series = [[round(p["minute"], 1), round(p["value"], 1)] for p in fotmob.parse_momentum(raw)]
+        if not series:
+            continue
+        m = fotmob.parse_match_meta(raw)
+        stoppages = []
+        if df is not None and not df.is_empty():
+            sub = (df.filter(pl.col("match_id") == str(mid))
+                     .select(["clock_minute", "stoppage_type"]).unique().sort("clock_minute"))
+            stoppages = [[r["clock_minute"], r["stoppage_type"]] for r in sub.to_dicts()]
+        out.append({
+            "id": str(mid), "home": m.get("home_team"), "away": m.get("away_team"),
+            "hs": m.get("home_score"), "as": m.get("away_score"),
+            "series": series, "stoppages": stoppages,
+        })
+    (PROCESSED / "momentum.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
 
 def _write_matches_json(match_ids: list[str]) -> None:
@@ -247,6 +276,20 @@ def discover_finished_wc_ids(days: int, end_date: str | None) -> list[str]:
     return merged
 
 
+def build_cwc_placebo() -> pl.DataFrame:
+    """Build the CWC 2025 same-units placebo parquet (occasional run; FotMob momentum)."""
+    from src.analysis.cwc_placebo import build_cwc_placebo_table, summarize_cwc_placebo
+
+    print("[cwc-placebo] discovering + scraping CWC 2025 (FotMob)…")
+    df = build_cwc_placebo_table()
+    out = PROCESSED / "cwc2025_placebo.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
+    print(f"[cwc-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
+    print(f"[cwc-placebo] summary: {summarize_cwc_placebo(df)}")
+    return df
+
+
 def _parse_ids(args: argparse.Namespace) -> list[str]:
     ids: list[str] = [str(i) for i in (args.match_ids or [])]
     if args.ids_file:
@@ -270,11 +313,15 @@ def main() -> None:
     ap.add_argument("--headless", action="store_true", help="run the scrape browser headless (with --browser)")
     ap.add_argument("--historical-placebo", action="store_true", help="build the 2022-WC placebo parquet and exit")
     ap.add_argument("--hp-limit", type=int, default=None, help="limit StatsBomb matches for --historical-placebo")
+    ap.add_argument("--cwc-placebo", action="store_true", help="build the CWC 2025 same-units placebo parquet and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
     args = ap.parse_args()
     if args.historical_placebo:
         build_historical_placebo(limit=args.hp_limit)
+        return
+    if args.cwc_placebo:
+        build_cwc_placebo()
         return
     ids = _parse_ids(args)
     if args.discover_days:
