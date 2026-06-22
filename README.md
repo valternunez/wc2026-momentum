@@ -8,7 +8,7 @@ against other stoppages (VAR, injuries) of similar duration to isolate the mecha
 > **Status:** live data collection through the 2026 final (July 19). The report site below
 > regenerates daily as matches accumulate.
 
-📊 **Live report:** _(GitHub Pages URL — added once Pages is enabled)_
+📊 **Live report:** https://valternunez.github.io/wc2026-momentum/ — auto-updates as matches are scraped.
 📝 Full design: [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md)
 
 ## How it works
