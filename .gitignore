@@ -30,3 +30,7 @@ Thumbs.db
 # --- Secrets ---
 .env
 *.local
+
+# --- Design source assets (kept local, not part of the repo) ---
+*.zip
+WC2026 Momentum Editorial Design/
