@@ -27,6 +27,59 @@ HOME_COLOR = "#0072B2"
 AWAY_COLOR = "#D55E00"
 NCOLS = 6
 
+# --- editorial per-match panels (one transparent PNG per match) -------------
+MATCHES_DIR = REPORTS / "figures" / "matches"
+PANEL_HOME = "#9CC4E0"   # home-on-top fill (blue)
+PANEL_AWAY = "#EBC09A"   # away-on-top fill (orange)
+MARKER_COLORS = {        # dashed stoppage markers, colour-coded by type
+    "hydration": "#3E88C7",
+    "var": "#2E8B57",
+    "injury_huddle": "#E08A4B",
+    "injury_no_huddle": "#E08A4B",
+    "other": "#9A927E",
+}
+
+
+def build_match_panels(out_dir: str | Path = MATCHES_DIR, *, match_ids: list[str] | None = None) -> list[str]:
+    """Render one transparent editorial momentum panel per match -> <match_id>.png.
+
+    Home-positive momentum filled blue above the zero line / orange below, with
+    colour-coded dashed stoppage markers, no axes. Reads FotMob raw + the parquet;
+    safe when raw is absent (returns []). Returns the match ids rendered.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ids = match_ids if match_ids is not None else sorted(p.stem for p in RAW_FOTMOB.glob("*.json"))
+    df = pl.read_parquet(STOPPAGES_PARQUET) if STOPPAGES_PARQUET.exists() else None
+
+    written: list[str] = []
+    for mid in ids:
+        raw = fotmob.load_raw(mid)
+        if not raw:
+            continue
+        mom = fotmob.parse_momentum(raw)
+        if not mom:
+            continue
+        xs = [p["minute"] for p in mom]
+        ys = [p["value"] for p in mom]
+
+        fig, ax = plt.subplots(figsize=(4.2, 1.45))
+        ax.fill_between(xs, ys, 0, where=[y >= 0 for y in ys], color=PANEL_HOME, linewidth=0)
+        ax.fill_between(xs, ys, 0, where=[y < 0 for y in ys], color=PANEL_AWAY, linewidth=0)
+        ax.axhline(0, color="#1A1813", linewidth=1.1)
+        for minute, stype in _markers(df, mid):
+            ax.axvline(minute, color=MARKER_COLORS.get(stype, "#9A927E"), linestyle=(0, (4, 3)),
+                       linewidth=1.2, alpha=0.95)
+        ymax = max((abs(y) for y in ys), default=1) * 1.08
+        ax.set_ylim(-ymax, ymax)
+        ax.set_xlim(min(xs), max(xs))
+        ax.axis("off")
+        fig.subplots_adjust(left=0.01, right=0.99, top=0.98, bottom=0.02)
+        fig.savefig(out_dir / f"{mid}.png", dpi=150, transparent=True)
+        plt.close(fig)
+        written.append(mid)
+    return written
+
 
 def _markers(df: pl.DataFrame | None, match_id: str) -> list[tuple[float, str]]:
     if df is None or df.is_empty():

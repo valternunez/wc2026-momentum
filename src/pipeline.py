@@ -163,17 +163,34 @@ def run(
         path = write_snapshot(df, date)
         print(f"[snapshot] {path}")
 
-    # Per-match momentum grid (local only; needs FotMob raw). Committed image; CI just serves it.
+    # Per-match editorial panels + match meta (local only; need FotMob raw). Committed; CI serves them.
     if source == "fotmob":
         try:
-            from src.viz.per_match import build_per_match_grid
+            from src.viz.per_match import build_match_panels
 
-            png = build_per_match_grid()
-            if png:
-                print(f"[per-match] {png}")
+            ids = build_match_panels()
+            _write_matches_json(all_ids)
+            print(f"[per-match] {len(ids)} panels + matches.json ({len(all_ids)} matches)")
         except Exception as e:
             print(f"[per-match] skipped: {type(e).__name__}: {e}")
     return df
+
+
+def _write_matches_json(match_ids: list[str]) -> None:
+    """Committed per-match meta (home/away/score/date/stage) so the report has fixtures in CI."""
+    rows = []
+    for mid in match_ids:
+        raw = fotmob.load_raw(mid)
+        if not raw:
+            continue
+        m = fotmob.parse_match_meta(raw)
+        rows.append({
+            "id": str(mid), "home": m.get("home_team"), "away": m.get("away_team"),
+            "home_score": m.get("home_score"), "away_score": m.get("away_score"),
+            "ts": m.get("start_timestamp"), "stage": m.get("stage"),
+        })
+    rows.sort(key=lambda r: (r["ts"] or 0, r["id"]))
+    (PROCESSED / "matches.json").write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
 
 
 def build_historical_placebo(limit: int | None = None) -> pl.DataFrame:

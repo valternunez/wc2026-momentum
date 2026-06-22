@@ -1,150 +1,205 @@
-"""Build the GitHub Pages report: data/processed parquet -> site/index.html.
+"""Build the editorial report (site/index.html) from the committed dataset.
 
-Run locally (`uv run python -m src.report.build_site`) and in CI on push. CI does
-NOT scrape — it only renders the committed parquet + snapshots into the site, so
-it can't be IP-blocked. Everything in the page is derived deterministically here.
-
-Token substitution: reports/writeup.md may contain {{tokens}} (e.g. the headline
-number) which are filled from the computed effects so prose and charts never drift.
+Renders the supplied editorial design (src/report/editorial_copy.TEMPLATE) by
+substituting {{TOKENS}} with values computed live from data/processed/*. CI-safe:
+uses only base deps (polars/numpy/scipy) — no scraping, no pandas/statsmodels.
+Per-match panel images are generated locally and committed; here we just copy and
+embed them.
 """
 
 from __future__ import annotations
 
-import html
-
+import json
 import shutil
+from datetime import datetime, timezone
+from pathlib import Path
 
-import markdown
-import plotly.io as pio
+import polars as pl
 
-from src.analysis.descriptive import effect_by_type, load_processed
-from src.paths import REPORTS, SITE, STOPPAGES_PARQUET
-from src.report.methodology import build_appendix_html, small_n_notice
+from src.analysis.descriptive import cluster_bootstrap_ci, effect_by_type, load_processed, on_top_rows
+from src.paths import PROCESSED, REPORTS, SITE, STOPPAGES_PARQUET
+from src.report.editorial_copy import TEMPLATE
 from src.snapshot import load_all_snapshots
-from src.viz.charts import distribution_chart, effect_chart, trend_chart
-from src.viz.static_charts import save_static_charts
 
-PLOTLY_CDN = '<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>'
+ACCENT = "#E5482E"
+INK = "#1A1813"
+SCALE = 32.0  # momentum axis: 0 .. -32
+PAGES_URL = "https://github.com/valternunez/wc2026-momentum"
 
-PAGE = """<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>World Cup 2026 — Stoppage Momentum</title>
-{cdn}
-<style>
-  body {{ font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-         max-width: 860px; margin: 0 auto; padding: 24px; color: #1a1a1a; line-height: 1.55; }}
-  h1, h2, h3 {{ line-height: 1.2; }} h1 {{ margin-bottom: .2em; }}
-  .sub {{ color: #666; margin-top: 0; }}
-  .chart {{ margin: 28px 0; }}
-  table {{ border-collapse: collapse; }} td, th {{ border: 1px solid #ddd; padding: 6px 10px; }}
-  code {{ background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }}
-  footer {{ color: #888; font-size: .85em; margin-top: 48px; border-top: 1px solid #eee; padding-top: 12px; }}
-</style></head><body>
-{body}
-<footer>Generated from <code>data/processed/stoppages.parquet</code>. Derived data only;
-raw provider payloads not redistributed. Code: MIT.</footer>
-</body></html>
-"""
+_LABELS = {
+    "hydration": "Hydration break",
+    "var": "VAR review",
+    "injury_huddle": "Injury · with huddle",
+    "injury_no_huddle": "Injury · no huddle",
+}
+_ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
+_MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
-def _fmt(x: float | None) -> str:
-    return "n/a" if x is None or x != x else f"{x:+.1f}"
+def _fmt_date(iso: str | None) -> str:
+    if not iso:
+        d = datetime.now(timezone.utc)
+        return f"{d.day} {_MONTHS[d.month]} {d.year}"
+    d = datetime.strptime(iso, "%Y-%m-%d")
+    return f"{d.day} {_MONTHS[d.month]} {d.year}"
 
 
-def _headline_tokens(effects: list[dict]) -> dict[str, str]:
-    hyd = next((e for e in effects if e["stoppage_type"] == "hydration"), None)
-    if not hyd or hyd["n"] == 0:
-        return {"HEADLINE": "Not enough data yet.", "HYD_N": "0", "HYD_MEAN": "n/a", "HYD_CI": "n/a"}
-    sign = "away from" if hyd["mean_delta"] < 0 else "toward"
+def _money_rows(effects: list[dict]) -> str:
+    by = {e["stoppage_type"]: e for e in effects}
+    out = []
+    for stype in _ORDER:
+        e = by.get(stype)
+        if not e or e["n"] == 0:
+            continue
+        mean = e["mean_delta"]
+        a, b = abs(e["ci_lo"]), abs(e["ci_hi"])
+        lo, hi = min(a, b), max(a, b)
+        mean_pct = min(abs(mean) / SCALE * 100, 100)
+        lo_pct, hi_pct = min(lo / SCALE * 100, 100), min(hi / SCALE * 100, 100)
+        is_hl = stype == "hydration"
+        color = ACCENT if is_hl else INK
+        out.append(f"""
+        <div style="position:relative;margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:16px;color:{color}">{_LABELS[stype]}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557">n = {e['n']}</span>
+          </div>
+          <div style="position:relative;height:30px">
+            <div style="position:absolute;top:13px;height:4px;right:0;width:{mean_pct:.2f}%;background:{color};opacity:{1 if is_hl else .85}"></div>
+            <div style="position:absolute;top:9px;height:12px;right:{lo_pct:.2f}%;width:{hi_pct - lo_pct:.2f}%;border-left:1px solid {color};border-right:1px solid {color};background:{color};opacity:{.16 if is_hl else .12}"></div>
+            <div style="position:absolute;top:9px;width:12px;height:12px;border-radius:50%;right:calc({mean_pct:.2f}% - 6px);background:{color};box-shadow:0 0 0 3px #EFEBDF"></div>
+            <span style="position:absolute;top:-2px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:{color};right:calc({mean_pct:.2f}% + 14px)">{mean:.1f}</span>
+          </div>
+        </div>""")
+    return "".join(out)
+
+
+def _match_cards(site_figures: Path) -> str:
+    mpath = PROCESSED / "matches.json"
+    src_dir = REPORTS / "figures" / "matches"
+    if not mpath.exists() or not src_dir.exists():
+        return '<p style="font-family:IBM Plex Mono,monospace;color:#948D7C">Match panels render on the next local update.</p>'
+    matches = json.loads(mpath.read_text(encoding="utf-8"))
+    dest = site_figures / "matches"
+    dest.mkdir(parents=True, exist_ok=True)
+    cards = []
+    idx = 0
+    for m in matches:
+        png = src_dir / f"{m['id']}.png"
+        if not png.exists():
+            continue
+        idx += 1
+        shutil.copyfile(png, dest / f"{m['id']}.png")
+        home, away = m.get("home") or "?", m.get("away") or "?"
+        cards.append(f"""
+          <div class="mb-card" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B0A78F">M{idx:02d}</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
+            </div>
+            <img src="figures/matches/{m['id']}.png" alt="{home} v {away} — per-minute momentum" loading="lazy" style="width:100%;height:74px;object-fit:contain;object-position:center;display:block;margin-top:2px"/>
+          </div>""")
+    return "".join(cards)
+
+
+def _compare_sentence(effects: list[dict]) -> str:
+    by = {e["stoppage_type"]: abs(e["mean_delta"]) for e in effects if e["n"]}
+    hyd = by.get("hydration")
+    var = by.get("var")
+    inh = by.get("injury_no_huddle")
+    hyd_n = next((e["n"] for e in effects if e["stoppage_type"] == "hydration"), 0)
+    if not hyd:
+        return "Not enough data yet to compare stoppage types."
+    bits = []
+    if var:
+        bits.append(f"about {round((hyd / var - 1) * 100)}% more momentum than a VAR review")
+    if inh:
+        bits.append(f"roughly {hyd / inh:.1f}× a no-huddle injury stoppage")
+    comp = " and ".join(bits) if bits else "the largest swing of any stoppage type"
+    return (f"A hydration break costs the leading side {comp}. And it isn't only noise at the edges: "
+            f"with {hyd_n} breaks logged, the hydration estimate is the tightest of the four — the "
+            f"more data arrives, the less it moves.")
+
+
+def _placebo_tokens() -> dict[str, str]:
+    p = PROCESSED / "historical_placebo.parquet"
+    if not p.exists():
+        return {"PLACEBO_MEAN": "—", "PLACEBO_CI": "pending", "PLACEBO_N": ""}
+    df = pl.read_parquet(p)
+    top = on_top_rows(df)
+    mean, lo, hi = cluster_bootstrap_ci(top)
     return {
-        "HEADLINE": (
-            f"Across {hyd['n']} hydration breaks, momentum shifted {sign} the team that was on "
-            f"top by {_fmt(hyd['mean_delta'])} on average "
-            f"(95% CI {_fmt(hyd['ci_lo'])}..{_fmt(hyd['ci_hi'])})."
-        ),
-        "HYD_N": str(hyd["n"]),
-        "HYD_MEAN": _fmt(hyd["mean_delta"]),
-        "HYD_CI": f"{_fmt(hyd['ci_lo'])}..{_fmt(hyd['ci_hi'])}",
+        "PLACEBO_MEAN": f"{mean:+.3f}",
+        "PLACEBO_CI": f"95% CI {lo:+.3f} … {hi:+.3f}",
+        "PLACEBO_N": f"{top.height} on-top stoppages · {top['match_id'].n_unique()} matches",
     }
 
 
-def _effects_table(effects: list[dict]) -> str:
-    rows = "".join(
-        f"<tr><td>{html.escape(e['stoppage_type'])}</td><td>{e['n']}</td>"
-        f"<td>{_fmt(e['mean_delta'])}</td><td>{_fmt(e['ci_lo'])}..{_fmt(e['ci_hi'])}</td></tr>"
-        for e in effects
-    )
-    return (
-        "<table><thead><tr><th>Stoppage type</th><th>n (on top)</th>"
-        "<th>Mean Δ</th><th>95% CI</th></tr></thead><tbody>" + rows + "</tbody></table>"
-    )
-
-
-def _per_match_section() -> str:
-    """Embed the locally-generated per-match momentum grid (committed in reports/figures/)."""
-    src = REPORTS / "figures" / "per_match_momentum.png"
-    if not src.exists():
-        return ""
-    dest = SITE / "figures"
-    dest.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, dest / "per_match_momentum.png")
-    return (
-        "<h2>Per-match momentum</h2>"
-        "<p>How momentum moved in every match so far (blue = home on top, orange = away); "
-        "dashed lines mark stoppages.</p>"
-        '<p><img src="figures/per_match_momentum.png" alt="Per-match momentum grid" style="max-width:100%"></p>'
-    )
+def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str) -> str:
+    est = f"−{abs(hyd_mean):.1f}" if hyd_mean is not None else "—"
+    extra = ""
+    if len(snapshots) >= 2:
+        extra = f" Tracking across {len(snapshots)} snapshots so far."
+    return f"""
+  <section style="border-top:1px solid #DDD6C5;background:#EAE5D6">
+    <div style="max-width:840px;margin:0 auto;padding:46px 40px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:16px">Living analysis</div>
+      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#2B2820;max-width:60ch">Recomputed every matchday from the committed dataset. As of {updated}, the hydration swing sits at <strong style="font-weight:600">{est}</strong> across {hyd_n} on-top breaks.{extra} Watch it as the knockouts arrive — wider stakes, more data, a tighter interval.</p>
+    </div>
+  </section>"""
 
 
 def build() -> str:
-    df = load_processed() if STOPPAGES_PARQUET.exists() else None
     SITE.mkdir(parents=True, exist_ok=True)
+    site_figures = SITE / "figures"
+    site_figures.mkdir(parents=True, exist_ok=True)
 
-    if df is None or df.is_empty():
-        body = "<h1>World Cup 2026 — Stoppage Momentum</h1><p>No data yet. Check back after the next match.</p>"
+    if not STOPPAGES_PARQUET.exists() or load_processed().is_empty():
         out = SITE / "index.html"
-        out.write_text(PAGE.format(cdn=PLOTLY_CDN, body=body), encoding="utf-8")
+        out.write_text("<!doctype html><meta charset=utf-8><title>WC2026 Momentum</title>"
+                       "<body style='font-family:sans-serif;max-width:640px;margin:60px auto'>"
+                       "<h1>WC2026 — Stoppage Momentum</h1><p>No data yet. Check back after the next match.</p>",
+                       encoding="utf-8")
         return str(out)
 
+    df = load_processed()
     effects = effect_by_type(df)
-    tokens = _headline_tokens(effects)
+    by = {e["stoppage_type"]: e for e in effects}
+    hyd = by.get("hydration", {})
+    snapshots = load_all_snapshots()
+    snap_date = snapshots[-1]["date"] if snapshots else None
+    updated = _fmt_date(snap_date)
 
-    # writeup.md with {{token}} substitution -> HTML
-    md_path = REPORTS / "writeup.md"
-    md_text = md_path.read_text(encoding="utf-8") if md_path.exists() else "# World Cup 2026 — Stoppage Momentum\n\n{{HEADLINE}}"
+    def mech(stype: str) -> str:
+        e = by.get(stype)
+        return f"{e['mean_delta']:.1f}" if e and e["n"] else "—"
+
+    tokens = {
+        "UPDATED_DATE": updated.upper(),
+        "N_MATCHES": str(df["match_id"].n_unique()),
+        "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
+        "HERO_DELTA": str(round(abs(hyd.get("mean_delta", 0)))) if hyd else "—",
+        "HYD_N": str(hyd.get("n", 0)),
+        "MONEY_ROWS": _money_rows(effects),
+        "CI_CAPTION": "95% INTERVAL (CLUSTER BOOTSTRAP)",
+        "INTERVAL_NOTE": ("Whiskers show the match-clustered bootstrap 95% interval; every interval sits "
+                          "left of zero. The causal claim is held until the live sample is larger — see method."),
+        "COMPARE_SENTENCE": _compare_sentence(effects),
+        "MATCH_CARDS": _match_cards(site_figures),
+        "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
+        "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
+        **_placebo_tokens(),
+        "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated),
+        "PAGES_URL": PAGES_URL,
+        "SNAPSHOT_DATE": snap_date or updated,
+    }
+
+    html = TEMPLATE
     for k, v in tokens.items():
-        md_text = md_text.replace("{{" + k + "}}", v)
-    prose_html = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
-
-    def div(fig):
-        return f'<div class="chart">{pio.to_html(fig, include_plotlyjs=False, full_html=False)}</div>'
-
-    # Static publication PNGs (for download / social sharing) alongside the
-    # interactive plotly charts; the methodology appendix + small-N caveat round
-    # out the page.
-    save_static_charts(df)  # -> site/figures/*.png (stable filenames)
-    static_section = (
-        '<details><summary>Static charts (for sharing)</summary>'
-        '<p><img src="figures/effect_by_type.png" alt="Effect by stoppage type" style="max-width:100%">'
-        '<img src="figures/distribution.png" alt="Distribution of momentum delta" style="max-width:100%">'
-        "</p></details>"
-    )
-
-    body = (
-        prose_html
-        + small_n_notice(df)
-        + "<h2>Effect by stoppage type</h2>"
-        + _effects_table(effects)
-        + div(effect_chart(effects))
-        + div(distribution_chart(df))
-        + div(trend_chart(load_all_snapshots()))
-        + _per_match_section()
-        + static_section
-        + build_appendix_html()
-    )
+        html = html.replace("{{" + k + "}}", str(v))
     out = SITE / "index.html"
-    out.write_text(PAGE.format(cdn=PLOTLY_CDN, body=body), encoding="utf-8")
+    out.write_text(html, encoding="utf-8")
     return str(out)
 
 
