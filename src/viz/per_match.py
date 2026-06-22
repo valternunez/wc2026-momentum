@@ -40,12 +40,18 @@ MARKER_COLORS = {        # dashed stoppage markers, colour-coded by type
 }
 
 
-def build_match_panels(out_dir: str | Path = MATCHES_DIR, *, match_ids: list[str] | None = None) -> list[str]:
+def build_match_panels(
+    out_dir: str | Path = MATCHES_DIR, *, match_ids: list[str] | None = None, force: bool = False
+) -> list[str]:
     """Render one transparent editorial momentum panel per match -> <match_id>.png.
 
     Home-positive momentum filled blue above the zero line / orange below, with
     colour-coded dashed stoppage markers, no axes. Reads FotMob raw + the parquet;
-    safe when raw is absent (returns []). Returns the match ids rendered.
+    safe when raw is absent (returns []). Returns the match ids newly rendered.
+
+    Idempotent: a match whose panel already exists is skipped (finished-match momentum
+    never changes), so daily runs don't re-render/re-commit unchanged panels. Pass
+    `force=True` to regenerate everything (e.g. after a style change).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +60,8 @@ def build_match_panels(out_dir: str | Path = MATCHES_DIR, *, match_ids: list[str
 
     written: list[str] = []
     for mid in ids:
+        if not force and (out_dir / f"{mid}.png").exists():
+            continue
         raw = fotmob.load_raw(mid)
         if not raw:
             continue

@@ -27,6 +27,15 @@ def test_match_panels_empty(tmp_path):
     assert per_match.build_match_panels(tmp_path, match_ids=[]) == []
 
 
+def test_match_panels_skip_existing(tmp_path, monkeypatch):
+    monkeypatch.setattr(fotmob, "load_raw", lambda mid: FIX)
+    assert per_match.build_match_panels(tmp_path, match_ids=["3370572"]) == ["3370572"]
+    # second run skips the already-rendered panel (no churn)
+    assert per_match.build_match_panels(tmp_path, match_ids=["3370572"]) == []
+    # force re-renders
+    assert per_match.build_match_panels(tmp_path, match_ids=["3370572"], force=True) == ["3370572"]
+
+
 def test_build_editorial_page():
     html = Path(build_site.build()).read_text(encoding="utf-8")
     if "No data yet" in html:

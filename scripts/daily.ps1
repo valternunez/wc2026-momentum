@@ -22,14 +22,14 @@ $today = Get-Date -Format "yyyy-MM-dd"
 Write-Host "[daily] $today — discover + scrape + build"
 
 # Auto-discover finished WC matches over the last 3 days (merges into match_ids.json),
-# scrape them + ESPN commentary, enrich, snapshot, and render the per-match grid.
+# scrape them + ESPN commentary, enrich, snapshot, and render the per-match panels.
 Invoke-Uv run python -m src.pipeline --discover-days 3 --ids-file data/match_ids.json --date $today
 
-# Build the site locally too (CI also builds it on push).
+# Build the editorial site locally too (CI also builds it on push).
 Invoke-Uv run python -m src.report.build_site
 
 # Commit only derived data (raw is gitignored). Skip cleanly if nothing changed.
-git add data/processed snapshots reports/figures reports/writeup.md data/match_ids.json
+git add data/processed snapshots reports/figures data/match_ids.json
 $changed = git status --porcelain data/processed snapshots reports/figures data/match_ids.json
 if ($changed) {
     git commit -m "data: daily update $today"
