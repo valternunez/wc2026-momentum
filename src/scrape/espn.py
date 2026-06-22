@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
+from datetime import datetime, timedelta
 from typing import Any
 
 from src.paths import RAW
@@ -22,6 +24,18 @@ from src.scrape.commentary import normalize_lines
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 WORLD_CUP_LEAGUE = "fifa.world"
 RAW_ESPN = RAW / "espn"
+
+# Tokens to drop before comparing team names.
+_STOPWORDS = {"and", "of", "the"}
+# Known FotMob<->ESPN name divergences (fold-no-space key -> canonical token).
+_ALIAS = {
+    "unitedstates": "usa", "usa": "usa",
+    "korearepublic": "korea", "southkorea": "korea",
+    "cotedivoire": "ivc", "ivorycoast": "ivc",
+    "czechrepublic": "czech", "czechia": "czech",
+    "turkiye": "turkey",
+    "caboverde": "capeverde",
+}
 
 
 def _client(client=None):
@@ -32,8 +46,28 @@ def _client(client=None):
     return creq.Session(impersonate="chrome131")
 
 
+def _fold(name: str | None) -> str:
+    """Accent-fold to ASCII, lowercase, non-alphanumerics -> spaces."""
+    ascii_ = unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", " ", ascii_.lower()).strip()
+
+
+def canon(name: str | None) -> str:
+    """Canonical team token, robust to accents, word order, hyphens, and aliases.
+
+    e.g. "DR Congo"=="Congo DR", "Bosnia and Herzegovina"=="Bosnia-Herzegovina",
+    "Curaçao"=="Curacao", "USA"=="United States", "Korea Republic"=="South Korea".
+    """
+    folded = _fold(name)
+    nospace = folded.replace(" ", "")
+    if nospace in _ALIAS:
+        return _ALIAS[nospace]
+    return "".join(sorted(t for t in folded.split() if t not in _STOPWORDS))
+
+
+# Back-compat alias used by older call sites/tests.
 def _norm(name: str | None) -> str:
-    return re.sub(r"[^a-z0-9]", "", (name or "").lower())
+    return _fold(name).replace(" ", "")
 
 
 def scoreboard(date_str: str, *, league: str = WORLD_CUP_LEAGUE, client=None) -> list[dict[str, Any]]:
@@ -54,19 +88,27 @@ def scoreboard(date_str: str, *, league: str = WORLD_CUP_LEAGUE, client=None) ->
         return []
 
 
-def _teams_match(want: set[str], got: set[str]) -> bool:
-    if want == got:
-        return True
-    # tolerant substring match for naming differences (USA vs United States, etc.)
-    return all(any(w and (w in g or g in w) for g in got) for w in want if w)
+def _teams_match(home1: str, away1: str, home2: str, away2: str) -> bool:
+    """True if two fixtures are the same pair of teams (order-independent, canonicalised)."""
+    return {canon(home1), canon(away1)} == {canon(home2), canon(away2)}
+
+
+def _shift_date(date_str: str, days: int) -> str:
+    return (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=days)).strftime("%Y%m%d")
 
 
 def find_event_id(date_str: str, home: str, away: str, *, league: str = WORLD_CUP_LEAGUE, client=None):
-    """Match a FotMob (home, away) on a date to an ESPN event id by team names."""
-    want = {_norm(home), _norm(away)}
-    for e in scoreboard(date_str, league=league, client=client):
-        if _teams_match(want, {_norm(e["home"]), _norm(e["away"])}):
-            return e["id"]
+    """Match a FotMob (home, away) to an ESPN event id, searching date ±1 day.
+
+    FotMob's UTC match date and ESPN's scoreboard date can differ by a day, so we
+    check the day before/after too. The same (home, away) pair within a 3-day window
+    is effectively unique in a WC group stage, so this won't cross-match.
+    """
+    client = _client(client)
+    for offset in (0, -1, 1):
+        for e in scoreboard(_shift_date(date_str, offset), league=league, client=client):
+            if _teams_match(home, away, e["home"], e["away"]):
+                return e["id"]
     return None
 
 

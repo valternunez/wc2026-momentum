@@ -21,14 +21,23 @@ def test_parse_and_classify_commentary():
     assert sorted(round(x["minute"]) for x in hyd) == [22, 67]
 
 
-def test_team_matching_tolerant():
-    assert espn._norm("United States") == "unitedstates"
-    # exact match
-    assert espn._teams_match({"argentina", "france"}, {"argentina", "france"})
-    # substring tolerance (e.g. "Korea" vs "Korea Republic")
-    assert espn._teams_match({"korea", "ghana"}, {"korearepublic", "ghana"})
+def test_canon_handles_divergences():
+    # word order, hyphen/"and", accents, and aliases all canonicalise together
+    assert espn.canon("DR Congo") == espn.canon("Congo DR")
+    assert espn.canon("Bosnia and Herzegovina") == espn.canon("Bosnia-Herzegovina")
+    assert espn.canon("Curaçao") == espn.canon("Curacao")
+    assert espn.canon("USA") == espn.canon("United States")
+    assert espn.canon("Korea Republic") == espn.canon("South Korea")
+    assert espn.canon("Côte d'Ivoire") == espn.canon("Ivory Coast")
+
+
+def test_teams_match_order_and_aliases():
+    # fixture order swapped AND a word-order team name
+    assert espn._teams_match("Portugal", "DR Congo", "Congo DR", "Portugal")
+    # alias divergence
+    assert espn._teams_match("USA", "Paraguay", "United States", "Paraguay")
     # genuinely different fixture does not match
-    assert not espn._teams_match({"brazil", "spain"}, {"argentina", "france"})
+    assert not espn._teams_match("Brazil", "Spain", "Argentina", "France")
 
 
 def test_commentary_drives_stoppage_detection():
