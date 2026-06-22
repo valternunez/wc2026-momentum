@@ -15,14 +15,15 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import polars as pl
 
 from src.features.momentum_features import COLUMNS, expand_stoppage_rows
 from src.parse.stoppages import detect_stoppages
-from src.paths import PROCESSED, RAW_FOTMOB, RAW_SOFASCORE, STOPPAGES_PARQUET, ensure_dirs
+from src.paths import DATA, PROCESSED, RAW_FOTMOB, RAW_SOFASCORE, STOPPAGES_PARQUET, ensure_dirs
 from src.scrape import commentary as comm
 from src.scrape import espn, fotmob, sofascore
 from src.snapshot import write_snapshot
@@ -161,6 +162,17 @@ def run(
     if date:
         path = write_snapshot(df, date)
         print(f"[snapshot] {path}")
+
+    # Per-match momentum grid (local only; needs FotMob raw). Committed image; CI just serves it.
+    if source == "fotmob":
+        try:
+            from src.viz.per_match import build_per_match_grid
+
+            png = build_per_match_grid()
+            if png:
+                print(f"[per-match] {png}")
+        except Exception as e:
+            print(f"[per-match] skipped: {type(e).__name__}: {e}")
     return df
 
 
@@ -187,6 +199,37 @@ def build_historical_placebo(limit: int | None = None) -> pl.DataFrame:
     return df
 
 
+MATCH_IDS_FILE = DATA / "match_ids.json"
+
+
+def discover_finished_wc_ids(days: int, end_date: str | None) -> list[str]:
+    """Discover FINISHED WC matches over the last `days` dates and merge into match_ids.json.
+
+    A match is upcoming (skip) if its FotMob status is a future ISO timestamp; anything else on a
+    past/today date is finished. Reuses fotmob.list_wc_events. Returns the merged id list (strings).
+    """
+    end = (
+        datetime.strptime(end_date, "%Y-%m-%d").date()
+        if end_date
+        else datetime.now(timezone.utc).date()
+    )
+    client = fotmob.make_client()
+    found: set[str] = set()
+    for i in range(max(days, 1)):
+        d = (end - timedelta(days=i)).strftime("%Y%m%d")
+        for e in fotmob.list_wc_events(d, client=client):
+            if e.get("id") and not re.match(r"^\d{4}-\d\d-\d\dT", str(e.get("status"))):
+                found.add(str(e["id"]))
+
+    existing: set[str] = set()
+    if MATCH_IDS_FILE.exists():
+        existing = {str(x) for x in json.loads(MATCH_IDS_FILE.read_text(encoding="utf-8"))}
+    merged = sorted(existing | found, key=int)
+    MATCH_IDS_FILE.write_text(json.dumps(merged), encoding="utf-8")
+    print(f"[discover] {len(found)} finished WC matches over {days}d; tracking {len(merged)} total")
+    return merged
+
+
 def _parse_ids(args: argparse.Namespace) -> list[str]:
     ids: list[str] = [str(i) for i in (args.match_ids or [])]
     if args.ids_file:
@@ -210,12 +253,17 @@ def main() -> None:
     ap.add_argument("--headless", action="store_true", help="run the scrape browser headless (with --browser)")
     ap.add_argument("--historical-placebo", action="store_true", help="build the 2022-WC placebo parquet and exit")
     ap.add_argument("--hp-limit", type=int, default=None, help="limit StatsBomb matches for --historical-placebo")
+    ap.add_argument("--discover-days", type=int, default=None,
+                    help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
     args = ap.parse_args()
     if args.historical_placebo:
         build_historical_placebo(limit=args.hp_limit)
         return
+    ids = _parse_ids(args)
+    if args.discover_days:
+        ids = sorted(set(ids) | set(discover_finished_wc_ids(args.discover_days, args.date)), key=int)
     run(
-        _parse_ids(args),
+        ids,
         do_scrape=not args.no_scrape,
         force=args.force,
         date=args.date,

@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import html
 
+import shutil
+
 import markdown
 import plotly.io as pio
 
@@ -79,6 +81,22 @@ def _effects_table(effects: list[dict]) -> str:
     )
 
 
+def _per_match_section() -> str:
+    """Embed the locally-generated per-match momentum grid (committed in reports/figures/)."""
+    src = REPORTS / "figures" / "per_match_momentum.png"
+    if not src.exists():
+        return ""
+    dest = SITE / "figures"
+    dest.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, dest / "per_match_momentum.png")
+    return (
+        "<h2>Per-match momentum</h2>"
+        "<p>How momentum moved in every match so far (blue = home on top, orange = away); "
+        "dashed lines mark stoppages.</p>"
+        '<p><img src="figures/per_match_momentum.png" alt="Per-match momentum grid" style="max-width:100%"></p>'
+    )
+
+
 def build() -> str:
     df = load_processed() if STOPPAGES_PARQUET.exists() else None
     SITE.mkdir(parents=True, exist_ok=True)
@@ -121,6 +139,7 @@ def build() -> str:
         + div(effect_chart(effects))
         + div(distribution_chart(df))
         + div(trend_chart(load_all_snapshots()))
+        + _per_match_section()
         + static_section
         + build_appendix_html()
     )
