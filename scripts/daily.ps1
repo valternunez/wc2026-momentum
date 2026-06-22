@@ -1,5 +1,5 @@
 <#
-  daily.ps1 — local daily runner (Windows Task Scheduler).
+  daily.ps1 - local daily runner (Windows Task Scheduler).
 
   Auto-discovers finished WC2026 matches from the last few days (FotMob), scrapes any
   new ones + ESPN commentary, rebuilds the processed parquet, regenerates the per-match
@@ -19,7 +19,7 @@ function Invoke-Uv {
 }
 
 $today = Get-Date -Format "yyyy-MM-dd"
-Write-Host "[daily] $today — discover + scrape + build"
+Write-Host "[daily] $today - discover + scrape + build"
 
 # Auto-discover finished WC matches over the last 3 days (merges into match_ids.json),
 # scrape them + ESPN commentary, enrich, snapshot, and render the per-match panels.
@@ -37,7 +37,7 @@ if ($changed) {
     if (git remote 2>$null | Select-String -Quiet '^origin$') {
         git push; Write-Host "[daily] pushed $today"
     } else {
-        Write-Host "[daily] committed $today (no 'origin' remote yet — skipping push)"
+        Write-Host "[daily] committed $today (no 'origin' remote yet - skipping push)"
     }
 } else {
     Write-Host "[daily] no changes to commit"
