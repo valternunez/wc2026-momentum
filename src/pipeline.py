@@ -197,9 +197,19 @@ def _write_momentum_json(match_ids: list[str], df: pl.DataFrame) -> None:
             sub = (df.filter(pl.col("match_id") == str(mid))
                      .select(["clock_minute", "stoppage_type"]).unique().sort("clock_minute"))
             stoppages = [[r["clock_minute"], r["stoppage_type"]] for r in sub.to_dicts()]
+        tc = (raw.get("general") or {}).get("teamColors") or {}
+        colors = None
+        if tc.get("lightMode") or tc.get("darkMode"):
+            colors = {
+                "light": {"home": (tc.get("lightMode") or {}).get("home"),
+                          "away": (tc.get("lightMode") or {}).get("away")},
+                "dark": {"home": (tc.get("darkMode") or {}).get("home"),
+                         "away": (tc.get("darkMode") or {}).get("away")},
+            }
         out.append({
             "id": str(mid), "home": m.get("home_team"), "away": m.get("away_team"),
             "hs": m.get("home_score"), "as": m.get("away_score"),
+            "ts": m.get("start_timestamp"), "colors": colors,
             "series": series, "stoppages": stoppages,
         })
     (PROCESSED / "momentum.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")

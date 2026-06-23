@@ -59,6 +59,10 @@ def test_build_editorial_page():
     assert "Did they even need them" in html and "WBGT" in html
     # match grid grouped by stage
     assert "Group A" in html and "grouped by stage" in html
+    # modal share toolbar + team-named legend + themed-export data
+    assert 'id="mb-share"' in html and 'id="mb-leg-home"' in html
+    assert 'data-group="palette"' in html and 'data-group="mode"' in html
+    assert '"ts"' in html and '"colors"' in html  # date + kit colours embedded for the modal
 
 
 def test_stage_meta():

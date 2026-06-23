@@ -273,16 +273,30 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">Match momentum</div>
     <h3 id="mb-title" style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(24px,4vw,34px);line-height:1.1;margin-bottom:6px"></h3>
     <div id="mb-sub" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;letter-spacing:.06em;margin-bottom:18px"></div>
-    <div id="mb-chart" style="position:relative;width:100%;overflow:hidden"></div>
-    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;color:#5A5547">
-      <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#9CC4E0;display:inline-block;border-radius:1px"></span>HOME ON TOP</span>
-      <span style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:9px;background:#EBC09A;display:inline-block;border-radius:1px"></span>AWAY ON TOP</span>
+    <div id="mb-chart" style="position:relative;width:100%;overflow:hidden;border-radius:3px"></div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;color:#5A5547">
+      <span style="display:flex;align-items:center;gap:7px"><span id="mb-sw-home" style="width:16px;height:9px;background:#9CC4E0;display:inline-block;border-radius:1px;flex:none"></span><span><b id="mb-leg-home" style="font-weight:600;color:#3E5E78">Home</b> on top</span></span>
+      <span style="display:flex;align-items:center;gap:7px"><span id="mb-sw-away" style="width:16px;height:9px;background:#EBC09A;display:inline-block;border-radius:1px;flex:none"></span><span><b id="mb-leg-away" style="font-weight:600;color:#9A6A3A">Away</b> on top</span></span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
     </div>
     <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:#A89F88;margin-top:14px">Per-minute momentum, FotMob (home-positive). Hover the chart for values.</p>
+    <style>
+     .mb-seg{display:inline-flex;border:1px solid #D2CAB6;border-radius:3px;overflow:hidden}
+     .mb-seg button{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;padding:6px 10px;background:#F4F0E5;color:#8A8268;border:none;border-left:1px solid #E2DBCA;cursor:pointer}
+     .mb-seg button:first-child{border-left:none}
+     .mb-seg button.on{background:#1A1813;color:#EFEBDF}
+     .mb-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:#A89F88;margin-right:6px}
+     #mb-share{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.07em;padding:7px 15px;background:#E5482E;color:#fff;border:none;border-radius:3px;cursor:pointer;font-weight:600;margin-left:auto}
+     #mb-share:disabled{opacity:.55;cursor:default}
+    </style>
+    <div style="display:flex;flex-wrap:wrap;gap:12px 14px;align-items:center;margin-top:18px;padding-top:15px;border-top:1px solid #E2DBCA">
+      <span class="mb-lbl">COLOURS</span><div class="mb-seg" data-group="palette"><button data-val="editorial" class="on">EDITORIAL</button><button data-val="kits">TEAM KITS</button></div>
+      <span class="mb-lbl">MODE</span><div class="mb-seg" data-group="mode"><button data-val="light" class="on">LIGHT</button><button data-val="dark">DARK</button></div>
+      <button id="mb-share">&#8595;&nbsp;SHARE IMAGE</button>
+    </div>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:#A89F88;margin-top:12px">Per-minute momentum, FotMob (home-positive). Hover the chart for values.</p>
   </div>
 </div>
 
@@ -293,11 +307,39 @@ TEMPLATE = """<!DOCTYPE html>
   try { JSON.parse(document.getElementById('mb-data').textContent).forEach(function(m){ DATA[m.id]=m; }); } catch(e){}
   var modal=document.getElementById('mb-modal'), chart=document.getElementById('mb-chart');
   var SVGNS='http://www.w3.org/2000/svg';
+  var theme={palette:'editorial', mode:'light'};   // re-render target; share() reads the same
+  var cur=null;
 
   function el(tag, attrs){ var e=document.createElementNS(SVGNS,tag); for(var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function pad2(n){ return (n<10?'0':'')+n; }
+  function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts*1000); return pad2(d.getUTCDate())+'/'+pad2(d.getUTCMonth()+1)+'/'+d.getUTCFullYear(); }
+  function slug(s){ return (s||'team').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+  // resolve {bg,ink,grid,sub,homeFill,awayFill} from the current theme + this match's kit colours
+  function resolveTheme(m){
+    var dark=theme.mode==='dark';
+    var t={ bg: dark?'#1A1813':'#FCFAF3', ink: dark?'#EFEBDF':'#1A1813',
+            grid: dark?'rgba(239,235,223,.85)':'#1A1813', sub: dark?'#8E8773':'#9A927E',
+            homeFill: dark?'#7FB2D8':'#9CC4E0', awayFill: dark?'#E2B07E':'#EBC09A' };
+    if(theme.palette==='kits' && m.colors && m.colors[theme.mode]){
+      var c=m.colors[theme.mode];
+      if(c.home) t.homeFill=c.home; if(c.away) t.awayFill=c.away;
+    }
+    return t;
+  }
+
+  function chrome(m){
+    var t=resolveTheme(m);
+    var lh=document.getElementById('mb-leg-home'), la=document.getElementById('mb-leg-away');
+    if(lh){ lh.textContent=m.home; } if(la){ la.textContent=m.away; }
+    document.getElementById('mb-sw-home').style.background=t.homeFill;
+    document.getElementById('mb-sw-away').style.background=t.awayFill;
+  }
 
   function render(m){
     chart.innerHTML='';
+    var t=resolveTheme(m);
+    chart.style.background=t.bg; chart.style.padding='8px 4px 2px'; chart.style.transition='background .2s';
     var W=720, H=300, pad={l:8,r:8,t:18,b:24};
     var s=m.series; if(!s||!s.length) return;
     var maxMin=s[s.length-1][0], minMin=s[0][0];
@@ -308,27 +350,24 @@ TEMPLATE = """<!DOCTYPE html>
     var zeroY=Y(0);
     var svg=el('svg',{viewBox:'0 0 '+W+' '+H, width:'100%', style:'display:block;font-family:IBM Plex Mono,monospace'});
 
-    // two-colour area (blue above zero, orange below) via clip
     var d='M '+X(s[0][0])+' '+zeroY; s.forEach(function(p){ d+=' L '+X(p[0])+' '+Y(p[1]); }); d+=' L '+X(s[s.length-1][0])+' '+zeroY+' Z';
     var defs=el('defs',{});
     defs.appendChild((function(){var c=el('clipPath',{id:'mbUp'});c.appendChild(el('rect',{x:0,y:0,width:W,height:zeroY}));return c;})());
     defs.appendChild((function(){var c=el('clipPath',{id:'mbDn'});c.appendChild(el('rect',{x:0,y:zeroY,width:W,height:H-zeroY}));return c;})());
     svg.appendChild(defs);
-    svg.appendChild(el('path',{d:d, fill:'#9CC4E0', 'clip-path':'url(#mbUp)'}));
-    svg.appendChild(el('path',{d:d, fill:'#EBC09A', 'clip-path':'url(#mbDn)'}));
-    svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:'#1A1813','stroke-width':1.1}));
+    svg.appendChild(el('path',{d:d, fill:t.homeFill, 'clip-path':'url(#mbUp)'}));
+    svg.appendChild(el('path',{d:d, fill:t.awayFill, 'clip-path':'url(#mbDn)'}));
+    svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:t.grid,'stroke-width':1.1}));
 
     (m.stoppages||[]).forEach(function(st){
       var x=X(st[0]);
       svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':'4 3'}));
     });
-    // minute ticks
-    [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var t=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:'#9A927E'}); t.textContent=mm+"'"; svg.appendChild(t); }});
+    [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var tx=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:t.sub}); tx.textContent=mm+"'"; svg.appendChild(tx); }});
 
-    // hover layer
-    var cross=el('line',{y1:pad.t,y2:H-pad.b, stroke:'#1A1813','stroke-width':1,opacity:0}); svg.appendChild(cross);
-    var dot=el('circle',{r:4, fill:'#1A1813', stroke:'#FCFAF3','stroke-width':2, opacity:0}); svg.appendChild(dot);
-    var tip=document.createElement('div'); tip.style.cssText='position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-120%);background:#1A1813;color:#EFEBDF;font-family:IBM Plex Mono,monospace;font-size:11px;padding:5px 8px;border-radius:3px;white-space:nowrap;transition:opacity .08s';
+    var cross=el('line',{y1:pad.t,y2:H-pad.b, stroke:t.grid,'stroke-width':1,opacity:0}); svg.appendChild(cross);
+    var dot=el('circle',{r:4, fill:t.ink, stroke:t.bg,'stroke-width':2, opacity:0}); svg.appendChild(dot);
+    var tip=document.createElement('div'); tip.style.cssText='position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-120%);background:'+t.ink+';color:'+t.bg+';font-family:IBM Plex Mono,monospace;font-size:11px;padding:5px 8px;border-radius:3px;white-space:nowrap;transition:opacity .08s';
     chart.appendChild(tip);
     var hit=el('rect',{x:pad.l,y:pad.t,width:pw,height:ph,fill:'transparent',style:'cursor:crosshair'}); svg.appendChild(hit);
     hit.addEventListener('mousemove', function(ev){
@@ -342,7 +381,7 @@ TEMPLATE = """<!DOCTYPE html>
       var who=best[1]>=0?(m.home):(m.away);
       tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(near.length?' · '+near[0]:'');
       tip.style.opacity=1;
-      var tl=x/W*r.width, hw=tip.offsetWidth/2+4;        // clamp so the tooltip never overflows
+      var tl=x/W*r.width, hw=tip.offsetWidth/2+4;
       tl=Math.max(hw, Math.min(r.width-hw, tl));
       tip.style.left=tl+'px'; tip.style.top=(y/H*r.height)+'px';
     });
@@ -350,18 +389,81 @@ TEMPLATE = """<!DOCTYPE html>
     chart.appendChild(svg);
   }
 
+  // ---- shareable themed PNG (canvas) -------------------------------------
+  function drawWave(ctx, m, t, box){
+    var s=m.series; if(!s||!s.length) return;
+    var minMin=s[0][0], maxMin=s[s.length-1][0];
+    var ymax=1; s.forEach(function(p){ ymax=Math.max(ymax, Math.abs(p[1])); }); ymax*=1.08;
+    function X(min){ return box.x + (min-minMin)/(maxMin-minMin||1)*box.w; }
+    function Y(v){ return box.y + (1-(v+ymax)/(2*ymax))*box.h; }
+    var zeroY=Y(0);
+    function wavePath(){ ctx.beginPath(); ctx.moveTo(X(s[0][0]), zeroY); s.forEach(function(p){ ctx.lineTo(X(p[0]), Y(p[1])); }); ctx.lineTo(X(s[s.length-1][0]), zeroY); ctx.closePath(); }
+    ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, zeroY-box.y); ctx.clip(); wavePath(); ctx.fillStyle=t.homeFill; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.rect(box.x, zeroY, box.w, box.y+box.h-zeroY); ctx.clip(); wavePath(); ctx.fillStyle=t.awayFill; ctx.fill(); ctx.restore();
+    ctx.strokeStyle=t.grid; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(box.x, zeroY); ctx.lineTo(box.x+box.w, zeroY); ctx.stroke();
+    (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); });
+    ctx.fillStyle=t.sub; ctx.font="22px 'IBM Plex Mono'"; ctx.textAlign='center';
+    [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1) ctx.fillText(mm+"'", X(mm), box.y+box.h+30); });
+  }
+
+  function shareCard(m){
+    var btn=document.getElementById('mb-share'); btn.disabled=true; var lbl=btn.innerHTML; btn.innerHTML='RENDERING…';
+    (document.fonts?document.fonts.ready:Promise.resolve()).then(function(){
+      var t=resolveTheme(m), S=2, Wl=1200, Hl=675;
+      var cv=document.createElement('canvas'); cv.width=Wl*S; cv.height=Hl*S;
+      var ctx=cv.getContext('2d'); ctx.scale(S,S);
+      ctx.fillStyle=t.bg; ctx.fillRect(0,0,Wl,Hl);
+      var P=70;
+      ctx.textAlign='left';
+      ctx.fillStyle='#E5482E'; ctx.font="600 19px 'IBM Plex Mono'"; ctx.fillText('WC2026 · STOPPAGE MOMENTUM', P, P+6);
+      var score=(m.hs!=null?(' '+m.hs+'–'+m.as+' '):' v ');
+      ctx.fillStyle=t.ink; ctx.font="500 50px 'Newsreader'"; ctx.fillText(m.home+score+m.away, P, P+62);
+      ctx.fillStyle=t.sub; ctx.font="18px 'IBM Plex Mono'"; var dt=fmtDate(m.ts); ctx.fillText((dt?dt+'  ·  ':'')+(m.series.length)+" minutes  ·  "+((m.stoppages||[]).length)+" stoppages", P, P+96);
+      drawWave(ctx, m, t, {x:P, y:200, w:Wl-2*P, h:300});
+      // legend
+      ctx.textAlign='left'; var ly=562; ctx.font="600 20px 'IBM Plex Mono'";
+      ctx.fillStyle=t.homeFill; ctx.fillRect(P, ly-14, 26, 14); ctx.fillStyle=t.ink; ctx.fillText(m.home+' on top', P+36, ly);
+      var ox=P+36+ctx.measureText(m.home+' on top').width+52;
+      ctx.fillStyle=t.awayFill; ctx.fillRect(ox, ly-14, 26, 14); ctx.fillStyle=t.ink; ctx.fillText(m.away+' on top', ox+36, ly);
+      // footer
+      ctx.strokeStyle=t.grid; ctx.globalAlpha=.3; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(P, Hl-66); ctx.lineTo(Wl-P, Hl-66); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.textAlign='left'; ctx.fillStyle=t.sub; ctx.font="16px 'IBM Plex Mono'"; ctx.fillText("FotMob per-minute momentum", P, Hl-36);
+      ctx.textAlign='right'; ctx.fillStyle=t.ink; ctx.fillText("valternunez.github.io/wc2026-momentum", Wl-P, Hl-36);
+      cv.toBlob(function(blob){
+        btn.disabled=false; btn.innerHTML=lbl;
+        if(!blob) return;
+        var fname='momentum-'+slug(m.home)+'-'+slug(m.away)+'.png';
+        try{ var file=new File([blob], fname, {type:'image/png'});
+          if(navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file], title:m.home+' '+m.away+' — momentum'}).catch(function(){dl(blob,fname);}); return; }
+        }catch(e){}
+        dl(blob,fname);
+      }, 'image/png');
+    });
+  }
+  function dl(blob, fname){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);}, 4000); }
+
   function open(id){
-    var m=DATA[id]; if(!m) return;
+    var m=DATA[id]; if(!m) return; cur=m;
     document.getElementById('mb-title').textContent=m.home+' '+(m.hs!=null?m.hs:'')+(m.hs!=null?'–'+m.as:'')+' '+m.away;
-    document.getElementById('mb-sub').textContent=(m.series.length)+' minutes tracked · '+(m.stoppages?m.stoppages.length:0)+' stoppages detected';
+    var dt=fmtDate(m.ts);
+    document.getElementById('mb-sub').textContent=(dt?dt+' · ':'')+(m.series.length)+' minutes tracked · '+(m.stoppages?m.stoppages.length:0)+' stoppages detected';
     document.getElementById('mb-explain').textContent=m.explain||'';
-    render(m); modal.hidden=false; document.body.style.overflow='hidden';
+    chrome(m); render(m); modal.hidden=false; document.body.style.overflow='hidden';
   }
   function close(){ modal.hidden=true; document.body.style.overflow=''; }
 
   document.addEventListener('click', function(ev){
     var card=ev.target.closest('[data-mid]'); if(card){ open(card.getAttribute('data-mid')); }
   });
+  document.querySelectorAll('.mb-seg').forEach(function(seg){
+    seg.addEventListener('click', function(ev){
+      var b=ev.target.closest('button'); if(!b) return;
+      theme[seg.getAttribute('data-group')]=b.getAttribute('data-val');
+      seg.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+      if(cur){ chrome(cur); render(cur); }
+    });
+  });
+  document.getElementById('mb-share').addEventListener('click', function(){ if(cur) shareCard(cur); });
   document.getElementById('mb-close').addEventListener('click', close);
   modal.addEventListener('click', function(ev){ if(ev.target===modal) close(); });
   document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && !modal.hidden) close(); });

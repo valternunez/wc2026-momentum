@@ -159,8 +159,8 @@ def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str) -> str:
     rows = (df.filter((pl.col("match_id") == str(mid)) & (pl.col("is_home") == True))  # noqa: E712
             .sort("clock_minute").to_dicts())
     if not rows:
-        return f"Per-minute momentum for {home} (blue) vs {away} (orange). No stoppages detected."
-    parts = [f"Blue marks {home} on top, orange marks {away}."]
+        return f"Per-minute momentum for {home} vs {away}. No stoppages detected."
+    parts: list[str] = []
     for r in rows:
         if r["stoppage_type"] != "hydration":
             continue
@@ -180,7 +180,7 @@ def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str) -> str:
     if sw.get("momentum_delta") is not None:
         parts.append(f"Biggest post-stoppage swing: {abs(sw['momentum_delta']):.0f} at the "
                      f"{int(sw['clock_minute'])}' {sw['stoppage_type'].replace('_', ' ')}.")
-    return " ".join(parts)
+    return " ".join(parts) or f"Per-minute momentum for {home} vs {away}."
 
 
 def _mb_data(df: pl.DataFrame) -> str:
