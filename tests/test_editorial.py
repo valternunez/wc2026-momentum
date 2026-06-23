@@ -57,8 +57,10 @@ def test_build_editorial_page():
     # §05 two same-units placebos + §06 heat note
     assert "2025 Club World Cup" in html and "2022 World Cup" in html
     assert "Did they even need them" in html and "WBGT" in html
-    # match grid grouped by stage
+    # match grid grouped by stage, in collapsible <details> sections
     assert "Group A" in html and "grouped by stage" in html
+    assert '<details class="grp"' in html and '<summary class="grp-h"' in html
+    assert "max-width:700px" in html  # mobile default-collapse JS present
     # modal share toolbar + team-named legend + themed-export data
     assert 'id="mb-share"' in html and 'id="mb-leg-home"' in html
     assert 'data-group="palette"' in html and 'data-group="mode"' in html

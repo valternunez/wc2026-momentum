@@ -142,8 +142,12 @@ def _match_cards(site_figures: Path) -> str:
     out = []
     for label in sorted(groups, key=lambda lb: groups[lb]["order"]):
         cards = groups[label]["cards"]
-        out.append(f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600;margin:28px 0 14px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D6CFBE;padding-bottom:8px"><span>{label}</span><span style="color:#B0A78F;font-weight:400">{len(cards)}</span></div>')
-        out.append('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:14px">' + "".join(cards) + "</div>")
+        out.append(
+            '<details class="grp" open>'
+            f'<summary class="grp-h"><span>{label}</span><span class="grp-n">{len(cards)}</span></summary>'
+            '<div class="grp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:14px">'
+            + "".join(cards) + "</div></details>"
+        )
     return "".join(out)
 
 

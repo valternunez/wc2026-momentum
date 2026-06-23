@@ -51,6 +51,14 @@ TEMPLATE = """<!DOCTYPE html>
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
   .src{font-family:'IBM Plex Mono',monospace;color:#E5482E;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.4)}
+  details.grp{margin:28px 0 0}
+  details.grp>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #D6CFBE;padding-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600}
+  details.grp>summary::-webkit-details-marker{display:none}
+  details.grp>summary .grp-n{color:#B0A78F;font-weight:400}
+  details.grp>summary .grp-n::after{content:'  +';color:#B0A78F}
+  details.grp[open]>summary .grp-n::after{content:'  \2013'}
+  details.grp>summary:hover{color:#E5482E}
+  details.grp[open]>.grp-grid{margin-top:14px}
   @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card{transition:none}.mb-card:hover{transform:none} }
 </style></head>
 <body>
@@ -315,6 +323,11 @@ TEMPLATE = """<!DOCTYPE html>
   var iso="{{SNAPSHOT_ISO}}"; if(!iso) return;
   var ageH=(Date.now() - new Date(iso+"T12:00:00Z").getTime())/3.6e6;
   if(ageH>36){ var b=document.getElementById('freshness'); if(b) b.hidden=false; }
+})();
+(function(){  // mobile: collapse all stage sections except the first, so the grid isn't endless
+  if(!(window.matchMedia && window.matchMedia('(max-width:700px)').matches)) return;
+  var g=document.querySelectorAll('details.grp');
+  for(var i=1;i<g.length;i++){ g[i].open=false; }
 })();
 </script>
 <script type="application/json" id="mb-data">{{MB_DATA}}</script>
