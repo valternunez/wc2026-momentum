@@ -177,6 +177,6 @@ if __name__ == "__main__":
     # representative overlay = match whose r is closest to the median
     rows_sorted = sorted(rows, key=lambda x: abs(x["pearson"] - med_r))
     rep = rows_sorted[0]["id"]
-    out = Path("reports/figures/recon_overlay.png")
+    out = Path("data/interim/recon_overlay.png")  # gitignored; a throwaway diagnostic
     _overlay_png(RAW_FOTMOB, rep, best_tau, out)
     print(f"\nOverlay for representative match {rep} -> {out}")

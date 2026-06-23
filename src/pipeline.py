@@ -23,12 +23,10 @@ import polars as pl
 
 from src.features.momentum_features import COLUMNS, expand_stoppage_rows
 from src.parse.stoppages import detect_stoppages
-from src.paths import DATA, PROCESSED, RAW, RAW_FOTMOB, RAW_SOFASCORE, STOPPAGES_PARQUET, ensure_dirs
+from src.paths import DATA, PROCESSED, RAW, RAW_FOTMOB, STOPPAGES_PARQUET, ensure_dirs
 from src.scrape import commentary as comm
-from src.scrape import espn, fotmob, sofascore
+from src.scrape import espn, fotmob
 from src.snapshot import write_snapshot
-
-DEFAULT_SOURCE = "fotmob"  # SofaScore IP-blocks the user; FotMob is the working source
 
 
 def _yyyymmdd(ts: int | None) -> str | None:
@@ -51,63 +49,36 @@ def assemble_rows(
     return rows
 
 
-def rows_for_match(match_id: int | str, source: str = DEFAULT_SOURCE) -> list[dict[str, Any]]:
-    """Build rows for one match from its persisted raw JSON (no network)."""
-    if source == "fotmob":
-        meta, momentum, incidents, nominal = fotmob.match_inputs(match_id)
-        if not meta or not momentum:
-            return []
-        # ESPN commentary (saved at scrape) gives exact hydration timing + VAR + injury.
-        # If it captured hydration breaks, trust it; else keep nominal 22'/67' as a backstop
-        # (we still get VAR/injury from the real commentary either way).
-        real = comm.normalize_lines(comm.load_commentary(match_id))
-        commentary = real if any(c.get("type") == "hydration" for c in real) else real + nominal
-        return assemble_rows(meta, momentum, incidents, commentary)
-
-    raw = sofascore.load_raw(match_id)
-    if not raw.get("graph") or not raw.get("event"):
+def rows_for_match(match_id: int | str) -> list[dict[str, Any]]:
+    """Build rows for one match from its persisted FotMob raw (no network)."""
+    meta, momentum, incidents, nominal = fotmob.match_inputs(match_id)
+    if not meta or not momentum:
         return []
-    meta = sofascore.parse_match_meta(raw["event"])
-    momentum = sofascore.parse_momentum(raw["graph"])
-    incidents = sofascore.parse_incidents(raw.get("incidents", {}))
-    # normalize_lines is idempotent: classifies text + coerces "67'" -> 67.0,
-    # so this works whether stored commentary is raw or already normalized.
-    commentary = comm.normalize_lines(comm.load_commentary(match_id))
+    # ESPN commentary (saved at scrape) gives exact hydration timing + VAR + injury.
+    # If it captured hydration breaks, trust it; else keep nominal 22'/67' as a backstop
+    # (we still get VAR/injury from the real commentary either way).
+    real = comm.normalize_lines(comm.load_commentary(match_id))
+    commentary = real if any(c.get("type") == "hydration" for c in real) else real + nominal
     return assemble_rows(meta, momentum, incidents, commentary)
 
 
-def scrape_match(match_id: int | str, *, source: str = DEFAULT_SOURCE, client=None, force: bool = False) -> None:
-    """Fetch + persist raw for one match from the chosen source."""
-    if source == "fotmob":
-        fotmob.fetch_match_details(match_id, client=client, force=force)
-        # Best-effort ESPN commentary (matched by date + team names) for exact
-        # hydration timing + VAR/injury. Never fail the scrape if ESPN is missing.
-        if not comm.load_commentary(match_id):
-            meta = fotmob.parse_match_meta(fotmob.load_raw(match_id))
-            date_str = _yyyymmdd(meta.get("start_timestamp"))
-            if date_str and meta.get("home_team") and meta.get("away_team"):
-                lines = espn.commentary_for_match(date_str, meta["home_team"], meta["away_team"])
-                if lines:
-                    comm.save_commentary(match_id, lines)
-        return
-
-    from src.parse.reconcile import reconcile
-
-    sofascore.fetch_match(match_id, client=client, force=force)
+def scrape_match(match_id: int | str, *, client=None, force: bool = False) -> None:
+    """Fetch + persist FotMob raw + best-effort ESPN commentary for one match."""
+    fotmob.fetch_match_details(match_id, client=client, force=force)
+    # Best-effort ESPN commentary (matched by date + team names) for exact
+    # hydration timing + VAR/injury. Never fail the scrape if ESPN is missing.
     if not comm.load_commentary(match_id):
-        sources = [comm.fetch_fotmob_commentary(match_id)]
-        merged = reconcile([s for s in sources if s])
-        if merged:
-            comm.save_commentary(match_id, merged)
+        meta = fotmob.parse_match_meta(fotmob.load_raw(match_id))
+        date_str = _yyyymmdd(meta.get("start_timestamp"))
+        if date_str and meta.get("home_team") and meta.get("away_team"):
+            lines = espn.commentary_for_match(date_str, meta["home_team"], meta["away_team"])
+            if lines:
+                comm.save_commentary(match_id, lines)
 
 
-def discover_scraped_ids(source: str = DEFAULT_SOURCE) -> list[str]:
-    """Match ids that already have raw data on disk for the chosen source."""
-    if source == "fotmob":
-        return sorted(p.stem for p in RAW_FOTMOB.glob("*.json")) if RAW_FOTMOB.exists() else []
-    if not RAW_SOFASCORE.exists():
-        return []
-    return sorted(p.name for p in RAW_SOFASCORE.iterdir() if (p / "graph.json").exists())
+def discover_scraped_ids() -> list[str]:
+    """Match ids that already have FotMob raw data on disk."""
+    return sorted(p.stem for p in RAW_FOTMOB.glob("*.json")) if RAW_FOTMOB.exists() else []
 
 
 def _guard_rowcount(prev: int, new: int, *, force: bool) -> None:
@@ -119,32 +90,25 @@ def _guard_rowcount(prev: int, new: int, *, force: bool) -> None:
         )
 
 
-def build_table(match_ids: list[str], source: str = DEFAULT_SOURCE) -> pl.DataFrame:
+def build_table(match_ids: list[str]) -> pl.DataFrame:
     rows: list[dict[str, Any]] = []
     for mid in match_ids:
-        rows.extend(rows_for_match(mid, source))
+        rows.extend(rows_for_match(mid))
     if not rows:
         return pl.DataFrame(schema={c: pl.Utf8 for c in COLUMNS})
     return pl.DataFrame(rows).select(COLUMNS)
 
 
 def run(
-    match_ids: list[str], *, do_scrape: bool, force: bool, date: str | None,
-    source: str = DEFAULT_SOURCE, do_enrich: bool = True,
-    use_cookies: bool = True, use_browser: bool = False, headless: bool = False,
+    match_ids: list[str], *, do_scrape: bool, force: bool, date: str | None, do_enrich: bool = True,
 ) -> pl.DataFrame:
     ensure_dirs()
     if do_scrape and match_ids:
-        # FotMob: plain client + x-mas header. SofaScore: Chrome-cookie/browser client.
-        client = (
-            fotmob.make_client()
-            if source == "fotmob"
-            else sofascore.make_client(use_cookies=use_cookies, use_browser=use_browser, headless=headless)
-        )
+        client = fotmob.make_client()  # plain client + x-mas auth header
         try:
             for mid in match_ids:
                 try:
-                    scrape_match(mid, source=source, client=client, force=force)
+                    scrape_match(mid, client=client, force=force)
                     print(f"[scrape] ok {mid}")
                 except Exception as e:  # keep going; a finished match can be retried tomorrow
                     print(f"[scrape] FAIL {mid}: {type(e).__name__}: {e}")
@@ -152,8 +116,8 @@ def run(
             if hasattr(client, "close"):
                 client.close()
 
-    all_ids = sorted(set(discover_scraped_ids(source)) | set(map(str, match_ids)))
-    df = build_table(all_ids, source)
+    all_ids = sorted(set(discover_scraped_ids()) | set(map(str, match_ids)))
+    df = build_table(all_ids)
 
     # coverage: surface matches that produced no rows (pending, missing data, or a payload-shape change)
     covered = set(df["match_id"].unique().to_list()) if not df.is_empty() else set()
@@ -187,16 +151,15 @@ def run(
         print(f"[snapshot] {path}")
 
     # Per-match editorial panels + match meta (local only; need FotMob raw). Committed; CI serves them.
-    if source == "fotmob":
-        try:
-            from src.viz.per_match import build_match_panels
+    try:
+        from src.viz.per_match import build_match_panels
 
-            ids = build_match_panels()
-            _write_matches_json(all_ids)
-            _write_momentum_json(all_ids, df)
-            print(f"[per-match] {len(ids)} panels + matches.json + momentum.json ({len(all_ids)} matches)")
-        except Exception as e:
-            print(f"[per-match] skipped: {type(e).__name__}: {e}")
+        ids = build_match_panels()
+        _write_matches_json(all_ids)
+        _write_momentum_json(all_ids, df)
+        print(f"[per-match] {len(ids)} panels + matches.json + momentum.json ({len(all_ids)} matches)")
+    except Exception as e:
+        print(f"[per-match] skipped: {type(e).__name__}: {e}")
     return df
 
 
@@ -358,17 +321,12 @@ def _parse_ids(args: argparse.Namespace) -> list[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--match-ids", nargs="*", type=str, help="match ids for the chosen --source")
+    ap.add_argument("--match-ids", nargs="*", type=str, help="FotMob match ids to scrape/build")
     ap.add_argument("--ids-file", type=str, help="JSON file with a list of match ids")
-    ap.add_argument("--source", choices=["fotmob", "sofascore"], default=DEFAULT_SOURCE,
-                    help="momentum source (default: fotmob; sofascore is the parked fallback)")
     ap.add_argument("--no-scrape", action="store_true", help="rebuild parquet from cached raw only")
     ap.add_argument("--force", action="store_true", help="re-fetch even if raw exists")
     ap.add_argument("--date", type=str, default=None, help="snapshot date YYYY-MM-DD (writes a snapshot)")
     ap.add_argument("--no-enrich", action="store_true", help="skip venue+weather enrichment (no network)")
-    ap.add_argument("--browser", action="store_true", help="scrape via Playwright instead of Chrome cookies")
-    ap.add_argument("--curl", action="store_true", help="scrape via plain curl_cffi (will 403; reconfirm block only)")
-    ap.add_argument("--headless", action="store_true", help="run the scrape browser headless (with --browser)")
     ap.add_argument("--historical-placebo", action="store_true", help="build the 2022-WC placebo parquet and exit")
     ap.add_argument("--hp-limit", type=int, default=None, help="limit StatsBomb matches for --historical-placebo")
     ap.add_argument("--cwc-placebo", action="store_true", help="build the CWC 2025 same-units placebo parquet and exit")
@@ -399,11 +357,7 @@ def main() -> None:
         do_scrape=not args.no_scrape,
         force=args.force,
         date=args.date,
-        source=args.source,
         do_enrich=not args.no_enrich,
-        use_cookies=not (args.browser or args.curl),
-        use_browser=args.browser,
-        headless=args.headless,
     )
 
 

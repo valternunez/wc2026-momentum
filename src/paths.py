@@ -21,7 +21,6 @@ SITE = ROOT / "site"
 FIXTURES = ROOT / "tests" / "fixtures"
 
 # Provider-specific raw subtrees
-RAW_SOFASCORE = RAW / "sofascore"
 RAW_FOTMOB = RAW / "fotmob"
 RAW_COMMENTARY = RAW / "commentary"
 
@@ -50,5 +49,5 @@ STOPPAGE_TYPES = (
 
 def ensure_dirs() -> None:
     """Create the directories the pipeline writes to. Safe to call repeatedly."""
-    for d in (RAW_SOFASCORE, RAW_FOTMOB, RAW_COMMENTARY, INTERIM, PROCESSED, SNAPSHOTS, SITE):
+    for d in (RAW_FOTMOB, RAW_COMMENTARY, INTERIM, PROCESSED, SNAPSHOTS, SITE):
         d.mkdir(parents=True, exist_ok=True)
