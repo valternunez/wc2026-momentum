@@ -438,7 +438,7 @@ TEMPLATE = """<!DOCTYPE html>
         var col=(g.h?t.homeFill:t.awayFill);
         ctx.strokeStyle=col; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.globalAlpha=1;
         ctx.beginPath(); ctx.arc(x, cy, 7.5, 0, 6.2832); ctx.fillStyle=col; ctx.fill(); ctx.lineWidth=2.4; ctx.strokeStyle=t.bg; ctx.stroke();
-        if(g.sc){ ctx.font="600 13px 'IBM Plex Mono'"; ctx.fillStyle=t.ink; ctx.fillText(g.sc, x, box.y+30); }
+        if(g.sc){ ctx.font="600 13px 'IBM Plex Mono'"; ctx.fillStyle=t.ink; ctx.fillText(g.sc, x, box.y-14); }
       }
     });
     ctx.fillStyle=t.sub; ctx.font="22px 'IBM Plex Mono'"; ctx.textAlign='center';
@@ -459,11 +459,24 @@ TEMPLATE = """<!DOCTYPE html>
       ctx.fillStyle=t.ink; ctx.font="500 50px 'Newsreader'"; ctx.fillText(m.home+score+m.away, P, P+62);
       ctx.fillStyle=t.sub; ctx.font="18px 'IBM Plex Mono'"; var dt=fmtDate(m.ts); ctx.fillText((dt?dt+'  ·  ':'')+(m.series.length)+" minutes  ·  "+((m.stoppages||[]).length)+" stoppages", P, P+96);
       drawWave(ctx, m, t, {x:P, y:200, w:Wl-2*P, h:300});
-      // legend
-      ctx.textAlign='left'; var ly=562; ctx.font="600 20px 'IBM Plex Mono'";
-      ctx.fillStyle=t.homeFill; ctx.fillRect(P, ly-14, 26, 14); ctx.fillStyle=t.ink; ctx.fillText(m.home+' on top', P+36, ly);
-      var ox=P+36+ctx.measureText(m.home+' on top').width+52;
-      ctx.fillStyle=t.awayFill; ctx.fillRect(ox, ly-14, 26, 14); ctx.fillStyle=t.ink; ctx.fillText(m.away+' on top', ox+36, ly);
+      // legend row 1 — team fills (who's on top)
+      ctx.textAlign='left'; var ly=550; ctx.font="600 18px 'IBM Plex Mono'";
+      ctx.fillStyle=t.homeFill; ctx.fillRect(P, ly-13, 24, 13); ctx.fillStyle=t.ink; ctx.fillText(m.home+' on top', P+34, ly);
+      var ox=P+34+ctx.measureText(m.home+' on top').width+44;
+      ctx.fillStyle=t.awayFill; ctx.fillRect(ox, ly-13, 24, 13); ctx.fillStyle=t.ink; ctx.fillText(m.away+' on top', ox+34, ly);
+      // legend row 2 — stoppage + goal markers
+      var my=586, mx=P; ctx.font="600 16px 'IBM Plex Mono'";
+      function legLine(label, col, dotted){
+        var cy=my-5;
+        ctx.strokeStyle=col; ctx.lineWidth=dotted?2.6:2.2; ctx.lineCap=dotted?'round':'butt'; ctx.setLineDash(dotted?[0.5,6]:[6,4]);
+        ctx.beginPath(); ctx.moveTo(mx, cy); ctx.lineTo(mx+26, cy); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap='butt';
+        ctx.fillStyle=t.ink; ctx.fillText(label, mx+34, my); mx += 34+ctx.measureText(label).width+30;
+      }
+      legLine('HYDRATION', '#3E88C7', false);
+      legLine('VAR', '#7A5CC0', true);
+      legLine('INJURY', '#E08A4B', false);
+      ctx.beginPath(); ctx.arc(mx+8, my-6, 7, 0, 6.2832); ctx.fillStyle='#6E90AE'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=t.bg; ctx.stroke();
+      ctx.fillStyle=t.ink; ctx.fillText('GOAL', mx+24, my);
       // footer
       ctx.strokeStyle=t.grid; ctx.globalAlpha=.3; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(P, Hl-66); ctx.lineTo(Wl-P, Hl-66); ctx.stroke(); ctx.globalAlpha=1;
       ctx.textAlign='left'; ctx.fillStyle=t.sub; ctx.font="16px 'IBM Plex Mono'"; ctx.fillText("FotMob per-minute momentum", P, Hl-36);
