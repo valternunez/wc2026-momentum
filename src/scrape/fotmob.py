@@ -22,6 +22,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -39,13 +40,20 @@ _UA = (
 
 # --- auth -------------------------------------------------------------------
 def _secret() -> str:
-    if not _SECRET_PATH.exists():
-        raise RuntimeError(
-            f"FotMob secret file missing: {_SECRET_PATH.name}. It is gitignored — create it locally "
-            "with FotMob's easter-egg lyrics (byte-exact, no trailing newline). Needed for scraping; "
-            "CI/report builds and tests (which use fixtures) do not need it."
-        )
-    return _SECRET_PATH.read_text(encoding="utf-8")
+    # Local: the gitignored file. Hosted (Railway): FOTMOB_SECRET_B64 (base64) or FOTMOB_SECRET env.
+    if _SECRET_PATH.exists():
+        return _SECRET_PATH.read_text(encoding="utf-8")
+    b64 = os.environ.get("FOTMOB_SECRET_B64")
+    if b64:
+        return base64.b64decode(b64).decode("utf-8")
+    env = os.environ.get("FOTMOB_SECRET")
+    if env:
+        return env
+    raise RuntimeError(
+        f"FotMob secret missing: provide {_SECRET_PATH.name} locally (gitignored, byte-exact "
+        "easter-egg lyrics) or set FOTMOB_SECRET_B64 / FOTMOB_SECRET in the environment. Needed for "
+        "scraping; CI/report builds and tests (which use fixtures) do not need it."
+    )
 
 
 def x_mas(api_path: str, *, code: int | None = None) -> str:
