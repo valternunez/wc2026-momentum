@@ -79,6 +79,18 @@ _KO_LABEL = {"1/16": "Round of 32", "1/8": "Round of 16", "1/4": "Quarter-finals
 _KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
 
 
+def _fmt_date(ts) -> str:
+    """Epoch seconds → DD/MM/YYYY (UTC, kickoff date)."""
+    if not ts:
+        return ""
+    from datetime import datetime, timezone
+    try:
+        ts = int(float(ts))
+    except (TypeError, ValueError):
+        return ""
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m/%Y")
+
+
 def _stage_meta(league: str | None, rnd) -> tuple[str, tuple]:
     """(display label, sort key) for a match's stage. Groups first (A→L), then knockouts in order."""
     league = league or ""
@@ -109,9 +121,10 @@ def _match_cards(site_figures: Path) -> str:
         idx += 1
         shutil.copyfile(png, dest / f"{m['id']}.png")
         home, away = m.get("home") or "?", m.get("away") or "?"
+        date = _fmt_date(m.get("ts"))
         card = f"""
           <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{home} v {away} — open chart" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
-            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B0A78F">M{idx:02d}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#B0A78F">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
             <div style="display:flex;flex-direction:column;gap:4px">
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></div>
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
@@ -131,6 +144,65 @@ def _match_cards(site_figures: Path) -> str:
         out.append(f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600;margin:28px 0 14px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D6CFBE;padding-bottom:8px"><span>{label}</span><span style="color:#B0A78F;font-weight:400">{len(cards)}</span></div>')
         out.append('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">' + "".join(cards) + "</div>")
     return "".join(out)
+
+
+def _match_names() -> dict[str, tuple[str, str]]:
+    """{match_id: (home, away)} from the committed momentum.json."""
+    p = PROCESSED / "momentum.json"
+    if not p.exists():
+        return {}
+    return {str(m["id"]): (m.get("home") or "?", m.get("away") or "?")
+            for m in json.loads(p.read_text(encoding="utf-8"))}
+
+
+def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]]) -> str:
+    """Descriptive: matches with the biggest / quietest leader momentum swing around a hydration break.
+
+    Match-level only, with the pre-break level shown so the regression-to-the-mean story is visible
+    (the bigger the drop, the higher the team was riding). No team ranking — too few breaks each.
+    """
+    if df is None or df.is_empty():
+        return ""
+    hyd = df.filter((pl.col("stoppage_type") == "hydration") & (pl.col("momentum_pre_5min_mean") > 0))
+    if hyd.is_empty():
+        return ""
+    per = (hyd.sort("momentum_delta")  # ascending: biggest drop first within each match
+           .group_by("match_id", maintain_order=True).first()
+           .select("match_id", "team", "momentum_pre_5min_mean", "momentum_delta", "clock_minute")
+           .sort("momentum_delta"))
+    recs = per.to_dicts()
+    if len(recs) < 4:
+        return ""
+    biggest, quietest = recs[:5], list(reversed(recs[-5:]))
+
+    def row(r: dict) -> str:
+        mid = str(r["match_id"]); h, a = names.get(mid, ("?", "?"))
+        drop = r["momentum_delta"]; sign = "−" if drop < 0 else "+"
+        return (f'<div class="mb-card" data-mid="{mid}" role="button" tabindex="0" '
+                f'aria-label="{h} v {a} — open chart" style="cursor:pointer;display:flex;'
+                f'justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid #E6E0CF">'
+                f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813">{h} v {a}</span>'
+                f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#1A1813;white-space:nowrap">'
+                f'{r["team"]} {sign}{abs(drop):.0f} '
+                f'<span style="color:#A89F88">from +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></div>')
+
+    note = ("Why matches and not teams? Each side has only one-to-four breaks so far, and about 77% of "
+            "the swing is set by how high a team was already riding when the whistle went — so a team "
+            "table would mostly rank who happened to be dominant in those minutes, not who's break-prone.")
+    return f"""
+      <div style="margin:4px 0 32px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:22px 44px">
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px">Biggest swings</div>
+            {"".join(row(r) for r in biggest)}
+          </div>
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5A5547;font-weight:600;margin-bottom:6px">Quietest breaks</div>
+            {"".join(row(r) for r in quietest)}
+          </div>
+        </div>
+        <p style="font-family:'Newsreader',serif;font-size:17px;line-height:1.55;color:#5A5547;margin-top:20px;max-width:64ch">{note}</p>
+      </div>"""
 
 
 def _compare_sentence(effects: list[dict]) -> str:
@@ -308,6 +380,7 @@ def build() -> str:
         "INTERVAL_NOTE": ("Whiskers show the match-clustered bootstrap 95% interval; every interval sits "
                           "left of zero. The causal claim is held until the live sample is larger — see method."),
         "COMPARE_SENTENCE": _compare_sentence(effects),
+        "EXTREMES": _extremes_block(df, _match_names()),
         "MATCH_CARDS": _match_cards(site_figures),
         "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
         "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),

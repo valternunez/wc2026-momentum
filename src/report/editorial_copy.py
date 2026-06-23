@@ -142,6 +142,11 @@ TEMPLATE = """<!DOCTYPE html>
         <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:18px">03 — Match by match</h2>
         <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.55;color:#2B2820;text-wrap:pretty">The aggregate is built from these — every match so far, grouped by stage. The wave rises when the <strong style="font-weight:600">home</strong> side is on top, drops when the <strong style="font-weight:600">away</strong> side takes over, and dashed lines mark detected stoppages. <span style="color:#6B6557">Click any match for the full interactive chart.</span></p>
       </div>
+      <div style="margin-bottom:32px">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#1A1813;font-weight:600;margin-bottom:6px">The extremes</h3>
+        <p style="font-family:'Newsreader',serif;font-size:18px;line-height:1.5;color:#2B2820;margin-bottom:16px;max-width:64ch">Where a hydration break landed hardest — and where it barely registered. Each row is a match's biggest swing for the side that was on top; the figure after "from" is how high they were riding when the whistle blew. Click any to open the chart.</p>
+        {{EXTREMES}}
+      </div>
       <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:#5A5547">
         <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:10px;background:#9CC4E0;display:inline-block;border-radius:1px"></span>HOME ON TOP</span>
         <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:10px;background:#EBC09A;display:inline-block;border-radius:1px"></span>AWAY ON TOP</span>
