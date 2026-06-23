@@ -143,7 +143,7 @@ def _match_cards(site_figures: Path) -> str:
     for label in sorted(groups, key=lambda lb: groups[lb]["order"]):
         cards = groups[label]["cards"]
         out.append(f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600;margin:28px 0 14px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D6CFBE;padding-bottom:8px"><span>{label}</span><span style="color:#B0A78F;font-weight:400">{len(cards)}</span></div>')
-        out.append('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">' + "".join(cards) + "</div>")
+        out.append('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:14px">' + "".join(cards) + "</div>")
     return "".join(out)
 
 
@@ -192,7 +192,7 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]]) -> str:
             "table would mostly rank who happened to be dominant in those minutes, not who's break-prone.")
     return f"""
       <div style="margin:4px 0 32px">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:22px 44px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,258px),1fr));gap:22px 44px">
           <div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px">Biggest swings</div>
             {"".join(row(r) for r in biggest)}

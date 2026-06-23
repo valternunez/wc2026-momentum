@@ -366,7 +366,11 @@ TEMPLATE = """<!DOCTYPE html>
     function X(min){ return pad.l + (min-minMin)/(maxMin-minMin||1)*pw; }
     function Y(v){ return pad.t + (1-(v+ymax)/(2*ymax))*ph; }
     var zeroY=Y(0);
-    var svg=el('svg',{viewBox:'0 0 '+W+' '+H, width:'100%', style:'display:block;font-family:IBM Plex Mono,monospace'});
+    var svg=el('svg',{viewBox:'0 0 '+W+' '+H, width:'100%', role:'img', style:'display:block;font-family:IBM Plex Mono,monospace'});
+    var summ=m.home+' versus '+m.away+' per-minute momentum. Wave above the line means '+m.home+' on top, below means '+m.away+'. Dashed lines mark stoppages; dots mark goals.';
+    svg.setAttribute('aria-label', summ);
+    var ti=el('title',{}); ti.textContent=m.home+' v '+m.away+' momentum'; svg.appendChild(ti);
+    var de=el('desc',{}); de.textContent=summ; svg.appendChild(de);
 
     var d='M '+X(s[0][0])+' '+zeroY; s.forEach(function(p){ d+=' L '+X(p[0])+' '+Y(p[1]); }); d+=' L '+X(s[s.length-1][0])+' '+zeroY+' Z';
     var defs=el('defs',{});
@@ -386,14 +390,16 @@ TEMPLATE = """<!DOCTYPE html>
     (m.goals||[]).forEach(function(g){
       if(g.m<minMin-1 || g.m>maxMin+1) return;
       var x=X(g.m), cy=pad.t-2;
+      var gc, gtxt=(g.k==='miss'?'Missed penalty':'Goal')+(g.who?' '+g.who:'')+(g.sc?' '+g.sc:'')+" ("+Math.round(g.m)+"')";
       if(g.k==='miss'){
         svg.appendChild(el('line',{x1:x,y1:cy,x2:x,y2:H-pad.b, stroke:t.sub,'stroke-width':1.2,'stroke-dasharray':'2 3',opacity:.55}));
-        svg.appendChild(el('circle',{cx:x,cy:cy,r:4, fill:t.bg, stroke:t.sub,'stroke-width':1.6}));
+        gc=el('circle',{cx:x,cy:cy,r:4, fill:t.bg, stroke:t.sub,'stroke-width':1.6});
       } else {
         var col=g.h?t.homeFill:t.awayFill;
         svg.appendChild(el('line',{x1:x,y1:cy,x2:x,y2:H-pad.b, stroke:col,'stroke-width':1.4,opacity:.5}));
-        svg.appendChild(el('circle',{cx:x,cy:cy,r:4.6, fill:col, stroke:t.bg,'stroke-width':1.6}));
+        gc=el('circle',{cx:x,cy:cy,r:4.6, fill:col, stroke:t.bg,'stroke-width':1.6});
       }
+      var gt=el('title',{}); gt.textContent=gtxt; gc.appendChild(gt); svg.appendChild(gc);
     });
     [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var tx=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:t.sub}); tx.textContent=mm+"'"; svg.appendChild(tx); }});
 
@@ -505,15 +511,31 @@ TEMPLATE = """<!DOCTYPE html>
   }
   function dl(blob, fname){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);}, 4000); }
 
+  var lastFocus=null;
   function open(id){
     var m=DATA[id]; if(!m) return; cur=m;
+    lastFocus=document.activeElement;   // remember trigger to restore focus on close
     document.getElementById('mb-title').textContent=m.home+' '+(m.hs!=null?m.hs:'')+(m.hs!=null?'–'+m.as:'')+' '+m.away;
     var dt=fmtDate(m.ts);
     document.getElementById('mb-sub').textContent=(dt?dt+' · ':'')+(m.series.length)+' minutes tracked · '+(m.stoppages?m.stoppages.length:0)+' stoppages detected';
     document.getElementById('mb-explain').textContent=m.explain||'';
     chrome(m); render(m); modal.hidden=false; document.body.style.overflow='hidden';
+    var c=document.getElementById('mb-close'); if(c) c.focus();   // move focus into the dialog
   }
-  function close(){ modal.hidden=true; document.body.style.overflow=''; }
+  function close(){
+    modal.hidden=true; document.body.style.overflow='';
+    if(lastFocus && lastFocus.focus){ lastFocus.focus(); }   // restore focus to the trigger
+  }
+  function trapTab(ev){   // keep Tab focus inside the open dialog
+    if(modal.hidden || ev.key!=='Tab') return;
+    var f=modal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])');
+    if(!f.length) return;
+    var first=f[0], last=f[f.length-1];
+    if(ev.shiftKey && document.activeElement===first){ ev.preventDefault(); last.focus(); }
+    else if(!ev.shiftKey && document.activeElement===last){ ev.preventDefault(); first.focus(); }
+    else if(!modal.contains(document.activeElement)){ ev.preventDefault(); first.focus(); }
+  }
+  document.addEventListener('keydown', trapTab);
 
   document.addEventListener('click', function(ev){
     var card=ev.target.closest('[data-mid]'); if(card){ open(card.getAttribute('data-mid')); }

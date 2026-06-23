@@ -76,6 +76,9 @@ def test_build_editorial_page():
     assert "dotted #7A5CC0" in html and "#2E8B57" not in html
     # data-freshness banner wired (hidden by default; JS reveals if snapshot is stale)
     assert 'id="freshness"' in html and 'var iso=' in html
+    # modal a11y: focus trap, restore-focus, and SVG screen-reader labelling
+    assert "trapTab" in html and "lastFocus" in html
+    assert "aria-label" in html and "el('title'" in html  # svg/goal titles for screen readers
 
 
 def test_parse_goals():
