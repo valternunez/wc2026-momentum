@@ -11,7 +11,13 @@ set -euo pipefail
 
 SLUG="${REPO_SLUG:-valternunez/wc2026-momentum}"
 WORK="${WORK_DIR:-/data/repo}"
-AUTH="https://x-access-token:${GH_TOKEN}@github.com/${SLUG}.git"
+# With a token we can push; without one we still clone the PUBLIC repo read-only (validation run).
+if [ -n "${GH_TOKEN:-}" ]; then
+  REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${SLUG}.git"
+else
+  REMOTE="https://github.com/${SLUG}.git"
+  echo "[railway-daily] no GH_TOKEN set — public read only; push will be skipped"
+fi
 
 export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-wc2026-bot}"
 export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-wc2026-bot@users.noreply.github.com}"
@@ -21,10 +27,10 @@ export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
 # Clone once onto the volume, then fast-forward to the latest committed code + data each run.
 if [ ! -d "$WORK/.git" ]; then
   echo "[railway-daily] cloning $SLUG -> $WORK"
-  git clone --depth 1 "$AUTH" "$WORK"
+  git clone --depth 1 "$REMOTE" "$WORK"
 fi
 cd "$WORK"
-git remote set-url origin "$AUTH"
+git remote set-url origin "$REMOTE"
 git fetch --depth 1 origin main
 git reset --hard origin/main   # data/raw is gitignored, so it persists on the volume
 
@@ -39,6 +45,8 @@ uv run python -m src.report.build_site
 git add data/processed snapshots reports/figures data/match_ids.json
 if git diff --cached --quiet; then
   echo "[railway-daily] no changes to commit"
+elif [ -z "${GH_TOKEN:-}" ]; then
+  echo "[railway-daily] changes built OK but GH_TOKEN unset — skipping push (validation run)"
 else
   git commit -m "data: daily update $TODAY (railway)"
   git push origin main
