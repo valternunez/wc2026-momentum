@@ -109,9 +109,12 @@ def test_fmt_date_helpers_distinct():
     # regression guard: the ISO and epoch formatters must not shadow each other
     from src.report.build_site import _fmt_date_epoch, _fmt_date_iso
 
-    iso = _fmt_date_iso("2026-06-22")
+    iso = _fmt_date_iso("2026-06-22", "en")
     assert "2026" in iso and "22" in iso          # "22 Jun 2026"-style
-    assert _fmt_date_iso(None)                      # falls back to today (non-empty)
+    assert _fmt_date_iso(None, "en")                # falls back to today (non-empty)
+    # bilingual: same digits, localized month abbreviation
+    assert "Jun" in _fmt_date_iso("2026-06-22", "en")
+    assert "jun" in _fmt_date_iso("2026-06-22", "es")
     assert _fmt_date_epoch(1781204400) == "11/06/2026"
     assert _fmt_date_epoch("2026-06-22") == ""      # epoch fn rejects ISO strings, doesn't crash
     assert _fmt_date_epoch(None) == ""
@@ -119,10 +122,15 @@ def test_fmt_date_helpers_distinct():
 
 def test_stage_meta():
     from src.report.build_site import _stage_meta
+    from src.report.i18n import STAGE
 
-    assert _stage_meta("World Cup Grp. J", "2")[0] == "Group J"
-    assert _stage_meta("World Cup Final Stage", "1/8")[0] == "Round of 16"
-    assert _stage_meta("World Cup Final Stage", "1/4")[0] == "Quarter-finals"
-    assert _stage_meta("World Cup", "final")[0] == "Final"
-    # groups sort before knockouts
-    assert _stage_meta("World Cup Grp. A", "1")[1] < _stage_meta("World Cup", "final")[1]
+    en, es = STAGE["en"], STAGE["es"]
+    assert _stage_meta("World Cup Grp. J", "2", en)[0] == "Group J"
+    assert _stage_meta("World Cup Final Stage", "1/8", en)[0] == "Round of 16"
+    assert _stage_meta("World Cup Final Stage", "1/4", en)[0] == "Quarter-finals"
+    assert _stage_meta("World Cup", "final", en)[0] == "Final"
+    # Spanish labels resolve through the same ordering
+    assert _stage_meta("World Cup Grp. J", "2", es)[0] == "Grupo J"
+    assert _stage_meta("World Cup Final Stage", "1/8", es)[0] == "Octavos de final"
+    # groups sort before knockouts (ordering is language-independent)
+    assert _stage_meta("World Cup Grp. A", "1", en)[1] < _stage_meta("World Cup", "final", en)[1]

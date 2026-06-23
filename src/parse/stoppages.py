@@ -26,9 +26,11 @@ SUB_WINDOW = (-1.0, 2.0)
 # Two hydration comments within this many minutes are the same break.
 HYDRATION_CLUSTER_GAP = 3.0
 
-# Heuristic threshold: an injury stoppage is treated as a coaching "huddle" if a
-# substitution is made during it OR commentary signals a prolonged stoppage.
-# Documented as approximate — see PROJECT_BRIEF.md mechanism caveats.
+# Heuristic proxy: an injury stoppage is tagged "huddle" iff a substitution was made
+# during it. There is no per-stoppage dwell-time signal, so "with sub" is the observable
+# stand-in for a coaching window — which makes the treatment label collinear with the
+# sub_made_during_break control. The mechanism reading is interpretive, not identified;
+# see the mechanism caveats in PROJECT_BRIEF.md.
 
 
 def detect_stoppages(

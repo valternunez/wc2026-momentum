@@ -55,18 +55,21 @@ def build_appendix_html() -> str:
   (a negative delta).</p>
 
   <h3>Comparison conditions (mechanism)</h3>
-  <p>Hydration breaks are compared against VAR reviews and injury stoppages
-  (split by whether a coaching huddle formed) of similar duration. This is what
-  lets us separate the <em>pause</em> from the <em>coaching window</em> from
-  <em>physical recovery</em>: a larger effect for hydration breaks than for
-  duration-matched VAR would implicate the coaching window rather than the pause.</p>
+  <p>Hydration breaks are compared against VAR reviews and injury stoppages (the injury
+  split is by whether a substitution was made, the observable stand-in for a coaching
+  huddle). Per-stoppage durations are not available, so this is a comparison by stoppage
+  <em>type</em>, not a duration-matched one. A larger effect for hydration breaks than for
+  VAR is <em>suggestive</em> of the coaching window over the pause, but the "with sub" label
+  is collinear with the substitution control, so the mechanism reading stays interpretive
+  rather than identified.</p>
 
   <h3>Placebo and robustness tests</h3>
   <ul>
-    <li><strong>Placebo break times.</strong> The same windowing is run at the
-    17&prime; and 62&prime; marks (5 minutes before the real breaks) in matches
-    with no actual stoppage there. An "effect" at placebo times would mean the
-    design is broken.</li>
+    <li><strong>Placebo break times.</strong> The same windowing is run on the 2026
+    matches at quiet, non-break minutes (10&prime;/35&prime;/55&prime;/80&prime;) where no
+    real stoppage occurred. A drop nearly as large at these placebo minutes is exactly what
+    regression to the mean predicts, and is the baseline the headline effect is measured
+    against.</li>
     <li><strong>Historical placebo.</strong> The pipeline is applied to all 64
     2022 World Cup matches at the 22&prime;/67&prime; marks — no breaks were
     mandated then, so any measured "effect" is bias. Result: a small but non-zero

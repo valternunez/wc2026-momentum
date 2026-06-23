@@ -1,51 +1,88 @@
-"""Build the editorial report (site/index.html) from the committed dataset.
+"""Build the editorial report from the committed dataset, in English + Spanish.
 
-Renders the supplied editorial design (src/report/editorial_copy.TEMPLATE) by
-substituting {{TOKENS}} with values computed live from data/processed/*. CI-safe:
-uses only base deps (polars/numpy/scipy) — no scraping, no pandas/statsmodels.
-Per-match panel images are generated locally and committed; here we just copy and
-embed them.
+Renders the editorial design (src/report/editorial_copy.TEMPLATE) by substituting {{TOKENS}}
+with values computed live from data/processed/*. All human copy lives in src/report/i18n.py;
+this module selects each language, fills the prose + data tokens, and writes a sibling file:
+EN -> site/index.html, ES -> site/index.es.html (relative asset paths stay valid either way).
+CI-safe: only base deps (polars/numpy/scipy) — no scraping, no pandas/statsmodels. Per-match
+panel images are generated locally and committed; here we just copy and embed them.
 """
 
 from __future__ import annotations
 
+import html
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 import polars as pl
 
-from src.analysis.descriptive import cluster_bootstrap_ci, effect_by_type, load_processed, on_top_rows
+from src.analysis.descriptive import (
+    cluster_bootstrap_ci,
+    effect_by_type,
+    load_processed,
+    on_top_rows,
+    pre_level_r2,
+)
 from src.paths import PROCESSED, REPORTS, SITE, STOPPAGES_PARQUET
 from src.report.editorial_copy import TEMPLATE
+from src.report.i18n import COUNTRIES, FRAG, JS, LABELS, LANGS, MONTHS, STAGE, STRINGS, TYPES
 from src.snapshot import load_all_snapshots
 
 ACCENT = "#E5482E"
 INK = "#1A1813"
 SCALE = 32.0  # momentum axis: 0 .. -32
 PAGES_URL = "https://github.com/valternunez/wc2026-momentum"
+SITE_BASE = "https://valternunez.github.io/wc2026-momentum/"
 
-_LABELS = {
-    "hydration": "Hydration break",
-    "var": "VAR review",
-    "injury_huddle": "Injury · with huddle",
-    "injury_no_huddle": "Injury · no huddle",
-}
 _ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
-_MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
+
+# Per-language <head> meta + output filename. Sibling files keep relative asset paths valid.
+_LANG_META = {
+    "en": {"LANG": "en", "OG_LOCALE": "en_US", "CANONICAL_URL": SITE_BASE,
+           "OG_URL": SITE_BASE, "OG_IMAGE": SITE_BASE + "og.png"},
+    "es": {"LANG": "es", "OG_LOCALE": "es_MX", "CANONICAL_URL": SITE_BASE + "index.es.html",
+           "OG_URL": SITE_BASE + "index.es.html", "OG_IMAGE": SITE_BASE + "og.es.png"},
+}
+_OUTFILE = {"en": "index.html", "es": "index.es.html"}
 
 
-def _fmt_date_iso(iso: str | None) -> str:
-    """ISO date (YYYY-MM-DD) → '22 June 2026' (falls back to today)."""
-    if not iso:
+def _team(name: str, lang: str) -> str:
+    """Country/team name in `lang` (Spanish via COUNTRIES; English passes through unchanged)."""
+    return COUNTRIES.get(name, name) if lang == "es" else name
+
+
+def _fmt_date_iso(iso: str | None, lang: str) -> str:
+    """ISO date (YYYY-MM-DD) → '22 jun 2026' in `lang` (falls back to today on missing/bad input)."""
+    months = MONTHS[lang]
+    d = None
+    if iso:
+        try:
+            d = datetime.strptime(iso, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            d = None
+    if d is None:
         d = datetime.now(timezone.utc)
-        return f"{d.day} {_MONTHS[d.month]} {d.year}"
-    d = datetime.strptime(iso, "%Y-%m-%d")
-    return f"{d.day} {_MONTHS[d.month]} {d.year}"
+    return f"{d.day} {months[d.month]} {d.year}"
 
 
-def _money_rows(effects: list[dict]) -> str:
+def _lang_toggle(lang: str) -> str:
+    """Footer English ⇄ Español switch: the current language inert, the other linked."""
+    base = "font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em"
+    on = f"{base};color:#E5C9A0;font-weight:600"
+    off = f"{base};color:#7E776A;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
+    en = (f'<span style="{on}">English</span>' if lang == "en"
+          else f'<a href="index.html" style="{off}">English</a>')
+    es = (f'<span style="{on}">Español</span>' if lang == "es"
+          else f'<a href="index.es.html" style="{off}">Español</a>')
+    sep = f'<span style="{base};color:#5A5547;padding:0 8px">·</span>'
+    return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
+
+
+def _money_rows(effects: list[dict], labels: dict) -> str:
     by = {e["stoppage_type"]: e for e in effects}
     out = []
     for stype in _ORDER:
@@ -62,29 +99,23 @@ def _money_rows(effects: list[dict]) -> str:
         out.append(f"""
         <div style="position:relative;margin-bottom:18px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
-            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:16px;color:{color}">{_LABELS[stype]}</span>
+            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:16px;color:{color}">{labels[stype]}</span>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557">n = {e['n']}</span>
           </div>
           <div style="position:relative;height:30px">
             <div style="position:absolute;top:13px;height:4px;right:0;width:{mean_pct:.2f}%;background:{color};opacity:{1 if is_hl else .85}"></div>
             <div style="position:absolute;top:9px;height:12px;right:{lo_pct:.2f}%;width:{hi_pct - lo_pct:.2f}%;border-left:1px solid {color};border-right:1px solid {color};background:{color};opacity:{.16 if is_hl else .12}"></div>
             <div style="position:absolute;top:9px;width:12px;height:12px;border-radius:50%;right:calc({mean_pct:.2f}% - 6px);background:{color};box-shadow:0 0 0 3px #EFEBDF"></div>
-            <span style="position:absolute;top:-2px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:{color};right:calc({mean_pct:.2f}% + 14px)">{mean:.1f}</span>
+            <span style="position:absolute;top:-2px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:{color};right:calc({mean_pct:.2f}% + 14px)">{mean:.0f}</span>
           </div>
         </div>""")
     return "".join(out)
 
 
-_KO_LABEL = {"1/16": "Round of 32", "1/8": "Round of 16", "1/4": "Quarter-finals",
-             "1/2": "Semi-finals", "bronze": "Third-place play-off", "final": "Final"}
-_KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
-
-
 def _fmt_date_epoch(ts) -> str:
-    """Epoch seconds → DD/MM/YYYY (UTC, kickoff date)."""
+    """Epoch seconds → DD/MM/YYYY (UTC, kickoff date). Locale-neutral, used in both languages."""
     if not ts:
         return ""
-    from datetime import datetime, timezone
     try:
         ts = int(float(ts))
     except (TypeError, ValueError):
@@ -92,23 +123,24 @@ def _fmt_date_epoch(ts) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m/%Y")
 
 
-def _stage_meta(league: str | None, rnd) -> tuple[str, tuple]:
+def _stage_meta(league: str | None, rnd, stage: dict) -> tuple[str, tuple]:
     """(display label, sort key) for a match's stage. Groups first (A→L), then knockouts in order."""
     league = league or ""
     if "Grp." in league:
         letter = league.split("Grp.")[-1].strip()
-        return (f"Group {letter}", (0, letter))
+        return (stage["group"].format(letter=letter), (0, letter))
     key = rnd.lower() if isinstance(rnd, str) else rnd
-    if key in _KO_LABEL:
-        return (_KO_LABEL[key], (1, _KO_ORDER[key]))
-    return ("Other matches", (2, 0))
+    if key in _KO_ORDER:
+        return (stage[key], (1, _KO_ORDER[key]))
+    return (stage["other"], (2, 0))
 
 
-def _match_cards(site_figures: Path) -> str:
+def _match_cards(site_figures: Path, F: dict, stage: dict, lang: str) -> str:
     mpath = PROCESSED / "matches.json"
     src_dir = REPORTS / "figures" / "matches"
+    pending = f'<p style="font-family:IBM Plex Mono,monospace;color:#5A5547">{F["cards_pending"]}</p>'
     if not mpath.exists() or not src_dir.exists():
-        return '<p style="font-family:IBM Plex Mono,monospace;color:#948D7C">Match panels render on the next local update.</p>'
+        return pending
     matches = json.loads(mpath.read_text(encoding="utf-8"))
     dest = site_figures / "matches"
     dest.mkdir(parents=True, exist_ok=True)
@@ -121,45 +153,47 @@ def _match_cards(site_figures: Path) -> str:
             continue
         idx += 1
         shutil.copyfile(png, dest / f"{m['id']}.png")
-        home, away = m.get("home") or "?", m.get("away") or "?"
+        home, away = _team(m.get("home") or "?", lang), _team(m.get("away") or "?", lang)
+        home, away = html.escape(home), html.escape(away)
         date = _fmt_date_epoch(m.get("ts"))
+        aria = F["open_chart_aria"].format(h=home, a=away)
         card = f"""
-          <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{home} v {away} — open chart" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#B0A78F">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
+          <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{aria}" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#5A5547">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
             <div style="display:flex;flex-direction:column;gap:4px">
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></div>
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
             </div>
-            <img src="figures/matches/{m['id']}.png" alt="{home} v {away} — per-minute momentum" loading="lazy" style="width:100%;height:74px;object-fit:contain;object-position:center;display:block;margin-top:2px"/>
+            <img src="figures/matches/{m['id']}.png" alt="" loading="lazy" style="width:100%;height:74px;object-fit:contain;object-position:center;display:block;margin-top:2px"/>
           </div>"""
-        label, order = _stage_meta(m.get("league"), m.get("stage"))
+        label, order = _stage_meta(m.get("league"), m.get("stage"), stage)
         g = groups.setdefault(label, {"order": order, "cards": []})
         g["cards"].append(card)
 
     if not groups:
-        return '<p style="font-family:IBM Plex Mono,monospace;color:#948D7C">Match panels render on the next local update.</p>'
+        return pending
 
     out = []
     has_group = has_knockout = False
     for label in sorted(groups, key=lambda lb: groups[lb]["order"]):
         cards = groups[label]["cards"]
-        stage = "group" if groups[label]["order"][0] == 0 else "knockout"  # 0=group; knockout/other -> knockout
-        has_group = has_group or stage == "group"
-        has_knockout = has_knockout or stage == "knockout"
+        stage_kind = "group" if groups[label]["order"][0] == 0 else "knockout"  # 0=group; else knockout
+        has_group = has_group or stage_kind == "group"
+        has_knockout = has_knockout or stage_kind == "knockout"
         out.append(
-            f'<details class="grp" data-stage="{stage}" open>'
+            f'<details class="grp" data-stage="{stage_kind}" open>'
             f'<summary class="grp-h"><span>{label}</span><span class="grp-n">{len(cards)}</span></summary>'
             '<div class="grp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:14px">'
             + "".join(cards) + "</div></details>"
         )
 
     # phase filter tabs (Knockouts only once those matches exist)
-    tabs = ['<button class="mb-tab on" role="tab" aria-selected="true" data-filter="all">All</button>']
+    tabs = [f'<button type="button" class="mb-tab on" aria-pressed="true" data-filter="all">{F["tab_all"]}</button>']
     if has_group:
-        tabs.append('<button class="mb-tab" role="tab" aria-selected="false" data-filter="group">Group stage</button>')
+        tabs.append(f'<button type="button" class="mb-tab" aria-pressed="false" data-filter="group">{F["tab_group"]}</button>')
     if has_knockout:
-        tabs.append('<button class="mb-tab" role="tab" aria-selected="false" data-filter="knockout">Knockouts</button>')
-    tabbar = (f'<div class="mb-tabs" role="tablist" aria-label="Filter matches by stage">{"".join(tabs)}</div>'
+        tabs.append(f'<button type="button" class="mb-tab" aria-pressed="false" data-filter="knockout">{F["tab_knockout"]}</button>')
+    tabbar = (f'<div class="mb-tabs" role="group" aria-label="{F["tabs_aria"]}">{"".join(tabs)}</div>'
               if len(tabs) > 1 else "")
     return tabbar + "".join(out)
 
@@ -173,7 +207,7 @@ def _match_names() -> dict[str, tuple[str, str]]:
             for m in json.loads(p.read_text(encoding="utf-8"))}
 
 
-def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]]) -> str:
+def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]], F: dict, lang: str) -> str:
     """Descriptive: matches with the biggest / quietest leader momentum swing around a hydration break.
 
     Match-level only, with the pre-break level shown so the regression-to-the-mean story is visible
@@ -189,67 +223,66 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]]) -> str:
            .select("match_id", "team", "momentum_pre_5min_mean", "momentum_delta", "clock_minute")
            .sort("momentum_delta"))
     recs = per.to_dicts()
-    if len(recs) < 4:
+    if len(recs) < 10:  # need 10 for two disjoint 5-row columns (else biggest/quietest overlap)
         return ""
     biggest, quietest = recs[:5], list(reversed(recs[-5:]))
+    vs, frm = F["extremes_vs"], F["extremes_from"]
 
     def row(r: dict) -> str:
         mid = str(r["match_id"]); h, a = names.get(mid, ("?", "?"))
+        h, a = html.escape(_team(h, lang)), html.escape(_team(a, lang))
+        team = html.escape(_team(r["team"], lang))
         drop = r["momentum_delta"]; sign = "−" if drop < 0 else "+"
+        aria = F["open_chart_aria"].format(h=h, a=a)
         return (f'<div class="mb-card" data-mid="{mid}" role="button" tabindex="0" '
-                f'aria-label="{h} v {a} — open chart" style="cursor:pointer;display:flex;'
+                f'aria-label="{aria}" style="cursor:pointer;display:flex;'
                 f'justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid #E6E0CF">'
-                f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813">{h} v {a}</span>'
+                f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813">{h} {vs} {a}</span>'
                 f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#1A1813;white-space:nowrap">'
-                f'{r["team"]} {sign}{abs(drop):.0f} '
-                f'<span style="color:#A89F88">from +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></div>')
+                f'{team} {sign}{abs(drop):.0f} '
+                f'<span style="color:#5A5547">{frm} +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></div>')
 
-    note = ("Why matches and not teams? Each side has only one-to-four breaks so far, and about 77% of "
-            "the swing is set by how high a team was already riding when the whistle went — so a team "
-            "table would mostly rank who happened to be dominant in those minutes, not who's break-prone.")
     return f"""
       <div style="margin:4px 0 32px">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,258px),1fr));gap:22px 44px">
           <div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px">Biggest swings</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px">{F["extremes_biggest"]}</div>
             {"".join(row(r) for r in biggest)}
           </div>
           <div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5A5547;font-weight:600;margin-bottom:6px">Quietest breaks</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5A5547;font-weight:600;margin-bottom:6px">{F["extremes_quietest"]}</div>
             {"".join(row(r) for r in quietest)}
           </div>
         </div>
-        <p style="font-family:'Newsreader',serif;font-size:17px;line-height:1.55;color:#5A5547;margin-top:20px;max-width:64ch">{note}</p>
+        <p style="font-family:'Newsreader',serif;font-size:17px;line-height:1.55;color:#5A5547;margin-top:20px;max-width:64ch">{F["extremes_note"]}</p>
       </div>"""
 
 
-def _compare_sentence(effects: list[dict]) -> str:
+def _compare_sentence(effects: list[dict], F: dict) -> str:
     by = {e["stoppage_type"]: abs(e["mean_delta"]) for e in effects if e["n"]}
     hyd = by.get("hydration")
     var = by.get("var")
     inh = by.get("injury_no_huddle")
     hyd_n = next((e["n"] for e in effects if e["stoppage_type"] == "hydration"), 0)
     if not hyd:
-        return "Not enough data yet to compare stoppage types."
+        return F["compare_not_enough"]
     bits = []
     if var:
-        bits.append(f"about {round((hyd / var - 1) * 100)}% more momentum than a VAR review")
+        bits.append(F["compare_pct"].format(pct=round((hyd / var - 1) * 100)))
     if inh:
-        bits.append(f"roughly {hyd / inh:.1f}× a no-huddle injury stoppage")
-    comp = " and ".join(bits) if bits else "the largest swing of any stoppage type"
-    return (f"A hydration break costs the leading side {comp}. And it isn't only noise at the edges: "
-            f"with {hyd_n} breaks logged, the hydration estimate is the tightest of the four — the "
-            f"more data arrives, the less it moves.")
+        bits.append(F["compare_ratio"].format(ratio=f"{hyd / inh:.1f}"))
+    comp = F["compare_and"].join(bits) if bits else F["compare_default"]
+    return F["compare_sentence"].format(comp=comp, n=hyd_n)
 
 
-def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str) -> str:
+def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str, F: dict, types: dict) -> str:
     """Short, purely descriptive note on this match's momentum (no causal claims)."""
     if df is None or df.is_empty():
-        return f"Per-minute momentum for {home} (home, blue) vs {away} (away, orange)."
+        return F["exp_no_df"].format(home=home, away=away)
     rows = (df.filter((pl.col("match_id") == str(mid)) & (pl.col("is_home") == True))  # noqa: E712
             .sort("clock_minute").to_dicts())
     if not rows:
-        return f"Per-minute momentum for {home} vs {away}. No stoppages detected."
+        return F["exp_no_stop"].format(home=home, away=away)
     parts: list[str] = []
     for r in rows:
         if r["stoppage_type"] != "hydration":
@@ -260,57 +293,32 @@ def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str) -> str:
         leader = home if pre > 0 else away
         lead_delta = d if pre > 0 else -d  # from the leader's perspective
         m = int(r["clock_minute"])
-        if lead_delta < 0:
-            parts.append(f"At the {m}' hydration break {leader} were on top, then lost "
-                         f"{abs(lead_delta):.0f} momentum over the next five minutes.")
-        else:
-            parts.append(f"At the {m}' hydration break {leader} were on top and pushed "
-                         f"{abs(lead_delta):.0f} further ahead.")
+        key = "exp_lost" if lead_delta < 0 else "exp_pushed"
+        parts.append(F[key].format(m=m, leader=leader, x=f"{abs(lead_delta):.0f}"))
     sw = max(rows, key=lambda r: abs(r.get("momentum_delta") or 0))
     if sw.get("momentum_delta") is not None:
-        parts.append(f"Biggest post-stoppage swing: {abs(sw['momentum_delta']):.0f} at the "
-                     f"{int(sw['clock_minute'])}' {sw['stoppage_type'].replace('_', ' ')}.")
-    return " ".join(parts) or f"Per-minute momentum for {home} vs {away}."
+        st = sw["stoppage_type"]
+        parts.append(F["exp_swing"].format(x=f"{abs(sw['momentum_delta']):.0f}",
+                                            m=int(sw["clock_minute"]),
+                                            type=types.get(st, st.replace("_", " "))))
+    return " ".join(parts) or F["exp_fallback"].format(home=home, away=away)
 
 
-def _mb_data(df: pl.DataFrame) -> str:
-    """Augment committed momentum.json with a per-match explanation; return JSON for the modal."""
+def _mb_data(df: pl.DataFrame, F: dict, types: dict, lang: str) -> str:
+    """Augment committed momentum.json with a per-match explanation; return JSON for the modal.
+
+    Team names are localized for `lang` here so the modal title, share card, SVG aria-label and the
+    `explain` text all read in the page's language (the JS reads names straight from this blob).
+    """
     p = PROCESSED / "momentum.json"
     if not p.exists():
         return "[]"
     data = json.loads(p.read_text(encoding="utf-8"))
     for m in data:
-        m["explain"] = _match_explanation(df, m["id"], m.get("home") or "Home", m.get("away") or "Away")
+        home, away = _team(m.get("home") or "Home", lang), _team(m.get("away") or "Away", lang)
+        m["home"], m["away"] = home, away
+        m["explain"] = _match_explanation(df, m["id"], home, away, F, types)
     return json.dumps(data, ensure_ascii=False)
-
-
-def _placebo_tokens() -> dict[str, str]:
-    p = PROCESSED / "historical_placebo.parquet"
-    if not p.exists():
-        return {"PLACEBO_MEAN": "—", "PLACEBO_CI": "pending", "PLACEBO_N": ""}
-    df = pl.read_parquet(p)
-    top = on_top_rows(df)
-    mean, lo, hi = cluster_bootstrap_ci(top)
-    return {
-        "PLACEBO_MEAN": f"{mean:+.3f}",
-        "PLACEBO_CI": f"95% CI {lo:+.3f} … {hi:+.3f}",
-        "PLACEBO_N": f"{top.height} on-top stoppages · {top['match_id'].n_unique()} matches",
-    }
-
-
-def _cwc_placebo_tokens() -> dict[str, str]:
-    """CWC 2025 same-units placebo (FotMob momentum scale, directly comparable to 2026)."""
-    p = PROCESSED / "cwc2025_placebo.parquet"
-    if not p.exists():
-        return {"CWC_MEAN": "—", "CWC_CI": "pending", "CWC_N": ""}
-    df = pl.read_parquet(p)
-    top = on_top_rows(df)
-    mean, lo, hi = cluster_bootstrap_ci(top)
-    return {
-        "CWC_MEAN": f"{mean:+.1f}",
-        "CWC_CI": f"95% CI {lo:+.1f} … {hi:+.1f}",
-        "CWC_N": f"{top.height} on-top stoppages · {top['match_id'].n_unique()} matches",
-    }
 
 
 def _placebo_meanci(parquet_name: str):
@@ -325,38 +333,30 @@ def _placebo_meanci(parquet_name: str):
     return (mean, lo, hi, top.height, top["match_id"].n_unique())
 
 
-def _info(tip: str) -> str:
-    """A small accessible info-tooltip trigger (ⓘ). `tip` is plain text (no double quotes)."""
-    return f'<button type="button" class="info" aria-label="What does this mean?" data-tip="{tip}">i</button>'
+def _info(tip: str, aria: str) -> str:
+    """A small accessible info-tooltip trigger (ⓘ). `tip`/`aria` are plain text (no double quotes)."""
+    return f'<button type="button" class="info" aria-label="{aria}" data-tip="{tip}">i</button>'
 
 
-_TIP_READ = ("How to read this: the dot is the average momentum drop for the team that was on top; "
-             "the faint bar around it is the 95% range — where the true value very likely sits given "
-             "how few matches we have so far. When two bars overlap a lot, those numbers aren't "
-             "meaningfully different yet.")
-_TIP_PLACEBO = ("The exact same 2026 matches, but measured at random quiet minutes with no break "
-                "(around 10', 35', 55' and 80'). It shows how much the leading team fades with no "
-                "whistle at all — the pure cool-off baseline, i.e. regression to the mean.")
-
-
-def _compare_chart(effects: list[dict]) -> str:
+def _compare_chart(effects: list[dict], F: dict) -> str:
     """Dot-and-whisker comparison: the 2026 break drop vs no-break baselines, same FotMob scale."""
+    aria = F["info_aria"]
     rows_data = []
     hyd = {e["stoppage_type"]: e for e in effects}.get("hydration")
     if hyd and hyd.get("n"):
-        rows_data.append(("Hydration break", "World Cup 2026 · the headline",
-                          hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], None, ACCENT, True, _TIP_READ))
+        rows_data.append((F["cc_hyd_label"], F["cc_hyd_sub"],
+                          hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], hyd.get("n_matches"), ACCENT, True, F["tip_read"]))
     p26 = _placebo_meanci("placebo2026.parquet")
     if p26:
-        rows_data.append(("No break — same 2026 matches", "windowed at quiet, non-break minutes",
-                          p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, _TIP_PLACEBO))
+        rows_data.append((F["cc_p26_label"], F["cc_p26_sub"],
+                          p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, F["tip_placebo"]))
     cwc = _placebo_meanci("cwc2025_placebo.parquet")
     if cwc:
-        rows_data.append(("No break — Club World Cup 2025", "same US summer · at the 22′/67′ marks",
+        rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
                           cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], "#46412F", True, None))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
-        rows_data.append(("No break — World Cup 2022", "cooler Qatar winter · at the 22′/67′ marks",
+        rows_data.append((F["cc_wc22_label"], F["cc_wc22_sub"],
                           w22[0], w22[1], w22[2], w22[3], w22[4], "#8A8268", True, None))
 
     out = []
@@ -365,45 +365,30 @@ def _compare_chart(effects: list[dict]) -> str:
         losp, hisp = min(min(a, b) / SCALE * 100, 100), min(max(a, b) / SCALE * 100, 100)
         mp = min(abs(mean) / SCALE * 100, 100)
         dot_fill = color if solid else "#EFEBDF"
-        n_lbl = f"n = {n}" + (f" · {matches} matches" if matches else "")
+        n_lbl = f"n = {n}" + (F["cc_matches"].format(m=matches) if matches else "")
         out.append(f"""
         <div style="position:relative;margin-bottom:20px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}{_info(tip) if tip else ""}</span>
+            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}{_info(tip, aria) if tip else ""}</span>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A927E">{n_lbl}</span>
           </div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;color:#A89F88;margin-bottom:8px">{sub}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;color:#5A5547;margin-bottom:8px">{sub}</div>
           <div style="position:relative;height:26px">
             <div style="position:absolute;top:11px;height:4px;right:0;width:{mp:.2f}%;background:{color};opacity:{.9 if solid else .35}"></div>
             <div style="position:absolute;top:7px;height:12px;right:{losp:.2f}%;width:{hisp - losp:.2f}%;background:{color};opacity:.13"></div>
             <div style="position:absolute;top:7px;width:12px;height:12px;border-radius:50%;right:calc({mp:.2f}% - 6px);background:{dot_fill};border:2px solid {color};box-shadow:0 0 0 3px #EFEBDF"></div>
-            <span style="position:absolute;top:-4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;color:{color};right:calc({mp:.2f}% + 14px)">{mean:.1f}</span>
+            <span style="position:absolute;top:-4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;color:{color};right:calc({mp:.2f}% + 14px)">{mean:.0f}</span>
           </div>
         </div>""")
     if not out:
         return ""
     axis = ('<div style="display:flex;justify-content:space-between;font-family:\'IBM Plex Mono\',monospace;'
-            'font-size:10.5px;color:#B0A78F;margin-top:2px"><span>−30</span><span>−20</span><span>−10</span><span>0</span></div>')
+            'font-size:10.5px;color:#5A5547;margin-top:2px"><span>−30</span><span>−20</span><span>−10</span><span>0</span></div>')
     return '<div style="margin:26px 0 8px">' + "".join(out) + axis + "</div>"
 
 
-def _wc2022_placebo_tokens() -> dict[str, str]:
-    """2022 WC placebo via FotMob (same momentum scale as CWC/2026)."""
-    p = PROCESSED / "wc2022_placebo.parquet"
-    if not p.exists():
-        return {"WC22F_MEAN": "—", "WC22F_CI": "pending", "WC22F_N": ""}
-    df = pl.read_parquet(p)
-    top = on_top_rows(df)
-    mean, lo, hi = cluster_bootstrap_ci(top)
-    return {
-        "WC22F_MEAN": f"{mean:+.1f}",
-        "WC22F_CI": f"95% CI {lo:+.1f} … {hi:+.1f}",
-        "WC22F_N": f"{top.height} on-top · {top['match_id'].n_unique()} matches",
-    }
-
-
 def _heat_tokens(df: pl.DataFrame) -> dict[str, str]:
-    """Per-match heat distribution for the 'did they need them?' note."""
+    """Per-match heat distribution for the 'did they need them?' note (numeric, language-neutral)."""
     m = (df.group_by("match_id").agg(pl.col("wbgt").first(), pl.col("dome").first())
          .drop_nulls("wbgt"))
     if m.is_empty():
@@ -417,16 +402,15 @@ def _heat_tokens(df: pl.DataFrame) -> dict[str, str]:
     }
 
 
-def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str) -> str:
+def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str, F: dict) -> str:
     est = f"−{abs(hyd_mean):.1f}" if hyd_mean is not None else "—"
-    extra = ""
-    if len(snapshots) >= 2:
-        extra = f" Tracking across {len(snapshots)} snapshots so far."
+    extra = F["trend_extra"].format(k=len(snapshots)) if len(snapshots) >= 2 else ""
+    body = F["trend_sentence"].format(updated=updated, est=est, n=hyd_n, extra=extra)
     return f"""
   <section style="border-top:1px solid #DDD6C5;background:#EAE5D6">
     <div style="max-width:840px;margin:0 auto;padding:46px 40px">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:16px">Living analysis</div>
-      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#2B2820;max-width:60ch">Recomputed every matchday from the committed dataset. As of {updated}, the hydration swing sits at <strong style="font-weight:600">{est}</strong> across {hyd_n} on-top breaks.{extra} Watch it as the knockouts arrive — wider stakes, more data, a tighter interval.</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:16px">{F["trend_label"]}</div>
+      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#2B2820;max-width:60ch">{body}</p>
     </div>
   </section>"""
 
@@ -436,18 +420,25 @@ def build() -> str:
     site_figures = SITE / "figures"
     site_figures.mkdir(parents=True, exist_ok=True)
     # social/share assets live at the site root for absolute OG URLs (generated locally, committed)
-    for icon in ("og.png", "apple-touch-icon.png"):
+    for icon in ("og.png", "og.es.png", "apple-touch-icon.png"):
         src = REPORTS / "figures" / icon
         if src.exists():
             shutil.copyfile(src, SITE / icon)
 
     if not STOPPAGES_PARQUET.exists() or load_processed().is_empty():
-        out = SITE / "index.html"
-        out.write_text("<!doctype html><meta charset=utf-8><title>WC2026 Momentum</title>"
-                       "<body style='font-family:sans-serif;max-width:640px;margin:60px auto'>"
-                       "<h1>WC2026 — Stoppage Momentum</h1><p>No data yet. Check back after the next match.</p>",
-                       encoding="utf-8")
-        return str(out)
+        first_out = None
+        for lang in LANGS:  # write both siblings so the toggle/hreflang never dangle
+            other = _OUTFILE["es" if lang == "en" else "en"]
+            other_label = "Español" if lang == "en" else "English"
+            out = SITE / _OUTFILE[lang]
+            out.write_text(f"<!doctype html><html lang='{lang}'><meta charset=utf-8>"
+                           "<title>WC2026 Momentum</title>"
+                           "<body style='font-family:sans-serif;max-width:640px;margin:60px auto'>"
+                           "<h1>WC2026 — Stoppage Momentum</h1>"
+                           "<p>No data yet. Check back after the next match.</p>"
+                           f"<p><a href='{other}'>{other_label}</a></p>", encoding="utf-8")
+            first_out = first_out or str(out)
+        return first_out
 
     df = load_processed()
     effects = effect_by_type(df)
@@ -455,47 +446,76 @@ def build() -> str:
     hyd = by.get("hydration", {})
     snapshots = load_all_snapshots()
     snap_date = snapshots[-1]["date"] if snapshots else None
-    updated = _fmt_date_iso(snap_date)
+    names = _match_names()
 
     def mech(stype: str) -> str:
         e = by.get(stype)
-        return f"{e['mean_delta']:.1f}" if e and e["n"] else "—"
+        return f"{e['mean_delta']:.0f}" if e and e["n"] else "—"
 
-    tokens = {
-        "UPDATED_DATE": updated.upper(),
-        "N_MATCHES": str(df["match_id"].n_unique()),
-        "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
-        "HERO_DELTA": str(round(abs(hyd.get("mean_delta", 0)))) if hyd else "—",
-        "HYD_N": str(hyd.get("n", 0)),
-        "MONEY_ROWS": _money_rows(effects),
-        "CI_CAPTION": "95% INTERVAL (CLUSTER BOOTSTRAP)",
-        "INTERVAL_NOTE": ("Whiskers show the match-clustered bootstrap 95% interval; every interval sits "
-                          "left of zero. The effect holds across 4–6-minute windows — but with few "
-                          "match-clusters this far in, read the interval as indicative, not a p-value. "
-                          "The causal claim is held until the live sample is larger — see method."),
-        "COMPARE_SENTENCE": _compare_sentence(effects),
-        "COMPARE_CHART": _compare_chart(effects),
-        "EXTREMES": _extremes_block(df, _match_names()),
-        "MATCH_CARDS": _match_cards(site_figures),
-        "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
-        "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
-        **_placebo_tokens(),
-        **_cwc_placebo_tokens(),
-        **_wc2022_placebo_tokens(),
-        **_heat_tokens(df),
-        "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated),
-        "PAGES_URL": PAGES_URL,
-        "SNAPSHOT_DATE": snap_date or updated,
-        "SNAPSHOT_ISO": snap_date or "",
-        "MB_DATA": _mb_data(df),
+    # No-break placebo figures, computed once and tokenized so prose can't drift from the data.
+    def _absround(x) -> str:
+        return str(round(abs(x))) if x is not None else "—"
+
+    p26 = _placebo_meanci("placebo2026.parquet")
+    cwc = _placebo_meanci("cwc2025_placebo.parquet")
+    w22 = _placebo_meanci("wc2022_placebo.parquet")
+    nobreak = sorted(round(abs(x[0])) for x in (p26, cwc, w22) if x)
+    r2 = pre_level_r2(df)
+    data_tokens = {
+        "HERO_DELTA": _absround(hyd.get("mean_delta")) if hyd else "—",
+        "P26_DELTA": _absround(p26[0] if p26 else None),
+        "CWC_DELTA": _absround(cwc[0] if cwc else None),
+        "WC22_DELTA": _absround(w22[0] if w22 else None),
+        "NOBREAK_LO": str(nobreak[0]) if nobreak else "—",
+        "NOBREAK_HI": str(nobreak[-1]) if nobreak else "—",
+        "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
     }
 
-    html = TEMPLATE
-    for k, v in tokens.items():
-        html = html.replace("{{" + k + "}}", str(v))
-    out = SITE / "index.html"
-    out.write_text(html, encoding="utf-8")
-    return str(out)
+    first_out = None
+    for lang in LANGS:
+        S = STRINGS[lang]
+        F = FRAG[lang]
+        updated = _fmt_date_iso(snap_date, lang)
+        tokens = {
+            **S,
+            **_LANG_META[lang],
+            **data_tokens,
+            "UPDATED_DATE": updated.upper(),
+            "N_MATCHES": str(df["match_id"].n_unique()),
+            "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
+            "HYD_N": str(hyd.get("n", 0)),
+            "MONEY_ROWS": _money_rows(effects, LABELS[lang]),
+            "COMPARE_SENTENCE": _compare_sentence(effects, F),
+            "COMPARE_CHART": _compare_chart(effects, F),
+            "EXTREMES": _extremes_block(df, names, F, lang),
+            "MATCH_CARDS": _match_cards(site_figures, F, STAGE[lang], lang),
+            "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
+            "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
+            **_heat_tokens(df),
+            "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated, F),
+            "PAGES_URL": PAGES_URL,
+            "LANG_TOGGLE": _lang_toggle(lang),
+            "SNAPSHOT_DATE": snap_date or updated,
+            "SNAPSHOT_ISO": snap_date or "",
+            "JS_STRINGS": json.dumps(JS[lang], ensure_ascii=False),
+            "MB_DATA": _mb_data(df, F, TYPES[lang], lang),
+        }
+
+        page = TEMPLATE
+        for _ in range(6):  # iterate to a fixed point so tokens nested in prose values resolve
+            before = page
+            for k, v in tokens.items():
+                page = page.replace("{{" + k + "}}", str(v))
+            if page == before:
+                break
+        leftover = sorted(set(re.findall(r"\{\{[A-Z0-9_]+\}\}", page)))
+        if leftover:
+            raise ValueError(f"unresolved template tokens in {lang} build: {leftover}")
+        out = SITE / _OUTFILE[lang]
+        out.write_text(page, encoding="utf-8")
+        if first_out is None:
+            first_out = str(out)
+    return first_out or str(SITE / "index.html")
 
 
 if __name__ == "__main__":

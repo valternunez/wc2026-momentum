@@ -47,6 +47,24 @@ def cluster_bootstrap_ci(
     return point, float(lo), float(hi)
 
 
+def pre_level_r2(df: pl.DataFrame) -> float | None:
+    """R² of the leader's post-break swing on its pre-break level (on-top hydration breaks).
+
+    Quantifies the regression-to-the-mean gradient: how much of momentum_delta is explained by
+    how high a team was already riding when the whistle blew. Returns None if <3 points or no
+    variance. This is a genuine variance-explained share (not a chart magnitude).
+    """
+    top = on_top_rows(df).filter(pl.col("stoppage_type") == "hydration")
+    if top.height < 3:
+        return None
+    x = top["momentum_pre_5min_mean"].to_numpy()
+    y = top["momentum_delta"].to_numpy()
+    if float(x.std()) == 0.0 or float(y.std()) == 0.0:
+        return None
+    r = float(np.corrcoef(x, y)[0, 1])
+    return r * r
+
+
 def effect_by_type(df: pl.DataFrame, **boot_kw) -> list[dict]:
     """Per stoppage type: n, on-top mean delta, and a cluster-bootstrap 95% CI."""
     top = on_top_rows(df)

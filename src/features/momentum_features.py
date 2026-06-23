@@ -64,8 +64,8 @@ def window_stats(
 
 def _mean_slope(pts: list[tuple[float, float]]) -> tuple[float | None, float | None]:
     if len(pts) < 2:
-        if len(pts) == 1:
-            return pts[0][1], None
+        # <2 points: mean unreliable and slope undefined (per window_stats docstring), so a
+        # single-point window contributes no momentum_delta rather than a noisy one.
         return None, None
     xs = np.array([p[0] for p in pts], dtype=float)
     ys = np.array([p[1] for p in pts], dtype=float)
