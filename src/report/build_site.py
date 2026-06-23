@@ -39,6 +39,7 @@ SITE_BASE = "https://valternunez.github.io/wc2026-momentum/"
 
 _ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
 _KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
+UNKNOWN_TEAM = "?"  # single placeholder for a missing team name (used everywhere)
 
 # Per-language <head> meta + output filename. Sibling files keep relative asset paths valid.
 _LANG_META = {
@@ -153,19 +154,19 @@ def _match_cards(site_figures: Path, F: dict, stage: dict, lang: str) -> str:
             continue
         idx += 1
         shutil.copyfile(png, dest / f"{m['id']}.png")
-        home, away = _team(m.get("home") or "?", lang), _team(m.get("away") or "?", lang)
-        home, away = html.escape(home), html.escape(away)
+        home = html.escape(_team(m.get("home") or UNKNOWN_TEAM, lang))
+        away = html.escape(_team(m.get("away") or UNKNOWN_TEAM, lang))
         date = _fmt_date_epoch(m.get("ts"))
         aria = F["open_chart_aria"].format(h=home, a=away)
         card = f"""
-          <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{aria}" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#5A5547">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
-            <div style="display:flex;flex-direction:column;gap:4px">
-              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
-            </div>
+          <button type="button" class="mb-card" data-mid="{m['id']}" aria-label="{aria}" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer;font:inherit;text-align:left;width:100%">
+            <span style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#5A5547">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></span>
+            <span style="display:flex;flex-direction:column;gap:4px">
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></span>
+            </span>
             <img src="figures/matches/{m['id']}.png" alt="" loading="lazy" style="width:100%;height:74px;object-fit:contain;object-position:center;display:block;margin-top:2px"/>
-          </div>"""
+          </button>"""
         label, order = _stage_meta(m.get("league"), m.get("stage"), stage)
         g = groups.setdefault(label, {"order": order, "cards": []})
         g["cards"].append(card)
@@ -203,7 +204,7 @@ def _match_names() -> dict[str, tuple[str, str]]:
     p = PROCESSED / "momentum.json"
     if not p.exists():
         return {}
-    return {str(m["id"]): (m.get("home") or "?", m.get("away") or "?")
+    return {str(m["id"]): (m.get("home") or UNKNOWN_TEAM, m.get("away") or UNKNOWN_TEAM)
             for m in json.loads(p.read_text(encoding="utf-8"))}
 
 
@@ -229,18 +230,18 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]], F: dict
     vs, frm = F["extremes_vs"], F["extremes_from"]
 
     def row(r: dict) -> str:
-        mid = str(r["match_id"]); h, a = names.get(mid, ("?", "?"))
+        mid = str(r["match_id"]); h, a = names.get(mid, (UNKNOWN_TEAM, UNKNOWN_TEAM))
         h, a = html.escape(_team(h, lang)), html.escape(_team(a, lang))
         team = html.escape(_team(r["team"], lang))
         drop = r["momentum_delta"]; sign = "−" if drop < 0 else "+"
         aria = F["open_chart_aria"].format(h=h, a=a)
-        return (f'<div class="mb-card" data-mid="{mid}" role="button" tabindex="0" '
-                f'aria-label="{aria}" style="cursor:pointer;display:flex;'
+        return (f'<button type="button" class="mb-card" data-mid="{mid}" '
+                f'aria-label="{aria}" style="cursor:pointer;display:flex;width:100%;font:inherit;text-align:left;background:none;border:none;'
                 f'justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid #E6E0CF">'
                 f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813">{h} {vs} {a}</span>'
                 f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#1A1813;white-space:nowrap">'
                 f'{team} {sign}{abs(drop):.0f} '
-                f'<span style="color:#5A5547">{frm} +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></div>')
+                f'<span style="color:#5A5547">{frm} +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></button>')
 
     return f"""
       <div style="margin:4px 0 32px">
@@ -315,7 +316,8 @@ def _mb_data(df: pl.DataFrame, F: dict, types: dict, lang: str) -> str:
         return "[]"
     data = json.loads(p.read_text(encoding="utf-8"))
     for m in data:
-        home, away = _team(m.get("home") or "Home", lang), _team(m.get("away") or "Away", lang)
+        home = _team(m.get("home") or UNKNOWN_TEAM, lang)
+        away = _team(m.get("away") or UNKNOWN_TEAM, lang)
         m["home"], m["away"] = home, away
         m["explain"] = _match_explanation(df, m["id"], home, away, F, types)
     return json.dumps(data, ensure_ascii=False)
@@ -402,6 +404,21 @@ def _heat_tokens(df: pl.DataFrame) -> dict[str, str]:
     }
 
 
+# §06 heat stat grid. Inner {{HEAT_*}} tokens resolve in the multi-pass; "" when there's no WBGT data
+# (so the page never shows a "0/0" / "—°" empty grid).
+_HEAT_GRID_HTML = (
+    '<div style="display:flex;gap:30px;flex-wrap:wrap;border-top:2px solid #1A1813;border-bottom:1px solid #DDD6C5;padding:26px 0;margin-bottom:26px">'
+    '<div style="flex:1 1 150px"><div style="font-family:\'Newsreader\',serif;font-size:44px;font-weight:500;color:#E5482E;line-height:1">{{HEAT_HOT32}}/{{HEAT_N}}</div><div style="font-family:\'IBM Plex Sans\',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC32}}</div></div>'
+    '<div style="flex:1 1 150px"><div style="font-family:\'Newsreader\',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_DOMED}}</div><div style="font-family:\'IBM Plex Sans\',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC_DOME}}</div></div>'
+    '<div style="flex:1 1 150px"><div style="font-family:\'Newsreader\',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_MEDIAN}}°</div><div style="font-family:\'IBM Plex Sans\',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC_MEDIAN}}</div></div>'
+    '</div>'
+)
+
+
+def _heat_grid(has_data: bool) -> str:
+    return _HEAT_GRID_HTML if has_data else ""
+
+
 def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str, F: dict) -> str:
     est = f"−{abs(hyd_mean):.1f}" if hyd_mean is not None else "—"
     extra = F["trend_extra"].format(k=len(snapshots)) if len(snapshots) >= 2 else ""
@@ -461,7 +478,10 @@ def build() -> str:
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     nobreak = sorted(round(abs(x[0])) for x in (p26, cwc, w22) if x)
     r2 = pre_level_r2(df)
+    heat = _heat_tokens(df)
     data_tokens = {
+        **heat,
+        "HEAT_GRID": _heat_grid(heat["HEAT_N"] != "0"),
         "HERO_DELTA": _absround(hyd.get("mean_delta")) if hyd else "—",
         "P26_DELTA": _absround(p26[0] if p26 else None),
         "CWC_DELTA": _absround(cwc[0] if cwc else None),
@@ -491,7 +511,6 @@ def build() -> str:
             "MATCH_CARDS": _match_cards(site_figures, F, STAGE[lang], lang),
             "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),
             "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
-            **_heat_tokens(df),
             "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated, F),
             "PAGES_URL": PAGES_URL,
             "LANG_TOGGLE": _lang_toggle(lang),

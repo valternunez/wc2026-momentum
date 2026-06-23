@@ -58,6 +58,14 @@ TEMPLATE = """<!DOCTYPE html>
   .lp{animation:livepulse 1.8s ease-in-out infinite}
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
+  #mb-data{margin-top:14px}
+  #mb-data summary{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5A5547;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px}
+  #mb-data summary::-webkit-details-marker{display:none}
+  #mb-data summary::after{content:'+';color:#9A927E}
+  #mb-data[open] summary::after{content:'–'}
+  #mb-data table{border-collapse:collapse;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#2B2820}
+  #mb-data th,#mb-data td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid #E6E0CF;white-space:nowrap}
+  #mb-data th{color:#5A5547;font-weight:600;letter-spacing:.04em}
   .src{font-family:'IBM Plex Mono',monospace;color:#C03A22;text-decoration:none;border-bottom:1px solid #C03A22}
   .info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #BBB29A;background:none;color:#8A8268;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:11px;font-weight:700;line-height:1;cursor:pointer;vertical-align:baseline;margin-left:5px;padding:0;transition:border-color .12s,color .12s,background .12s}
   .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
@@ -233,11 +241,7 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="max-width:840px;margin:0 auto;padding:60px 40px 56px">
       <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">{{S06_HEAD}}</h2>
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820;margin-bottom:30px;text-wrap:pretty">{{S06_LEAD}}</p>
-      <div style="display:flex;gap:30px;flex-wrap:wrap;border-top:2px solid #1A1813;border-bottom:1px solid #DDD6C5;padding:26px 0;margin-bottom:26px">
-        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#E5482E;line-height:1">{{HEAT_HOT32}}/{{HEAT_N}}</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC32}}</div></div>
-        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_DOMED}}</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC_DOME}}</div></div>
-        <div style="flex:1 1 150px"><div style="font-family:'Newsreader',serif;font-size:44px;font-weight:500;color:#1A1813;line-height:1">{{HEAT_MEDIAN}}°</div><div style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:#46412F;margin-top:8px;line-height:1.45">{{HEAT_DESC_MEDIAN}}</div></div>
-      </div>
+      {{HEAT_GRID}}
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820">{{S06_CONCL}}</p>
       <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;color:#5A5547;margin-top:20px;line-height:1.6">{{S06_FOOTNOTE}}</p>
     </div>
@@ -289,7 +293,7 @@ TEMPLATE = """<!DOCTYPE html>
 <!-- MATCH MODAL -->
 <div id="mb-modal" hidden style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(26,24,19,.55);padding:20px">
   <div role="dialog" aria-modal="true" aria-labelledby="mb-title" style="background:#FCFAF3;color:#1A1813;width:min(780px,96vw);max-width:96vw;max-height:92vh;overflow-y:auto;overflow-x:hidden;border-radius:4px;box-shadow:0 24px 70px rgba(26,24,19,.4);position:relative;padding:30px 32px 28px">
-    <button id="mb-close" aria-label="{{MODAL_CLOSE_ARIA}}" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#E5482E">{{MODAL_CLOSE}}</button>
+    <button id="mb-close" aria-label="{{MODAL_CLOSE_ARIA}}" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#E5482E"><span aria-hidden="true">{{MODAL_CLOSE}}</span></button>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">{{MODAL_KICKER}}</div>
     <h3 id="mb-title" style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(24px,4vw,34px);line-height:1.1;margin-bottom:6px"></h3>
     <div id="mb-sub" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;letter-spacing:.06em;margin-bottom:18px"></div>
@@ -303,6 +307,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#6E90AE;display:inline-block;border:1.5px solid #FCFAF3;box-shadow:0 0 0 1px #CFC6B0;flex:none"></span>{{LEG_GOAL}}</span>
     </div>
     <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
+    <details id="mb-data"></details>
     <style>
      .mb-seg{display:inline-flex;border:1px solid #D2CAB6;border-radius:3px;overflow:hidden}
      .mb-seg button{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;padding:6px 10px;background:#F4F0E5;color:#8A8268;border:none;border-left:1px solid #E2DBCA;cursor:pointer}
@@ -330,7 +335,7 @@ TEMPLATE = """<!DOCTYPE html>
 (function(){  // match-grid stage tabs (All / Group / Knockout) + mobile short-scroll
   var tabs=document.querySelectorAll('.mb-tab');
   var mq=window.matchMedia('(max-width:700px)');
-  function apply(){
+  function apply(initial){
     var act='all';
     tabs.forEach(function(t){ if(t.classList.contains('on')) act=t.getAttribute('data-filter'); });
     var vis=[];
@@ -338,13 +343,15 @@ TEMPLATE = """<!DOCTYPE html>
       var show=(act==='all'||act===d.getAttribute('data-stage'));
       d.style.display=show?'':'none'; if(show) vis.push(d);
     });
-    vis.forEach(function(d,i){ d.open = mq.matches ? (i===0) : true; });  // mobile: only first open
+    // Set the open/closed state only on first load (mobile: only the first group open). On tab
+    // clicks we just change visibility, leaving each group as the user left it.
+    if(initial){ vis.forEach(function(d,i){ d.open = mq.matches ? (i===0) : true; }); }
   }
   tabs.forEach(function(t){ t.addEventListener('click', function(){
     tabs.forEach(function(x){ var on=(x===t); x.classList.toggle('on',on); x.setAttribute('aria-pressed', on?'true':'false'); });
-    apply();
+    apply(false);
   }); });
-  apply();
+  apply(true);
 })();
 (function(){  // plain-language info tooltips: hover (desktop) / tap (mobile) / Enter; Esc or click-away to close
   var pop=document.createElement('div'); pop.id='tip-pop'; pop.setAttribute('role','tooltip');
@@ -488,6 +495,25 @@ TEMPLATE = """<!DOCTYPE html>
     });
     hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity',0); dot.setAttribute('opacity',0); tip.style.opacity=0; });
     chart.appendChild(svg);
+
+    // keyboard + screen-reader fallback: a collapsible "Chart data" table of the key moments
+    // (every stoppage + goal: minute, event, momentum value, which team was on top).
+    var box=document.getElementById('mb-data');
+    if(box){
+      function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+      function momAt(min){ var b=s[0]; for(var i=0;i<s.length;i++){ if(Math.abs(s[i][0]-min)<Math.abs(b[0]-min)) b=s[i]; } return b[1]; }
+      var moments=[];
+      (m.stoppages||[]).forEach(function(st){ moments.push({min:st[0], ev:typeName(st[1])}); });
+      (m.goals||[]).forEach(function(g){ moments.push({min:g.m, ev:(g.k==='miss'?T.miss:T.goal)+(g.who?' '+g.who:'')+(g.sc?' '+g.sc:'')}); });
+      moments.sort(function(a,b){ return a.min-b.min; });
+      var rows='';
+      moments.forEach(function(mm){ var v=momAt(mm.min), who=v>=0?m.home:m.away;
+        rows+='<tr><td>'+Math.round(mm.min)+"'</td><td>"+esc(mm.ev)+'</td><td>'+(v>0?'+':'')+v+'</td><td>'+esc(who)+'</td></tr>'; });
+      if(rows){
+        box.hidden=false;
+        box.innerHTML='<summary>'+esc(T.dataLabel)+'</summary><table><thead><tr><th>'+esc(T.thMin)+'</th><th>'+esc(T.thEvent)+'</th><th>'+esc(T.thMomentum)+'</th><th>'+esc(T.thLeader)+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      } else { box.hidden=true; box.innerHTML=''; }
+    }
   }
 
   // ---- shareable themed PNG (canvas) -------------------------------------
@@ -606,12 +632,7 @@ TEMPLATE = """<!DOCTYPE html>
   document.addEventListener('click', function(ev){
     var card=ev.target.closest('[data-mid]'); if(card){ open(card.getAttribute('data-mid')); }
   });
-  document.addEventListener('keydown', function(ev){   // keyboard-activate cards/rows
-    if(ev.key!=='Enter' && ev.key!==' ' && ev.key!=='Spacebar') return;
-    if(!ev.target.closest) return;
-    var card=ev.target.closest('[data-mid]');
-    if(card){ ev.preventDefault(); open(card.getAttribute('data-mid')); }
-  });
+  // (cards/rows are native <button>s, so Enter/Space activation is handled by the browser)
   document.querySelectorAll('.mb-seg').forEach(function(seg){
     seg.addEventListener('click', function(ev){
       var b=ev.target.closest('button'); if(!b) return;
