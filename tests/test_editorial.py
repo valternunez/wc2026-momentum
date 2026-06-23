@@ -93,6 +93,18 @@ def test_parse_goals():
     assert g[3]["k"] == "miss" and g[3]["sc"] == ""
 
 
+def test_fmt_date_helpers_distinct():
+    # regression guard: the ISO and epoch formatters must not shadow each other
+    from src.report.build_site import _fmt_date_epoch, _fmt_date_iso
+
+    iso = _fmt_date_iso("2026-06-22")
+    assert "2026" in iso and "22" in iso          # "22 Jun 2026"-style
+    assert _fmt_date_iso(None)                      # falls back to today (non-empty)
+    assert _fmt_date_epoch(1781204400) == "11/06/2026"
+    assert _fmt_date_epoch("2026-06-22") == ""      # epoch fn rejects ISO strings, doesn't crash
+    assert _fmt_date_epoch(None) == ""
+
+
 def test_stage_meta():
     from src.report.build_site import _stage_meta
 

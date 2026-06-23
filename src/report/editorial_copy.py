@@ -47,9 +47,11 @@ TEMPLATE = """<!DOCTYPE html>
   [hidden]{display:none!important}
   ::selection{background:#E5482E;color:#FCFAF3}
   @keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
+  .lp{animation:livepulse 1.8s ease-in-out infinite}
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
   .src{font-family:'IBM Plex Mono',monospace;color:#E5482E;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.4)}
+  @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card{transition:none}.mb-card:hover{transform:none} }
 </style></head>
 <body>
 <article style="background:#EFEBDF;color:#1A1813;font-family:'IBM Plex Sans',sans-serif;width:100%;min-height:100vh;overflow-x:hidden">
@@ -58,7 +60,7 @@ TEMPLATE = """<!DOCTYPE html>
   <header style="max-width:840px;margin:0 auto;padding:22px 40px 0;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
     <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#1A1813;font-weight:600">WC2026 · Stoppage Momentum Study</div>
     <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
-      <span style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block;animation:livepulse 1.8s ease-in-out infinite"></span>
+      <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
       LIVE · UPDATED {{UPDATED_DATE}}
     </div>
   </header>
@@ -507,6 +509,12 @@ TEMPLATE = """<!DOCTYPE html>
 
   document.addEventListener('click', function(ev){
     var card=ev.target.closest('[data-mid]'); if(card){ open(card.getAttribute('data-mid')); }
+  });
+  document.addEventListener('keydown', function(ev){   // keyboard-activate cards/rows
+    if(ev.key!=='Enter' && ev.key!==' ' && ev.key!=='Spacebar') return;
+    if(!ev.target.closest) return;
+    var card=ev.target.closest('[data-mid]');
+    if(card){ ev.preventDefault(); open(card.getAttribute('data-mid')); }
   });
   document.querySelectorAll('.mb-seg').forEach(function(seg){
     seg.addEventListener('click', function(ev){

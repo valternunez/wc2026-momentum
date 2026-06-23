@@ -36,7 +36,8 @@ _ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
 _MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
-def _fmt_date(iso: str | None) -> str:
+def _fmt_date_iso(iso: str | None) -> str:
+    """ISO date (YYYY-MM-DD) → '22 June 2026' (falls back to today)."""
     if not iso:
         d = datetime.now(timezone.utc)
         return f"{d.day} {_MONTHS[d.month]} {d.year}"
@@ -79,7 +80,7 @@ _KO_LABEL = {"1/16": "Round of 32", "1/8": "Round of 16", "1/4": "Quarter-finals
 _KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
 
 
-def _fmt_date(ts) -> str:
+def _fmt_date_epoch(ts) -> str:
     """Epoch seconds → DD/MM/YYYY (UTC, kickoff date)."""
     if not ts:
         return ""
@@ -121,7 +122,7 @@ def _match_cards(site_figures: Path) -> str:
         idx += 1
         shutil.copyfile(png, dest / f"{m['id']}.png")
         home, away = m.get("home") or "?", m.get("away") or "?"
-        date = _fmt_date(m.get("ts"))
+        date = _fmt_date_epoch(m.get("ts"))
         card = f"""
           <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{home} v {away} — open chart" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#B0A78F">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
@@ -363,7 +364,7 @@ def build() -> str:
     hyd = by.get("hydration", {})
     snapshots = load_all_snapshots()
     snap_date = snapshots[-1]["date"] if snapshots else None
-    updated = _fmt_date(snap_date)
+    updated = _fmt_date_iso(snap_date)
 
     def mech(stype: str) -> str:
         e = by.get(stype)

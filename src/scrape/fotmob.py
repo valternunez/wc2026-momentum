@@ -39,6 +39,12 @@ _UA = (
 
 # --- auth -------------------------------------------------------------------
 def _secret() -> str:
+    if not _SECRET_PATH.exists():
+        raise RuntimeError(
+            f"FotMob secret file missing: {_SECRET_PATH.name}. It is gitignored — create it locally "
+            "with FotMob's easter-egg lyrics (byte-exact, no trailing newline). Needed for scraping; "
+            "CI/report builds and tests (which use fixtures) do not need it."
+        )
     return _SECRET_PATH.read_text(encoding="utf-8")
 
 

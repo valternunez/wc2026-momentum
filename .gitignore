@@ -34,3 +34,6 @@ Thumbs.db
 # --- Design source assets (kept local, not part of the repo) ---
 *.zip
 WC2026 Momentum Editorial Design/
+
+# FotMob auth secret (easter-egg lyrics) — local-only, needed for scraping
+src/scrape/fotmob_secret_lyrics.txt
