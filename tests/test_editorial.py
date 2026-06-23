@@ -69,8 +69,9 @@ def test_build_editorial_page():
     # match date on grid cards (DD/MM/YYYY)
     import re
     assert re.search(r"\d{2}/\d{2}/\d{4}", html)
-    # goal markers: data + legend + chart glyph
-    assert '"goals"' in html and "⚽" in html
+    # goal markers: data embedded + legend entry (clean disc marker, no emoji)
+    assert '"goals"' in html and ">GOAL</span>" in html
+    assert "⚽" not in html  # emoji replaced by the editorial disc marker
 
 
 def test_parse_goals():

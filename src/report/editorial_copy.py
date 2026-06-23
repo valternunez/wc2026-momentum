@@ -285,7 +285,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
-      <span style="display:flex;align-items:center;gap:6px">&#9917; GOAL</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#6E90AE;display:inline-block;border:1.5px solid #FCFAF3;box-shadow:0 0 0 1px #CFC6B0;flex:none"></span>GOAL</span>
     </div>
     <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
     <style>
@@ -369,16 +369,18 @@ TEMPLATE = """<!DOCTYPE html>
       var x=X(st[0]);
       svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':'4 3'}));
     });
-    // goals (solid guide in the scoring side's colour + a ball glyph up top); missed penalty = muted ✗
+    // goals: a thin guide in the scoring side's colour, capped by a disc up top (filled = scored,
+    // hollow ring = missed penalty). Cleaner than an emoji and still team-coloured.
     (m.goals||[]).forEach(function(g){
       if(g.m<minMin-1 || g.m>maxMin+1) return;
-      var x=X(g.m);
+      var x=X(g.m), cy=pad.t-2;
       if(g.k==='miss'){
-        svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:t.sub,'stroke-width':1.2,'stroke-dasharray':'2 3',opacity:.7}));
-        var xm=el('text',{x:x,y:14,'text-anchor':'middle','font-size':12,fill:t.sub}); xm.textContent='✗'; svg.appendChild(xm);
+        svg.appendChild(el('line',{x1:x,y1:cy,x2:x,y2:H-pad.b, stroke:t.sub,'stroke-width':1.2,'stroke-dasharray':'2 3',opacity:.55}));
+        svg.appendChild(el('circle',{cx:x,cy:cy,r:4, fill:t.bg, stroke:t.sub,'stroke-width':1.6}));
       } else {
-        svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:(g.h?t.homeFill:t.awayFill),'stroke-width':1.6,opacity:.6}));
-        var gb=el('text',{x:x,y:14,'text-anchor':'middle','font-size':13}); gb.textContent='⚽'; svg.appendChild(gb);
+        var col=g.h?t.homeFill:t.awayFill;
+        svg.appendChild(el('line',{x1:x,y1:cy,x2:x,y2:H-pad.b, stroke:col,'stroke-width':1.4,opacity:.5}));
+        svg.appendChild(el('circle',{cx:x,cy:cy,r:4.6, fill:col, stroke:t.bg,'stroke-width':1.6}));
       }
     });
     [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var tx=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:t.sub}); tx.textContent=mm+"'"; svg.appendChild(tx); }});
@@ -397,8 +399,8 @@ TEMPLATE = """<!DOCTYPE html>
       dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('opacity',1);
       var near=(m.stoppages||[]).filter(function(st){return Math.abs(st[0]-best[0])<1.5;}).map(function(st){return st[1].replace(/_/g,' ');});
       var ng=(m.goals||[]).filter(function(g){return Math.abs(g.m-best[0])<1.6;}).map(function(g){
-        return g.k==='miss' ? ('✗ '+(g.who||'')+' pen miss')
-          : '⚽ '+(g.who||'')+(g.sc?' '+g.sc:'')+(g.k&&g.k!=='miss'?' ('+g.k+')':''); });
+        return g.k==='miss' ? ('○ '+(g.who||'')+' pen miss')
+          : '● '+(g.who||'')+(g.sc?' '+g.sc:'')+(g.k&&g.k!=='miss'?' ('+g.k+')':''); });
       var extra=near.concat(ng);
       var who=best[1]>=0?(m.home):(m.away);
       tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(extra.length?' · '+extra.join(' · '):'');
@@ -427,14 +429,15 @@ TEMPLATE = """<!DOCTYPE html>
     ctx.textAlign='center';
     (m.goals||[]).forEach(function(g){
       if(g.m<minMin-1 || g.m>maxMin+1) return;
-      var x=X(g.m);
+      var x=X(g.m), cy=box.y-2;
       if(g.k==='miss'){
-        ctx.strokeStyle=t.sub; ctx.lineWidth=1.6; ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(x,box.y); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle=t.sub; ctx.font="20px 'IBM Plex Mono'"; ctx.fillText('✗', x, box.y+22);
+        ctx.strokeStyle=t.sub; ctx.lineWidth=1.6; ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(x, cy, 6.5, 0, 6.2832); ctx.fillStyle=t.bg; ctx.fill(); ctx.lineWidth=2.2; ctx.strokeStyle=t.sub; ctx.stroke();
       } else {
-        ctx.strokeStyle=(g.h?t.homeFill:t.awayFill); ctx.globalAlpha=.6; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(x,box.y); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.globalAlpha=1;
-        ctx.font="22px 'IBM Plex Mono'"; ctx.fillText('⚽', x, box.y+22);
-        if(g.sc){ ctx.font="600 13px 'IBM Plex Mono'"; ctx.fillStyle=t.ink; ctx.fillText(g.sc, x, box.y+40); }
+        var col=(g.h?t.homeFill:t.awayFill);
+        ctx.strokeStyle=col; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.globalAlpha=1;
+        ctx.beginPath(); ctx.arc(x, cy, 7.5, 0, 6.2832); ctx.fillStyle=col; ctx.fill(); ctx.lineWidth=2.4; ctx.strokeStyle=t.bg; ctx.stroke();
+        if(g.sc){ ctx.font="600 13px 'IBM Plex Mono'"; ctx.fillStyle=t.ink; ctx.fillText(g.sc, x, box.y+30); }
       }
     });
     ctx.fillStyle=t.sub; ctx.font="22px 'IBM Plex Mono'"; ctx.textAlign='center';
