@@ -94,6 +94,10 @@ def fetch_match_details(match_id: int | str, *, client=None, force: bool = False
     if path.exists() and not force:
         return json.loads(path.read_text(encoding="utf-8"))
     data = _get(client or make_client(), f"/api/data/matchDetails?matchId={match_id}")
+    # payload-shape guard: a gross schema change should fail loudly here, not silently parse to []
+    missing = [k for k in ("general", "header", "content") if k not in data]
+    if missing:
+        raise RuntimeError(f"FotMob matchDetails {match_id}: unexpected payload shape, missing {missing}")
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     return data
 

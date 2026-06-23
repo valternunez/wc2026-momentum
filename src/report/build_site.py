@@ -392,6 +392,7 @@ def build() -> str:
         "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated),
         "PAGES_URL": PAGES_URL,
         "SNAPSHOT_DATE": snap_date or updated,
+        "SNAPSHOT_ISO": snap_date or "",
         "MB_DATA": _mb_data(df),
     }
 

@@ -37,3 +37,6 @@ WC2026 Momentum Editorial Design/
 
 # FotMob auth secret (easter-egg lyrics) — local-only, needed for scraping
 src/scrape/fotmob_secret_lyrics.txt
+
+# Local run heartbeat/logs
+logs/

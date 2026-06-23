@@ -110,6 +110,15 @@ def discover_scraped_ids(source: str = DEFAULT_SOURCE) -> list[str]:
     return sorted(p.name for p in RAW_SOFASCORE.iterdir() if (p / "graph.json").exists())
 
 
+def _guard_rowcount(prev: int, new: int, *, force: bool) -> None:
+    """Raise if the rebuilt table lost >50% of rows vs the committed parquet (unless forced)."""
+    if not force and prev > 0 and new < max(1, prev // 2):
+        raise RuntimeError(
+            f"Refusing to overwrite stoppages.parquet: rows {prev} -> {new} (>50% drop). "
+            "Likely a source/payload regression — investigate, or re-run with --force to override."
+        )
+
+
 def build_table(match_ids: list[str], source: str = DEFAULT_SOURCE) -> pl.DataFrame:
     rows: list[dict[str, Any]] = []
     for mid in match_ids:
@@ -146,6 +155,13 @@ def run(
     all_ids = sorted(set(discover_scraped_ids(source)) | set(map(str, match_ids)))
     df = build_table(all_ids, source)
 
+    # coverage: surface matches that produced no rows (pending, missing data, or a payload-shape change)
+    covered = set(df["match_id"].unique().to_list()) if not df.is_empty() else set()
+    missing = [m for m in all_ids if m not in covered]
+    if missing:
+        shown = ", ".join(missing[:12]) + (" …" if len(missing) > 12 else "")
+        print(f"[build] WARNING: {len(missing)}/{len(all_ids)} matches produced 0 rows ({shown})")
+
     # Confounder enrichment (venue dome + weather) fills dome/temp_c/humidity/wbgt.
     # Hits Open-Meteo, so it's opt-out via --no-enrich for fast offline rebuilds.
     # enrich_stoppages is resilient (unknown venue / failed fetch -> None, never raises).
@@ -155,9 +171,16 @@ def run(
         df = enrich_stoppages(df)
         print("[enrich] venue + weather columns filled")
 
+    # guardrails — never overwrite a good committed parquet with garbage (override with --force)
+    if set(df.columns) != set(COLUMNS):
+        raise RuntimeError(f"parquet schema drift: {sorted(set(COLUMNS) ^ set(df.columns))}")
+    if STOPPAGES_PARQUET.exists():
+        _guard_rowcount(pl.read_parquet(STOPPAGES_PARQUET).height, df.height, force=force)
+
     STOPPAGES_PARQUET.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(STOPPAGES_PARQUET)
-    print(f"[build] {df.height} rows from {len(all_ids)} matches -> {STOPPAGES_PARQUET}")
+    print(f"[build] {df.height} rows from {len(all_ids)} matches "
+          f"({len(covered)} with data) -> {STOPPAGES_PARQUET}")
 
     if date:
         path = write_snapshot(df, date)
@@ -195,7 +218,8 @@ def _write_momentum_json(match_ids: list[str], df: pl.DataFrame) -> None:
         stoppages = []
         if df is not None and not df.is_empty():
             sub = (df.filter(pl.col("match_id") == str(mid))
-                     .select(["clock_minute", "stoppage_type"]).unique().sort("clock_minute"))
+                     .select(["clock_minute", "stoppage_type"]).unique()
+                     .sort(["clock_minute", "stoppage_type"]))  # tie-break for deterministic output
             stoppages = [[r["clock_minute"], r["stoppage_type"]] for r in sub.to_dicts()]
         tc = (raw.get("general") or {}).get("teamColors") or {}
         colors = None
@@ -280,8 +304,14 @@ def discover_finished_wc_ids(days: int, end_date: str | None) -> list[str]:
     existing: set[str] = set()
     if MATCH_IDS_FILE.exists():
         existing = {str(x) for x in json.loads(MATCH_IDS_FILE.read_text(encoding="utf-8"))}
+    # a bad FotMob day returns 0 — don't clobber the tracked list with an empty discovery
+    if not found and existing:
+        print(f"[discover] WARNING: 0 matches found over {days}d; keeping existing {len(existing)} (no overwrite)")
+        return sorted(existing, key=int)
     merged = sorted(existing | found, key=int)
-    MATCH_IDS_FILE.write_text(json.dumps(merged), encoding="utf-8")
+    tmp = MATCH_IDS_FILE.with_name(MATCH_IDS_FILE.name + ".tmp")  # atomic: write temp then replace
+    tmp.write_text(json.dumps(merged), encoding="utf-8")
+    tmp.replace(MATCH_IDS_FILE)
     print(f"[discover] {len(found)} finished WC matches over {days}d; tracking {len(merged)} total")
     return merged
 

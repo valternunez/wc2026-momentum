@@ -64,6 +64,7 @@ TEMPLATE = """<!DOCTYPE html>
       LIVE · UPDATED {{UPDATED_DATE}}
     </div>
   </header>
+  <div id="freshness" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E">⚠ The live scraper hasn't refreshed in a while — this data was last updated <b>{{UPDATED_DATE}}</b>.</div>
   <div style="max-width:840px;margin:14px auto 0;padding:0 40px"><div style="height:2px;background:#1A1813"></div></div>
 
   <!-- HERO -->
@@ -309,6 +310,13 @@ TEMPLATE = """<!DOCTYPE html>
   </div>
 </div>
 
+<script>
+(function(){  // data-freshness: reveal the banner if the committed snapshot is > ~36h old at view time
+  var iso="{{SNAPSHOT_ISO}}"; if(!iso) return;
+  var ageH=(Date.now() - new Date(iso+"T12:00:00Z").getTime())/3.6e6;
+  if(ageH>36){ var b=document.getElementById('freshness'); if(b) b.hidden=false; }
+})();
+</script>
 <script type="application/json" id="mb-data">{{MB_DATA}}</script>
 <script>
 (function(){

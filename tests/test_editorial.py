@@ -74,6 +74,8 @@ def test_build_editorial_page():
     assert "⚽" not in html  # emoji replaced by the editorial disc marker
     # VAR marker distinct from hydration: violet + dotted, old green gone
     assert "dotted #7A5CC0" in html and "#2E8B57" not in html
+    # data-freshness banner wired (hidden by default; JS reveals if snapshot is stale)
+    assert 'id="freshness"' in html and 'var iso=' in html
 
 
 def test_parse_goals():
