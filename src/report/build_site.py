@@ -140,15 +140,28 @@ def _match_cards(site_figures: Path) -> str:
         return '<p style="font-family:IBM Plex Mono,monospace;color:#948D7C">Match panels render on the next local update.</p>'
 
     out = []
+    has_group = has_knockout = False
     for label in sorted(groups, key=lambda lb: groups[lb]["order"]):
         cards = groups[label]["cards"]
+        stage = "group" if groups[label]["order"][0] == 0 else "knockout"  # 0=group; knockout/other -> knockout
+        has_group = has_group or stage == "group"
+        has_knockout = has_knockout or stage == "knockout"
         out.append(
-            '<details class="grp" open>'
+            f'<details class="grp" data-stage="{stage}" open>'
             f'<summary class="grp-h"><span>{label}</span><span class="grp-n">{len(cards)}</span></summary>'
             '<div class="grp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:14px">'
             + "".join(cards) + "</div></details>"
         )
-    return "".join(out)
+
+    # phase filter tabs (Knockouts only once those matches exist)
+    tabs = ['<button class="mb-tab on" role="tab" aria-selected="true" data-filter="all">All</button>']
+    if has_group:
+        tabs.append('<button class="mb-tab" role="tab" aria-selected="false" data-filter="group">Group stage</button>')
+    if has_knockout:
+        tabs.append('<button class="mb-tab" role="tab" aria-selected="false" data-filter="knockout">Knockouts</button>')
+    tabbar = (f'<div class="mb-tabs" role="tablist" aria-label="Filter matches by stage">{"".join(tabs)}</div>'
+              if len(tabs) > 1 else "")
+    return tabbar + "".join(out)
 
 
 def _match_names() -> dict[str, tuple[str, str]]:

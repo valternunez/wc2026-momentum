@@ -61,10 +61,11 @@ def test_build_editorial_page():
     assert 'class="info"' in html and "#tip-pop" in html
     assert "pure cool-off baseline" in html  # a tooltip explanation for non-stats readers
     assert "Did they even need them" in html and "WBGT" in html
-    # match grid grouped by stage, in collapsible <details> sections
-    assert "Group A" in html and "grouped by stage" in html
-    assert '<details class="grp"' in html and '<summary class="grp-h"' in html
-    assert "max-width:700px" in html  # mobile default-collapse JS present
+    # match grid: stage filter tabs + collapsible <details> sections tagged by stage
+    assert "Group A" in html and "filterable by stage" in html
+    assert 'class="mb-tabs"' in html and 'data-filter="all"' in html and 'data-filter="group"' in html
+    assert '<details class="grp" data-stage="group"' in html
+    assert "max-width:700px" in html  # mobile short-scroll JS present
     # modal share toolbar + team-named legend + themed-export data
     assert 'id="mb-share"' in html and 'id="mb-leg-home"' in html
     assert 'data-group="palette"' in html and 'data-group="mode"' in html

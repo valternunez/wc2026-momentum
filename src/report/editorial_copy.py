@@ -55,6 +55,10 @@ TEMPLATE = """<!DOCTYPE html>
   .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
   #tip-pop{position:absolute;z-index:90;max-width:300px;background:#1A1813;color:#EFEBDF;font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.5;padding:12px 15px;border-radius:5px;box-shadow:0 12px 34px rgba(26,24,19,.34);opacity:0;pointer-events:none;transition:opacity .12s}
   #tip-pop.on{opacity:1;pointer-events:auto}
+  .mb-tabs{display:inline-flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+  .mb-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:7px 14px;border:1px solid #D2CAB6;border-radius:3px;background:#F4F0E5;color:#8A8268;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+  .mb-tab.on{background:#1A1813;color:#EFEBDF;border-color:#1A1813}
+  .mb-tab:hover:not(.on){border-color:#1A1813;color:#1A1813}
   details.grp{margin:28px 0 0}
   details.grp>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #D6CFBE;padding-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600}
   details.grp>summary::-webkit-details-marker{display:none}
@@ -156,7 +160,7 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="max-width:840px;margin:0 auto;padding:60px 40px 56px">
       <div style="margin-bottom:34px">
         <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:18px">03 — Match by match</h2>
-        <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.55;color:#2B2820;text-wrap:pretty">The aggregate is built from these — every match so far, grouped by stage. The wave rises when the <strong style="font-weight:600">home</strong> side is on top, drops when the <strong style="font-weight:600">away</strong> side takes over, and dashed lines mark detected stoppages. <span style="color:#6B6557">Click any match for the full interactive chart.</span></p>
+        <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.55;color:#2B2820;text-wrap:pretty">The aggregate is built from these — every match so far, filterable by stage. The wave rises when the <strong style="font-weight:600">home</strong> side is on top, drops when the <strong style="font-weight:600">away</strong> side takes over, and dashed lines mark detected stoppages. <span style="color:#6B6557">Click any match for the full interactive chart.</span></p>
       </div>
       <div style="margin-bottom:32px">
         <h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#1A1813;font-weight:600;margin-bottom:6px">The extremes</h3>
@@ -314,10 +318,24 @@ TEMPLATE = """<!DOCTYPE html>
   var ageH=(Date.now() - new Date(iso+"T12:00:00Z").getTime())/3.6e6;
   if(ageH>36){ var b=document.getElementById('freshness'); if(b) b.hidden=false; }
 })();
-(function(){  // mobile: collapse all stage sections except the first, so the grid isn't endless
-  if(!(window.matchMedia && window.matchMedia('(max-width:700px)').matches)) return;
-  var g=document.querySelectorAll('details.grp');
-  for(var i=1;i<g.length;i++){ g[i].open=false; }
+(function(){  // match-grid stage tabs (All / Group / Knockout) + mobile short-scroll
+  var tabs=document.querySelectorAll('.mb-tab');
+  var mq=window.matchMedia('(max-width:700px)');
+  function apply(){
+    var act='all';
+    tabs.forEach(function(t){ if(t.classList.contains('on')) act=t.getAttribute('data-filter'); });
+    var vis=[];
+    document.querySelectorAll('details.grp').forEach(function(d){
+      var show=(act==='all'||act===d.getAttribute('data-stage'));
+      d.style.display=show?'':'none'; if(show) vis.push(d);
+    });
+    vis.forEach(function(d,i){ d.open = mq.matches ? (i===0) : true; });  // mobile: only first open
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){
+    tabs.forEach(function(x){ var on=(x===t); x.classList.toggle('on',on); x.setAttribute('aria-selected', on?'true':'false'); });
+    apply();
+  }); });
+  apply();
 })();
 (function(){  // plain-language info tooltips: hover (desktop) / tap (mobile) / Enter; Esc or click-away to close
   var pop=document.createElement('div'); pop.id='tip-pop'; pop.setAttribute('role','tooltip');
