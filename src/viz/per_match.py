@@ -33,7 +33,7 @@ PANEL_HOME = "#9CC4E0"   # home-on-top fill (blue)
 PANEL_AWAY = "#EBC09A"   # away-on-top fill (orange)
 MARKER_COLORS = {        # dashed stoppage markers, colour-coded by type
     "hydration": "#3E88C7",
-    "var": "#2E8B57",
+    "var": "#7A5CC0",  # violet, dotted (distinct from blue dashed hydration)
     "injury_huddle": "#E08A4B",
     "injury_no_huddle": "#E08A4B",
     "other": "#9A927E",
@@ -76,8 +76,9 @@ def build_match_panels(
         ax.fill_between(xs, ys, 0, where=[y < 0 for y in ys], color=PANEL_AWAY, linewidth=0)
         ax.axhline(0, color="#1A1813", linewidth=1.1)
         for minute, stype in _markers(df, mid):
-            ax.axvline(minute, color=MARKER_COLORS.get(stype, "#9A927E"), linestyle=(0, (4, 3)),
-                       linewidth=1.2, alpha=0.95)
+            ls = (0, (1, 3)) if stype == "var" else (0, (4, 3))  # VAR dotted, others dashed
+            ax.axvline(minute, color=MARKER_COLORS.get(stype, "#9A927E"), linestyle=ls,
+                       linewidth=1.4 if stype == "var" else 1.2, alpha=0.95)
         ymax = max((abs(y) for y in ys), default=1) * 1.08
         ax.set_ylim(-ymax, ymax)
         ax.set_xlim(min(xs), max(xs))

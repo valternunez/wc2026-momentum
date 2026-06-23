@@ -72,6 +72,8 @@ def test_build_editorial_page():
     # goal markers: data embedded + legend entry (clean disc marker, no emoji)
     assert '"goals"' in html and ">GOAL</span>" in html
     assert "⚽" not in html  # emoji replaced by the editorial disc marker
+    # VAR marker distinct from hydration: violet + dotted, old green gone
+    assert "dotted #7A5CC0" in html and "#2E8B57" not in html
 
 
 def test_parse_goals():

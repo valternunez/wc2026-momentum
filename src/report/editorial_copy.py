@@ -151,7 +151,7 @@ TEMPLATE = """<!DOCTYPE html>
         <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:10px;background:#9CC4E0;display:inline-block;border-radius:1px"></span>HOME ON TOP</span>
         <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:10px;background:#EBC09A;display:inline-block;border-radius:1px"></span>AWAY ON TOP</span>
         <span style="display:flex;align-items:center;gap:8px"><span style="width:0;height:14px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
-        <span style="display:flex;align-items:center;gap:8px"><span style="width:0;height:14px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
+        <span style="display:flex;align-items:center;gap:8px"><span style="width:0;height:14px;border-left:2px dotted #7A5CC0;display:inline-block"></span>VAR</span>
         <span style="display:flex;align-items:center;gap:8px"><span style="width:0;height:14px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
       </div>
       {{MATCH_CARDS}}
@@ -283,7 +283,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span style="display:flex;align-items:center;gap:7px"><span id="mb-sw-home" style="width:16px;height:9px;background:#9CC4E0;display:inline-block;border-radius:1px;flex:none"></span><span><b id="mb-leg-home" style="font-weight:600;color:#3E5E78">Home</b> on top</span></span>
       <span style="display:flex;align-items:center;gap:7px"><span id="mb-sw-away" style="width:16px;height:9px;background:#EBC09A;display:inline-block;border-radius:1px;flex:none"></span><span><b id="mb-leg-away" style="font-weight:600;color:#9A6A3A">Away</b> on top</span></span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
-      <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
+      <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dotted #7A5CC0;display:inline-block"></span>VAR</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#6E90AE;display:inline-block;border:1.5px solid #FCFAF3;box-shadow:0 0 0 1px #CFC6B0;flex:none"></span>GOAL</span>
     </div>
@@ -309,7 +309,8 @@ TEMPLATE = """<!DOCTYPE html>
 <script type="application/json" id="mb-data">{{MB_DATA}}</script>
 <script>
 (function(){
-  var DATA = {}, MARK = {hydration:'#3E88C7', var:'#2E8B57', injury_huddle:'#E08A4B', injury_no_huddle:'#E08A4B', other:'#9A927E'};
+  var DATA = {}, MARK = {hydration:'#3E88C7', var:'#7A5CC0', injury_huddle:'#E08A4B', injury_no_huddle:'#E08A4B', other:'#9A927E'};
+  var DASH = {var:'2 3'};  // VAR is dotted; everything else dashed (set below)
   try { JSON.parse(document.getElementById('mb-data').textContent).forEach(function(m){ DATA[m.id]=m; }); } catch(e){}
   var modal=document.getElementById('mb-modal'), chart=document.getElementById('mb-chart');
   var SVGNS='http://www.w3.org/2000/svg';
@@ -367,7 +368,7 @@ TEMPLATE = """<!DOCTYPE html>
 
     (m.stoppages||[]).forEach(function(st){
       var x=X(st[0]);
-      svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':'4 3'}));
+      svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':DASH[st[1]]||'4 3','stroke-linecap':(DASH[st[1]]?'round':'butt')}));
     });
     // goals: a thin guide in the scoring side's colour, capped by a disc up top (filled = scored,
     // hollow ring = missed penalty). Cleaner than an emoji and still team-coloured.
@@ -425,7 +426,7 @@ TEMPLATE = """<!DOCTYPE html>
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, zeroY-box.y); ctx.clip(); wavePath(); ctx.fillStyle=t.homeFill; ctx.fill(); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, zeroY, box.w, box.y+box.h-zeroY); ctx.clip(); wavePath(); ctx.fillStyle=t.awayFill; ctx.fill(); ctx.restore();
     ctx.strokeStyle=t.grid; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(box.x, zeroY); ctx.lineTo(box.x+box.w, zeroY); ctx.stroke();
-    (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); });
+    (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); var dot=st[1]==='var'; ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=dot?2.6:2; ctx.lineCap=dot?'round':'butt'; ctx.setLineDash(dot?[0.5,6]:[6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap='butt'; });
     ctx.textAlign='center';
     (m.goals||[]).forEach(function(g){
       if(g.m<minMin-1 || g.m>maxMin+1) return;
