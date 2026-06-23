@@ -379,7 +379,9 @@ def build() -> str:
         "MONEY_ROWS": _money_rows(effects),
         "CI_CAPTION": "95% INTERVAL (CLUSTER BOOTSTRAP)",
         "INTERVAL_NOTE": ("Whiskers show the match-clustered bootstrap 95% interval; every interval sits "
-                          "left of zero. The causal claim is held until the live sample is larger — see method."),
+                          "left of zero. The effect holds across 4–6-minute windows — but with few "
+                          "match-clusters this far in, read the interval as indicative, not a p-value. "
+                          "The causal claim is held until the live sample is larger — see method."),
         "COMPARE_SENTENCE": _compare_sentence(effects),
         "EXTREMES": _extremes_block(df, _match_names()),
         "MATCH_CARDS": _match_cards(site_figures),

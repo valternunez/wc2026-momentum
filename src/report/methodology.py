@@ -27,18 +27,24 @@ def build_appendix_html() -> str:
   <h2>Methodology appendix</h2>
 
   <h3>Momentum operationalization</h3>
-  <p>The outcome is SofaScore's per-minute in-match <em>momentum</em> series
-  (positive = home team, negative = away). We re-frame it to each team's
-  perspective per row, then aggregate it into two 5-minute windows around every
-  stoppage: a <strong>pre</strong> window <code>[t&minus;5, t)</code> and a
-  <strong>post</strong> window <code>(t, t+5]</code>, excluding the stoppage
-  minute itself. The primary outcome is
-  <code>momentum_delta = post_mean &minus; pre_mean</code>. FotMob's series is
-  scraped as an independent cross-check; where the two diverge meaningfully we
-  prefer SofaScore and report the disagreement. Stoppages are detected from
-  commentary and incident feeds (not a hardcoded clock minute), because the
-  referee has discretion to delay the nominal ~22&prime; and ~67&prime; breaks
-  around other play stoppages.</p>
+  <p>The outcome is <strong>FotMob's</strong> per-minute in-match <em>momentum</em>
+  series &mdash; an expected-threat (xT) model of which side is on top (positive =
+  home, negative = away). It is FotMob's own model, distinct from the official
+  Opta/Stats&nbsp;Perform momentum on FIFA broadcasts; we read it consistently
+  across every tournament here so the choice of model cancels in the comparison.
+  (SofaScore was the original source but Cloudflare-blocks datacenter IPs, so the
+  pipeline runs on FotMob.) We re-frame the series to each team's perspective per
+  row, then aggregate it into two 5-minute windows around every stoppage: a
+  <strong>pre</strong> window <code>[t&minus;5, t)</code> and a <strong>post</strong>
+  window <code>(t, t+5]</code>, excluding the stoppage minute itself. The primary
+  outcome is <code>momentum_delta = post_mean &minus; pre_mean</code>. A shots-only
+  reconstruction of the curve recovers only ~20% of its variance
+  (Pearson&nbsp;r&nbsp;&asymp;&nbsp;0.46), the rest being the build-up play xT
+  rewards &mdash; so it is a genuine threat metric, not noise
+  (<code>src/analysis/momentum_recon.py</code>). Stoppages are detected from
+  commentary and incident feeds (not a hardcoded clock minute), because the referee
+  has discretion to delay the nominal ~22&prime; and ~67&prime; breaks around other
+  play stoppages.</p>
 
   <h3>Conditioning on the team that was on top</h3>
   <p>Because every stoppage contributes two mirrored team-perspective rows, the
@@ -70,9 +76,15 @@ def build_appendix_html() -> str:
     separately from hydration/VAR. We <em>cannot</em> drop sub-30-second injuries
     (the data has no reliable per-stoppage durations) &mdash; an acknowledged
     limitation rather than a fix.</li>
+    <li><strong>Window length.</strong> The on-top effect is recomputed at 4-, 5-
+    and 6-minute windows; it stays negative with every 95% interval below zero
+    (about &minus;21 to &minus;25), so it is not an artifact of the 5-minute choice.
+    See <code>src/analysis/sensitivity.py</code>.</li>
     <li><strong>Non-independence.</strong> Multiple stoppages within a match are
     not independent, so confidence intervals are bootstrapped by resampling
-    <em>matches</em> (cluster bootstrap), not rows.</li>
+    <em>matches</em> (cluster bootstrap), not rows. Early in the tournament the
+    number of match-clusters is small, so the interval is read as indicative
+    rather than as a precise <em>p</em>-value.</li>
   </ul>
 
   <h3>Regression to the mean (the main threat)</h3>
