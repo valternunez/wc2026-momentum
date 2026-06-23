@@ -51,6 +51,10 @@ TEMPLATE = """<!DOCTYPE html>
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
   .src{font-family:'IBM Plex Mono',monospace;color:#E5482E;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.4)}
+  .info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #BBB29A;background:none;color:#8A8268;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:11px;font-weight:700;line-height:1;cursor:pointer;vertical-align:baseline;margin-left:5px;padding:0;transition:border-color .12s,color .12s,background .12s}
+  .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
+  #tip-pop{position:absolute;z-index:90;max-width:300px;background:#1A1813;color:#EFEBDF;font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.5;padding:12px 15px;border-radius:5px;box-shadow:0 12px 34px rgba(26,24,19,.34);opacity:0;pointer-events:none;transition:opacity .12s}
+  #tip-pop.on{opacity:1;pointer-events:auto}
   details.grp{margin:28px 0 0}
   details.grp>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #D6CFBE;padding-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600}
   details.grp>summary::-webkit-details-marker{display:none}
@@ -205,7 +209,7 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- 05 — THE CATCH -->
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
     <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">05 — The catch worth stating out loud</h2>
-    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em> — break or no break. That's regression to the mean, and it's the single biggest threat to reading too much into the bars above.</p>
+    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em> — break or no break. That's regression to the mean<button type="button" class="info" aria-label="What does this mean?" data-tip="Regression to the mean: a team that just had a hot five minutes tends to cool off in the next five anyway — break or no break. It's a natural pull back toward average, not something the break caused.">i</button>, and it's the single biggest threat to reading too much into the bars above.</p>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:8px">So run the <em style="font-style:italic">exact same measurement</em> where no break was mandated — on the same FotMob scale — and put the −24 next to it. Three ways: the same 2026 matches windowed at quiet, break-free minutes; and two whole tournaments with no mandated breaks (the 2025 Club World Cup in the same US heat, and the cooler 2022 World Cup), measured at the very 22′/67′ marks.</p>
     {{COMPARE_CHART}}
     <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.7;letter-spacing:.01em;color:#6B6557;background:#EAE5D6;border-left:3px solid #E5C9A0;padding:14px 16px;margin:14px 0 28px">Same statistic, same scale. No-break drops run from about −15 to −23 — so the bulk of the −24 is the team cooling off <strong>anyway</strong>: regression to the mean. The cleanest like-for-like, the Club World Cup at the very same 22′/67′ minutes, lands within a point of the break. The within-2026 control is a touch smaller (−18), which leaves a little room for the whistle to matter — but the intervals overlap, so any effect of the break itself is small and not yet proven. <span style="color:#948D7C">(An event-xT cross-check on 2022 agrees the slide is real.)</span></p>
@@ -314,6 +318,32 @@ TEMPLATE = """<!DOCTYPE html>
   if(!(window.matchMedia && window.matchMedia('(max-width:700px)').matches)) return;
   var g=document.querySelectorAll('details.grp');
   for(var i=1;i<g.length;i++){ g[i].open=false; }
+})();
+(function(){  // plain-language info tooltips: hover (desktop) / tap (mobile) / Enter; Esc or click-away to close
+  var pop=document.createElement('div'); pop.id='tip-pop'; pop.setAttribute('role','tooltip');
+  document.body.appendChild(pop); var cur=null;
+  var canHover=window.matchMedia && window.matchMedia('(hover:hover)').matches;
+  function show(b){
+    pop.textContent=b.getAttribute('data-tip')||''; pop.classList.add('on');
+    var r=b.getBoundingClientRect(), pw=pop.offsetWidth, ph=pop.offsetHeight, m=8;
+    var left=window.scrollX+r.left+r.width/2-pw/2;
+    left=Math.max(m, Math.min(window.scrollX+document.documentElement.clientWidth-pw-m, left));
+    var top=window.scrollY+r.top-ph-9;
+    if(top<window.scrollY+m){ top=window.scrollY+r.bottom+9; }  // flip below if no room above
+    pop.style.left=left+'px'; pop.style.top=top+'px'; cur=b;
+  }
+  function hide(){ pop.classList.remove('on'); cur=null; }
+  document.addEventListener('click', function(ev){
+    var b=ev.target.closest && ev.target.closest('.info');
+    if(b){ ev.preventDefault(); ev.stopPropagation(); (cur===b)?hide():show(b); return; }
+    if(cur && ev.target!==pop) hide();
+  });
+  document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') hide(); });
+  if(canHover){
+    document.addEventListener('mouseover', function(ev){ var b=ev.target.closest&&ev.target.closest('.info'); if(b) show(b); });
+    document.addEventListener('mouseout', function(ev){ var b=ev.target.closest&&ev.target.closest('.info'); if(b&&cur===b) hide(); });
+  }
+  window.addEventListener('scroll', function(){ if(cur) hide(); }, {passive:true});
 })();
 </script>
 <script type="application/json" id="mb-data">{{MB_DATA}}</script>

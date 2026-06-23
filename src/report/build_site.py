@@ -312,28 +312,42 @@ def _placebo_meanci(parquet_name: str):
     return (mean, lo, hi, top.height, top["match_id"].n_unique())
 
 
+def _info(tip: str) -> str:
+    """A small accessible info-tooltip trigger (ⓘ). `tip` is plain text (no double quotes)."""
+    return f'<button type="button" class="info" aria-label="What does this mean?" data-tip="{tip}">i</button>'
+
+
+_TIP_READ = ("How to read this: the dot is the average momentum drop for the team that was on top; "
+             "the faint bar around it is the 95% range — where the true value very likely sits given "
+             "how few matches we have so far. When two bars overlap a lot, those numbers aren't "
+             "meaningfully different yet.")
+_TIP_PLACEBO = ("The exact same 2026 matches, but measured at random quiet minutes with no break "
+                "(around 10', 35', 55' and 80'). It shows how much the leading team fades with no "
+                "whistle at all — the pure cool-off baseline, i.e. regression to the mean.")
+
+
 def _compare_chart(effects: list[dict]) -> str:
     """Dot-and-whisker comparison: the 2026 break drop vs no-break baselines, same FotMob scale."""
     rows_data = []
     hyd = {e["stoppage_type"]: e for e in effects}.get("hydration")
     if hyd and hyd.get("n"):
         rows_data.append(("Hydration break", "World Cup 2026 · the headline",
-                          hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], None, ACCENT, True))
+                          hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], None, ACCENT, True, _TIP_READ))
     p26 = _placebo_meanci("placebo2026.parquet")
     if p26:
         rows_data.append(("No break — same 2026 matches", "windowed at quiet, non-break minutes",
-                          p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False))
+                          p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, _TIP_PLACEBO))
     cwc = _placebo_meanci("cwc2025_placebo.parquet")
     if cwc:
         rows_data.append(("No break — Club World Cup 2025", "same US summer · at the 22′/67′ marks",
-                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], "#46412F", True))
+                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], "#46412F", True, None))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
         rows_data.append(("No break — World Cup 2022", "cooler Qatar winter · at the 22′/67′ marks",
-                          w22[0], w22[1], w22[2], w22[3], w22[4], "#8A8268", True))
+                          w22[0], w22[1], w22[2], w22[3], w22[4], "#8A8268", True, None))
 
     out = []
-    for label, sub, mean, lo, hi, n, matches, color, solid in rows_data:
+    for label, sub, mean, lo, hi, n, matches, color, solid, tip in rows_data:
         a, b = abs(lo), abs(hi)
         losp, hisp = min(min(a, b) / SCALE * 100, 100), min(max(a, b) / SCALE * 100, 100)
         mp = min(abs(mean) / SCALE * 100, 100)
@@ -342,7 +356,7 @@ def _compare_chart(effects: list[dict]) -> str:
         out.append(f"""
         <div style="position:relative;margin-bottom:20px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}</span>
+            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}{_info(tip) if tip else ""}</span>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A927E">{n_lbl}</span>
           </div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;color:#A89F88;margin-bottom:8px">{sub}</div>

@@ -57,6 +57,9 @@ def test_build_editorial_page():
     # §05 break-vs-no-break comparison chart (incl. the within-2026 placebo) + honest caption
     assert "Club World Cup 2025" in html and "World Cup 2022" in html
     assert "same 2026 matches" in html and "Same statistic, same scale" in html
+    # plain-language info tooltips (accessible ⓘ + popover)
+    assert 'class="info"' in html and "#tip-pop" in html
+    assert "pure cool-off baseline" in html  # a tooltip explanation for non-stats readers
     assert "Did they even need them" in html and "WBGT" in html
     # match grid grouped by stage, in collapsible <details> sections
     assert "Group A" in html and "grouped by stage" in html
