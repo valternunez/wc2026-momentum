@@ -160,6 +160,11 @@ def run(
         print(f"[per-match] {len(ids)} panels + matches.json + momentum.json ({len(all_ids)} matches)")
     except Exception as e:
         print(f"[per-match] skipped: {type(e).__name__}: {e}")
+    try:  # within-2026 regression-to-the-mean control (committed; CI reads it)
+        pdf = build_2026_placebo(all_ids)
+        print(f"[placebo2026] {pdf.height} rows ({pdf['match_id'].n_unique()} matches) -> placebo2026.parquet")
+    except Exception as e:
+        print(f"[placebo2026] skipped: {type(e).__name__}: {e}")
     return df
 
 
@@ -308,6 +313,26 @@ def build_wc2022_placebo() -> pl.DataFrame:
     df.write_parquet(out)
     print(f"[wc2022-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
     print(f"[wc2022-placebo] summary: {summarize_placebo(df)}")
+    return df
+
+
+# Within-2026 regression-to-the-mean control: the SAME matches windowed at non-break minutes,
+# all >=5' clear of the real 22'/67' breaks and the 45' half (so pre/post windows aren't contaminated).
+PLACEBO_2026_MINUTES = (10.0, 35.0, 55.0, 80.0)
+
+
+def build_2026_placebo(match_ids: list[str]) -> pl.DataFrame:
+    """Window the 2026 matches at fake non-break minutes -> data/processed/placebo2026.parquet."""
+    from datetime import date
+
+    from src.analysis.fotmob_placebo import build_fotmob_placebo
+    from src.scrape.fotmob import WORLD_CUP_PRIMARY_ID
+
+    df = build_fotmob_placebo(WORLD_CUP_PRIMARY_ID, date(2026, 6, 1), date(2026, 8, 1), RAW_FOTMOB,
+                              minutes=PLACEBO_2026_MINUTES, match_ids=[str(m) for m in match_ids])
+    out = PROCESSED / "placebo2026.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
     return df
 
 

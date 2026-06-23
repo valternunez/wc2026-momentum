@@ -54,8 +54,9 @@ def test_build_editorial_page():
     assert 'rel="apple-touch-icon"' in html and 'rel="icon"' in html
     # momentum explainer (we read it, not compute it)
     assert "we don't compute it" in html or "we don't compute our own" in html
-    # §05 two same-units placebos + §06 heat note
-    assert "2025 Club World Cup" in html and "2022 World Cup" in html
+    # §05 break-vs-no-break comparison chart (incl. the within-2026 placebo) + honest caption
+    assert "Club World Cup 2025" in html and "World Cup 2022" in html
+    assert "same 2026 matches" in html and "Same statistic, same scale" in html
     assert "Did they even need them" in html and "WBGT" in html
     # match grid grouped by stage, in collapsible <details> sections
     assert "Group A" in html and "grouped by stage" in html

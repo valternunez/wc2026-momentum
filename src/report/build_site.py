@@ -300,6 +300,66 @@ def _cwc_placebo_tokens() -> dict[str, str]:
     }
 
 
+def _placebo_meanci(parquet_name: str):
+    """(mean, lo, hi, n, matches) for an on-top FotMob placebo parquet, or None if absent/empty."""
+    p = PROCESSED / parquet_name
+    if not p.exists():
+        return None
+    top = on_top_rows(pl.read_parquet(p))
+    if top.is_empty():
+        return None
+    mean, lo, hi = cluster_bootstrap_ci(top)
+    return (mean, lo, hi, top.height, top["match_id"].n_unique())
+
+
+def _compare_chart(effects: list[dict]) -> str:
+    """Dot-and-whisker comparison: the 2026 break drop vs no-break baselines, same FotMob scale."""
+    rows_data = []
+    hyd = {e["stoppage_type"]: e for e in effects}.get("hydration")
+    if hyd and hyd.get("n"):
+        rows_data.append(("Hydration break", "World Cup 2026 · the headline",
+                          hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], None, ACCENT, True))
+    p26 = _placebo_meanci("placebo2026.parquet")
+    if p26:
+        rows_data.append(("No break — same 2026 matches", "windowed at quiet, non-break minutes",
+                          p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False))
+    cwc = _placebo_meanci("cwc2025_placebo.parquet")
+    if cwc:
+        rows_data.append(("No break — Club World Cup 2025", "same US summer · at the 22′/67′ marks",
+                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], "#46412F", True))
+    w22 = _placebo_meanci("wc2022_placebo.parquet")
+    if w22:
+        rows_data.append(("No break — World Cup 2022", "cooler Qatar winter · at the 22′/67′ marks",
+                          w22[0], w22[1], w22[2], w22[3], w22[4], "#8A8268", True))
+
+    out = []
+    for label, sub, mean, lo, hi, n, matches, color, solid in rows_data:
+        a, b = abs(lo), abs(hi)
+        losp, hisp = min(min(a, b) / SCALE * 100, 100), min(max(a, b) / SCALE * 100, 100)
+        mp = min(abs(mean) / SCALE * 100, 100)
+        dot_fill = color if solid else "#EFEBDF"
+        n_lbl = f"n = {n}" + (f" · {matches} matches" if matches else "")
+        out.append(f"""
+        <div style="position:relative;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A927E">{n_lbl}</span>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;color:#A89F88;margin-bottom:8px">{sub}</div>
+          <div style="position:relative;height:26px">
+            <div style="position:absolute;top:11px;height:4px;right:0;width:{mp:.2f}%;background:{color};opacity:{.9 if solid else .35}"></div>
+            <div style="position:absolute;top:7px;height:12px;right:{losp:.2f}%;width:{hisp - losp:.2f}%;background:{color};opacity:.13"></div>
+            <div style="position:absolute;top:7px;width:12px;height:12px;border-radius:50%;right:calc({mp:.2f}% - 6px);background:{dot_fill};border:2px solid {color};box-shadow:0 0 0 3px #EFEBDF"></div>
+            <span style="position:absolute;top:-4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;color:{color};right:calc({mp:.2f}% + 14px)">{mean:.1f}</span>
+          </div>
+        </div>""")
+    if not out:
+        return ""
+    axis = ('<div style="display:flex;justify-content:space-between;font-family:\'IBM Plex Mono\',monospace;'
+            'font-size:10.5px;color:#B0A78F;margin-top:2px"><span>−30</span><span>−20</span><span>−10</span><span>0</span></div>')
+    return '<div style="margin:26px 0 8px">' + "".join(out) + axis + "</div>"
+
+
 def _wc2022_placebo_tokens() -> dict[str, str]:
     """2022 WC placebo via FotMob (same momentum scale as CWC/2026)."""
     p = PROCESSED / "wc2022_placebo.parquet"
@@ -387,6 +447,7 @@ def build() -> str:
                           "match-clusters this far in, read the interval as indicative, not a p-value. "
                           "The causal claim is held until the live sample is larger — see method."),
         "COMPARE_SENTENCE": _compare_sentence(effects),
+        "COMPARE_CHART": _compare_chart(effects),
         "EXTREMES": _extremes_block(df, _match_names()),
         "MATCH_CARDS": _match_cards(site_figures),
         "MECH_HYD": mech("hydration"), "MECH_VAR": mech("var"),

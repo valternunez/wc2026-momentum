@@ -206,23 +206,9 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
     <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">05 — The catch worth stating out loud</h2>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em> — break or no break. That's regression to the mean, and it's the single biggest threat to reading too much into the bars above.</p>
-    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">So run the same test on two tournaments with no mandated breaks — measured on the <em style="font-style:italic">same</em> FotMob scale — at the fake 22′/67′ marks. Both show the team on top sliding anyway. And the closest comparison, last summer's Club World Cup in the same US heat, lands almost exactly on the 2026 figure. Most of that headline −24 is regression to the mean, not the water bottle.</p>
-    <div style="background:#1A1813;color:#EFEBDF;padding:30px 32px;margin:30px 0;border-radius:2px">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#E5C9A0;margin-bottom:18px">NO MANDATED BREAK · SAME FOTMOB SCALE AS THE −24</div>
-      <div style="display:flex;gap:48px;flex-wrap:wrap">
-        <div>
-          <span style="font-family:'Newsreader',serif;font-size:46px;font-weight:500;color:#EFEBDF">{{CWC_MEAN}}</span>
-          <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;margin-top:4px;color:#EFEBDF">2025 Club World Cup</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#948D7C;margin-top:4px;line-height:1.6">{{CWC_CI}}<br>{{CWC_N}} · same US summer</div>
-        </div>
-        <div>
-          <span style="font-family:'Newsreader',serif;font-size:46px;font-weight:500;color:#E5C9A0">{{WC22F_MEAN}}</span>
-          <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;margin-top:4px;color:#EFEBDF">2022 World Cup</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#948D7C;margin-top:4px;line-height:1.6">{{WC22F_CI}}<br>{{WC22F_N}} · cooler Qatar winter</div>
-        </div>
-      </div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7E776A;margin-top:18px;line-height:1.6">Both at the 22′/67′ marks where no break was taken. (An event-xT cross-check on 2022 agrees the slide is real.)</div>
-    </div>
+    <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:8px">So run the <em style="font-style:italic">exact same measurement</em> where no break was mandated — on the same FotMob scale — and put the −24 next to it. Three ways: the same 2026 matches windowed at quiet, break-free minutes; and two whole tournaments with no mandated breaks (the 2025 Club World Cup in the same US heat, and the cooler 2022 World Cup), measured at the very 22′/67′ marks.</p>
+    {{COMPARE_CHART}}
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.7;letter-spacing:.01em;color:#6B6557;background:#EAE5D6;border-left:3px solid #E5C9A0;padding:14px 16px;margin:14px 0 28px">Same statistic, same scale. No-break drops run from about −15 to −23 — so the bulk of the −24 is the team cooling off <strong>anyway</strong>: regression to the mean. The cleanest like-for-like, the Club World Cup at the very same 22′/67′ minutes, lands within a point of the break. The within-2026 control is a touch smaller (−18), which leaves a little room for the whistle to matter — but the intervals overlap, so any effect of the break itself is small and not yet proven. <span style="color:#948D7C">(An event-xT cross-check on 2022 agrees the slide is real.)</span></p>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820">Which is exactly why the model controls for pre-break momentum, clusters its errors by match, and won't print a causal headline until the live sample is big enough. The interaction regression-to-the-mean <em style="font-style:italic">can't</em> explain — a break hitting harder precisely when a team is on top — is the part still being watched.</p>
   </section>
 
@@ -248,7 +234,7 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="max-width:840px;margin:0 auto;padding:46px 40px 20px">
     <div style="border-top:2px solid #1A1813;border-bottom:2px solid #1A1813;padding:44px 0">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:24px">The bottom line — so far</div>
-      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">On the surface the momentum killer is real. But a summer of football with no mandated breaks shows the same drop — so most of it is regression to the mean, and any effect of the break itself is small and unproven. The verdict stays open until the final.</p>
+      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">On the surface the momentum killer is real. But football with no mandated breaks shows much the same drop — so most of it is regression to the mean, and any effect of the break itself is small and unproven. The verdict stays open until the final.</p>
     </div>
   </section>
 
