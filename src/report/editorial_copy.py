@@ -58,14 +58,14 @@ TEMPLATE = """<!DOCTYPE html>
   .lp{animation:livepulse 1.8s ease-in-out infinite}
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
-  #mb-data{margin-top:14px}
-  #mb-data summary{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5A5547;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px}
-  #mb-data summary::-webkit-details-marker{display:none}
-  #mb-data summary::after{content:'+';color:#9A927E}
-  #mb-data[open] summary::after{content:'–'}
-  #mb-data table{border-collapse:collapse;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#2B2820}
-  #mb-data th,#mb-data td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid #E6E0CF;white-space:nowrap}
-  #mb-data th{color:#5A5547;font-weight:600;letter-spacing:.04em}
+  #mb-table{margin-top:14px}
+  #mb-table summary{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5A5547;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px}
+  #mb-table summary::-webkit-details-marker{display:none}
+  #mb-table summary::after{content:'+';color:#9A927E}
+  #mb-table[open] summary::after{content:'–'}
+  #mb-table table{border-collapse:collapse;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#2B2820}
+  #mb-table th,#mb-table td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid #E6E0CF;white-space:nowrap}
+  #mb-table th{color:#5A5547;font-weight:600;letter-spacing:.04em}
   .src{font-family:'IBM Plex Mono',monospace;color:#C03A22;text-decoration:none;border-bottom:1px solid #C03A22}
   .info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #BBB29A;background:none;color:#8A8268;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:11px;font-weight:700;line-height:1;cursor:pointer;vertical-align:baseline;margin-left:5px;padding:0;transition:border-color .12s,color .12s,background .12s}
   .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
@@ -307,7 +307,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#6E90AE;display:inline-block;border:1.5px solid #FCFAF3;box-shadow:0 0 0 1px #CFC6B0;flex:none"></span>{{LEG_GOAL}}</span>
     </div>
     <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
-    <details id="mb-data"></details>
+    <details id="mb-table"></details>
     <style>
      .mb-seg{display:inline-flex;border:1px solid #D2CAB6;border-radius:3px;overflow:hidden}
      .mb-seg button{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;padding:6px 10px;background:#F4F0E5;color:#8A8268;border:none;border-left:1px solid #E2DBCA;cursor:pointer}
@@ -498,7 +498,7 @@ TEMPLATE = """<!DOCTYPE html>
 
     // keyboard + screen-reader fallback: a collapsible "Chart data" table of the key moments
     // (every stoppage + goal: minute, event, momentum value, which team was on top).
-    var box=document.getElementById('mb-data');
+    var box=document.getElementById('mb-table');
     if(box){
       function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
       function momAt(min){ var b=s[0]; for(var i=0;i<s.length;i++){ if(Math.abs(s[i][0]-min)<Math.abs(b[0]-min)) b=s[i]; } return b[1]; }
