@@ -64,7 +64,7 @@ TEMPLATE = """<!DOCTYPE html>
   details.grp>summary::-webkit-details-marker{display:none}
   details.grp>summary .grp-n{color:#B0A78F;font-weight:400}
   details.grp>summary .grp-n::after{content:'  +';color:#B0A78F}
-  details.grp[open]>summary .grp-n::after{content:'  \2013'}
+  details.grp[open]>summary .grp-n::after{content:'  –'}
   details.grp>summary:hover{color:#E5482E}
   details.grp[open]>.grp-grid{margin-top:14px}
   @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card{transition:none}.mb-card:hover{transform:none} }
