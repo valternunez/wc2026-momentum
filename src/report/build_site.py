@@ -74,6 +74,23 @@ def _money_rows(effects: list[dict]) -> str:
     return "".join(out)
 
 
+_KO_LABEL = {"1/16": "Round of 32", "1/8": "Round of 16", "1/4": "Quarter-finals",
+             "1/2": "Semi-finals", "bronze": "Third-place play-off", "final": "Final"}
+_KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
+
+
+def _stage_meta(league: str | None, rnd) -> tuple[str, tuple]:
+    """(display label, sort key) for a match's stage. Groups first (A→L), then knockouts in order."""
+    league = league or ""
+    if "Grp." in league:
+        letter = league.split("Grp.")[-1].strip()
+        return (f"Group {letter}", (0, letter))
+    key = rnd.lower() if isinstance(rnd, str) else rnd
+    if key in _KO_LABEL:
+        return (_KO_LABEL[key], (1, _KO_ORDER[key]))
+    return ("Other matches", (2, 0))
+
+
 def _match_cards(site_figures: Path) -> str:
     mpath = PROCESSED / "matches.json"
     src_dir = REPORTS / "figures" / "matches"
@@ -82,7 +99,8 @@ def _match_cards(site_figures: Path) -> str:
     matches = json.loads(mpath.read_text(encoding="utf-8"))
     dest = site_figures / "matches"
     dest.mkdir(parents=True, exist_ok=True)
-    cards = []
+
+    groups: dict[str, dict] = {}
     idx = 0
     for m in matches:
         png = src_dir / f"{m['id']}.png"
@@ -91,7 +109,7 @@ def _match_cards(site_figures: Path) -> str:
         idx += 1
         shutil.copyfile(png, dest / f"{m['id']}.png")
         home, away = m.get("home") or "?", m.get("away") or "?"
-        cards.append(f"""
+        card = f"""
           <div class="mb-card" data-mid="{m['id']}" role="button" tabindex="0" aria-label="{home} v {away} — open chart" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
             <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B0A78F">M{idx:02d}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></div>
             <div style="display:flex;flex-direction:column;gap:4px">
@@ -99,8 +117,20 @@ def _match_cards(site_figures: Path) -> str:
               <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></div>
             </div>
             <img src="figures/matches/{m['id']}.png" alt="{home} v {away} — per-minute momentum" loading="lazy" style="width:100%;height:74px;object-fit:contain;object-position:center;display:block;margin-top:2px"/>
-          </div>""")
-    return "".join(cards)
+          </div>"""
+        label, order = _stage_meta(m.get("league"), m.get("stage"))
+        g = groups.setdefault(label, {"order": order, "cards": []})
+        g["cards"].append(card)
+
+    if not groups:
+        return '<p style="font-family:IBM Plex Mono,monospace;color:#948D7C">Match panels render on the next local update.</p>'
+
+    out = []
+    for label in sorted(groups, key=lambda lb: groups[lb]["order"]):
+        cards = groups[label]["cards"]
+        out.append(f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#1A1813;font-weight:600;margin:28px 0 14px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D6CFBE;padding-bottom:8px"><span>{label}</span><span style="color:#B0A78F;font-weight:400">{len(cards)}</span></div>')
+        out.append('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">' + "".join(cards) + "</div>")
+    return "".join(out)
 
 
 def _compare_sentence(effects: list[dict]) -> str:

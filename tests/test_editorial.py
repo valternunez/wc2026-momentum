@@ -57,3 +57,16 @@ def test_build_editorial_page():
     # §05 two same-units placebos + §06 heat note
     assert "2025 Club World Cup" in html and "2022 World Cup" in html
     assert "Did they even need them" in html and "WBGT" in html
+    # match grid grouped by stage
+    assert "Group A" in html and "grouped by stage" in html
+
+
+def test_stage_meta():
+    from src.report.build_site import _stage_meta
+
+    assert _stage_meta("World Cup Grp. J", "2")[0] == "Group J"
+    assert _stage_meta("World Cup Final Stage", "1/8")[0] == "Round of 16"
+    assert _stage_meta("World Cup Final Stage", "1/4")[0] == "Quarter-finals"
+    assert _stage_meta("World Cup", "final")[0] == "Final"
+    # groups sort before knockouts
+    assert _stage_meta("World Cup Grp. A", "1")[1] < _stage_meta("World Cup", "final")[1]

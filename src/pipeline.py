@@ -216,7 +216,7 @@ def _write_matches_json(match_ids: list[str]) -> None:
         rows.append({
             "id": str(mid), "home": m.get("home_team"), "away": m.get("away_team"),
             "home_score": m.get("home_score"), "away_score": m.get("away_score"),
-            "ts": m.get("start_timestamp"), "stage": m.get("stage"),
+            "ts": m.get("start_timestamp"), "stage": m.get("stage"), "league": m.get("tournament"),
         })
     rows.sort(key=lambda r: (r["ts"] or 0, r["id"]))
     (PROCESSED / "matches.json").write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
