@@ -285,6 +285,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #3E88C7;display:inline-block"></span>HYDRATION</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #2E8B57;display:inline-block"></span>VAR</span>
       <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:13px;border-left:2px dashed #E08A4B;display:inline-block"></span>INJURY</span>
+      <span style="display:flex;align-items:center;gap:6px">&#9917; GOAL</span>
     </div>
     <p id="mb-explain" style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#2B2820;margin-top:20px"></p>
     <style>
@@ -368,6 +369,18 @@ TEMPLATE = """<!DOCTYPE html>
       var x=X(st[0]);
       svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':'4 3'}));
     });
+    // goals (solid guide in the scoring side's colour + a ball glyph up top); missed penalty = muted ✗
+    (m.goals||[]).forEach(function(g){
+      if(g.m<minMin-1 || g.m>maxMin+1) return;
+      var x=X(g.m);
+      if(g.k==='miss'){
+        svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:t.sub,'stroke-width':1.2,'stroke-dasharray':'2 3',opacity:.7}));
+        var xm=el('text',{x:x,y:14,'text-anchor':'middle','font-size':12,fill:t.sub}); xm.textContent='✗'; svg.appendChild(xm);
+      } else {
+        svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:(g.h?t.homeFill:t.awayFill),'stroke-width':1.6,opacity:.6}));
+        var gb=el('text',{x:x,y:14,'text-anchor':'middle','font-size':13}); gb.textContent='⚽'; svg.appendChild(gb);
+      }
+    });
     [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1){ var tx=el('text',{x:X(mm),y:H-7,'text-anchor':'middle','font-size':11,fill:t.sub}); tx.textContent=mm+"'"; svg.appendChild(tx); }});
 
     var cross=el('line',{y1:pad.t,y2:H-pad.b, stroke:t.grid,'stroke-width':1,opacity:0}); svg.appendChild(cross);
@@ -383,8 +396,12 @@ TEMPLATE = """<!DOCTYPE html>
       cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity',.5);
       dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('opacity',1);
       var near=(m.stoppages||[]).filter(function(st){return Math.abs(st[0]-best[0])<1.5;}).map(function(st){return st[1].replace(/_/g,' ');});
+      var ng=(m.goals||[]).filter(function(g){return Math.abs(g.m-best[0])<1.6;}).map(function(g){
+        return g.k==='miss' ? ('✗ '+(g.who||'')+' pen miss')
+          : '⚽ '+(g.who||'')+(g.sc?' '+g.sc:'')+(g.k&&g.k!=='miss'?' ('+g.k+')':''); });
+      var extra=near.concat(ng);
       var who=best[1]>=0?(m.home):(m.away);
-      tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(near.length?' · '+near[0]:'');
+      tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(extra.length?' · '+extra.join(' · '):'');
       tip.style.opacity=1;
       var tl=x/W*r.width, hw=tip.offsetWidth/2+4;
       tl=Math.max(hw, Math.min(r.width-hw, tl));
@@ -407,6 +424,19 @@ TEMPLATE = """<!DOCTYPE html>
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, zeroY, box.w, box.y+box.h-zeroY); ctx.clip(); wavePath(); ctx.fillStyle=t.awayFill; ctx.fill(); ctx.restore();
     ctx.strokeStyle=t.grid; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(box.x, zeroY); ctx.lineTo(box.x+box.w, zeroY); ctx.stroke();
     (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); });
+    ctx.textAlign='center';
+    (m.goals||[]).forEach(function(g){
+      if(g.m<minMin-1 || g.m>maxMin+1) return;
+      var x=X(g.m);
+      if(g.k==='miss'){
+        ctx.strokeStyle=t.sub; ctx.lineWidth=1.6; ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(x,box.y); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle=t.sub; ctx.font="20px 'IBM Plex Mono'"; ctx.fillText('✗', x, box.y+22);
+      } else {
+        ctx.strokeStyle=(g.h?t.homeFill:t.awayFill); ctx.globalAlpha=.6; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(x,box.y); ctx.lineTo(x,box.y+box.h); ctx.stroke(); ctx.globalAlpha=1;
+        ctx.font="22px 'IBM Plex Mono'"; ctx.fillText('⚽', x, box.y+22);
+        if(g.sc){ ctx.font="600 13px 'IBM Plex Mono'"; ctx.fillStyle=t.ink; ctx.fillText(g.sc, x, box.y+40); }
+      }
+    });
     ctx.fillStyle=t.sub; ctx.font="22px 'IBM Plex Mono'"; ctx.textAlign='center';
     [0,15,30,45,60,75,90].forEach(function(mm){ if(mm>=minMin-1 && mm<=maxMin+1) ctx.fillText(mm+"'", X(mm), box.y+box.h+30); });
   }

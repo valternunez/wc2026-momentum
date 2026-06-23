@@ -210,7 +210,7 @@ def _write_momentum_json(match_ids: list[str], df: pl.DataFrame) -> None:
             "id": str(mid), "home": m.get("home_team"), "away": m.get("away_team"),
             "hs": m.get("home_score"), "as": m.get("away_score"),
             "ts": m.get("start_timestamp"), "colors": colors,
-            "series": series, "stoppages": stoppages,
+            "series": series, "stoppages": stoppages, "goals": fotmob.parse_goals(raw),
         })
     (PROCESSED / "momentum.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 

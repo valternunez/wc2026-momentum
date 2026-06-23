@@ -194,6 +194,36 @@ def parse_incidents(details_json: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+def parse_goals(details_json: dict[str, Any]) -> list[dict[str, Any]]:
+    """Compact goal/penalty timeline for the momentum chart markers.
+
+    Each item: {m: minute, h: 1 if home scored else 0, who: scorer, sc: "H-A", k: kind}
+    where kind is "" | "pen" | "og" | "header" | "fk" | "miss" (missed penalty, no score).
+    Shootout entries are excluded (not part of in-match momentum).
+    """
+    mf = (details_json.get("content") or {}).get("matchFacts") or {}
+    events = (mf.get("events") or {}).get("events") or []
+    desc_map = {"penalty": "pen", "owngoal": "og", "header": "header", "direct_free_kick": "fk"}
+    out: list[dict[str, Any]] = []
+    for e in events:
+        typ = e.get("type")
+        if typ not in ("Goal", "MissedPenalty") or e.get("isPenaltyShootoutEvent"):
+            continue
+        if e.get("time") is None:
+            continue
+        who = e.get("nameStr") or (e.get("player") or {}).get("name") or ""
+        if typ == "MissedPenalty":
+            kind, sc = "miss", ""
+        else:
+            dkey = (e.get("goalDescriptionKey") or "").lower()
+            kind = "og" if e.get("ownGoal") else desc_map.get(dkey, "")
+            ns = e.get("newScore")
+            sc = f"{ns[0]}-{ns[1]}" if isinstance(ns, (list, tuple)) and len(ns) == 2 else (str(ns) if ns else "")
+        out.append({"m": int(e["time"]), "h": 1 if e.get("isHome") else 0, "who": who, "sc": sc, "k": kind})
+    out.sort(key=lambda r: r["m"])
+    return out
+
+
 def nominal_hydration_commentary(momentum: list[dict[str, float]]) -> list[dict[str, Any]]:
     """Synthetic hydration markers at nominal WC2026 minutes the match actually reached.
 

@@ -69,6 +69,25 @@ def test_build_editorial_page():
     # match date on grid cards (DD/MM/YYYY)
     import re
     assert re.search(r"\d{2}/\d{2}/\d{4}", html)
+    # goal markers: data + legend + chart glyph
+    assert '"goals"' in html and "⚽" in html
+
+
+def test_parse_goals():
+    raw = {"content": {"matchFacts": {"events": {"events": [
+        {"type": "Goal", "time": 9, "isHome": True, "nameStr": "A", "newScore": [1, 0], "goalDescriptionKey": ""},
+        {"type": "Goal", "time": 50, "isHome": False, "nameStr": "B", "newScore": [1, 1], "goalDescriptionKey": "penalty"},
+        {"type": "Goal", "time": 60, "isHome": True, "nameStr": "C", "newScore": [2, 1], "ownGoal": True},
+        {"type": "MissedPenalty", "time": 70, "isHome": False, "nameStr": "D"},
+        {"type": "Goal", "time": 121, "isHome": True, "nameStr": "E", "isPenaltyShootoutEvent": True, "newScore": [3, 1]},
+        {"type": "Card", "time": 30, "isHome": True},
+    ]}}}}
+    g = fotmob.parse_goals(raw)
+    assert [x["m"] for x in g] == [9, 50, 60, 70]  # shootout + card excluded, sorted by minute
+    assert g[0]["sc"] == "1-0" and g[0]["k"] == ""
+    assert g[1]["k"] == "pen" and g[1]["h"] == 0
+    assert g[2]["k"] == "og"
+    assert g[3]["k"] == "miss" and g[3]["sc"] == ""
 
 
 def test_stage_meta():
