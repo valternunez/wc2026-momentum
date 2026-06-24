@@ -34,6 +34,10 @@ Write-Host "[daily] $today - discover + scrape + build"
 try {
     Invoke-Uv run python -m src.pipeline --discover-days 3 --ids-file data/match_ids.json --date $today
     Invoke-Uv run python -m src.report.build_site
+    # Regenerate committed social artifacts (og cards, story stills, story MP4) only if the headline
+    # numbers moved. Best-effort: skips cleanly if the browser/ffmpeg extras aren't installed.
+    # Needs: uv sync --extra browser --extra media + playwright install chromium.
+    Invoke-Uv run python -m src.pipeline --refresh-social
 } catch {
     Write-Heartbeat "FAIL" "$($_.Exception.Message)"
     Write-Host "[daily] FAILED: $($_.Exception.Message)"

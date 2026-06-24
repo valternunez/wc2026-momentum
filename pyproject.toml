@@ -32,6 +32,11 @@ dev = ["pytest>=8.0"]
 browser = [
     "playwright>=1.60.0",
 ]
+# Pip-installable static ffmpeg (no system install) for the story-mode MP4 export.
+# Install with: uv sync --extra browser --extra media
+media = [
+    "imageio-ffmpeg>=0.4.8",
+]
 sources = [
     "scraperfc>=3.2.1",
 ]

@@ -119,6 +119,12 @@ TEMPLATE = """<!DOCTYPE html>
   body.still .anim{opacity:1;transform:none;transition:none}
   body.still .wave-path{stroke-dashoffset:0}
   body.still .wave-band{opacity:1}
+  /* autoplay mode: clean full-bleed frame for video capture (Playwright ?autoplay=1) — keep the
+     progress bars, hide the interactive chrome */
+  body.autoplay{overflow:hidden}
+  body.autoplay .stage{padding:0}
+  body.autoplay .frame{width:100vw;height:100vh;border-radius:0;box-shadow:none;cursor:default}
+  body.autoplay .chrome,body.autoplay .hint,body.autoplay .navchev,body.autoplay .close{display:none}
 </style></head>
 <body>
 <div class="stage">
@@ -192,6 +198,7 @@ TEMPLATE = """<!DOCTYPE html>
       <div class="crow">
         <div class="ctrls">
           <a class="cbtn no-nav" id="save" href="story/{{STORY_DIR}}/slide1.png" download>&#8595; {{STORY_SAVE}}</a>
+          <a class="cbtn no-nav" href="{{STORY_VID}}" download>&#8595; {{STORY_VIDEO}}</a>
           {{STORY_LANG}}
         </div>
         <div class="counter" id="counter" data-of="{{STORY_OF}}"></div>
@@ -237,13 +244,25 @@ TEMPLATE = """<!DOCTYPE html>
   function go(i){ idx=Math.max(0,Math.min(N-1,i)); activate(idx); }
   function next(){ go(idx+1); } function prev(){ go(idx-1); }
 
+  var params=new URLSearchParams(location.search);
+
   // still-capture mode (?still=N) — one slide, final state, no animation
-  var still=new URLSearchParams(location.search).get('still');
+  var still=params.get('still');
   if(still!==null){
     var k=Math.max(1,Math.min(N,parseInt(still,10)||1))-1;
     document.body.classList.add('still'); rm=true;
     slides.forEach(function(s,j){ s.classList.toggle('show', j===k); });
     activate(k); return;
+  }
+
+  // autoplay mode (?autoplay=1) — used by the video recorder: advance on a timer through every
+  // slide (playing each slide's animations), hold on the last. Chrome is hidden via body.autoplay.
+  if(params.get('autoplay')!==null){
+    document.body.classList.add('autoplay');
+    activate(0);
+    var per=3200, i=0;
+    var timer=setInterval(function(){ i++; if(i>=N){ clearInterval(timer); return; } go(i); }, per);
+    return;
   }
 
   frame.addEventListener('click', function(e){

@@ -501,6 +501,8 @@ def main() -> None:
     ap.add_argument("--twfe", action="store_true", help="fit the signed-off TWFE model and persist twfe.json (needs the dev/events extra) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
     ap.add_argument("--story-cards", action="store_true", help="render the 1080x1920 story-slide still PNGs (needs a built site/story.html) and exit")
+    ap.add_argument("--story-video", action="store_true", help="render the 1080x1920 story MP4 per language (needs a built site/story.html + ffmpeg) and exit")
+    ap.add_argument("--refresh-social", action="store_true", help="regenerate og cards + story stills + story videos IF the headline numbers changed (best-effort) and exit")
     ap.add_argument("--method-pdf", action="store_true", help="render the methodology pages to committed PDFs and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
@@ -535,6 +537,16 @@ def main() -> None:
         from src.viz.social import build_story_cards
 
         print("[story-cards]", build_story_cards())
+        return
+    if args.story_video:
+        from src.viz.social import build_story_video
+
+        print("[story-video]", build_story_video())
+        return
+    if args.refresh_social:
+        from src.viz.social import refresh_social
+
+        refresh_social()
         return
     if args.method_pdf:
         from src.viz.method_pdf import build_methodology_pdf

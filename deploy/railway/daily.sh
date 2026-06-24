@@ -41,6 +41,10 @@ TODAY="$(date -u +%F)"
 echo "[railway-daily] $TODAY — discover + scrape + build"
 uv run python -m src.pipeline --discover-days 3 --ids-file data/match_ids.json --date "$TODAY"
 uv run python -m src.report.build_site
+# Refresh committed social artifacts (og cards, story stills, story MP4) when the numbers move.
+# Best-effort: skips cleanly unless this runner installed the render extras (uv sync --extra browser
+# --extra media + playwright install chromium). The local daily runner is the primary renderer.
+uv run python -m src.pipeline --refresh-social || true
 
 git add data/processed snapshots reports/figures data/match_ids.json
 if git diff --cached --quiet; then

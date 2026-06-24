@@ -38,8 +38,9 @@ def test_story_pages_built_and_resolved():
         assert "<!DOCTYPE html>" in html
         assert html.count('class="slide"') == 6        # six narrative slides
         assert 'id="frame"' in html
-        assert "?still=" not in html or "still=" in html  # still hook present in the inline script
-        assert "URLSearchParams" in html               # nav/still script embedded
+        assert "URLSearchParams" in html               # nav/still/autoplay script embedded
+        assert "autoplay" in html and "body.classList.add('autoplay')" in html  # video-capture mode
+        assert 'href="story.mp4"' in html or 'href="story.es.mp4"' in html      # download-video link
     # the headline numbers reach the slides (they trace to the committed parquet)
     assert "data-num=" in en
     # verdict slide carries the CI bounds + the data-driven gap clause (honest verdict)
@@ -71,6 +72,9 @@ def test_main_page_links_to_story():
     index_es = (SITE / "index.es.html").read_text(encoding="utf-8")
     assert 'href="story.html"' in index and 'class="sharebar"' in index
     assert 'href="story.es.html"' in index_es and 'class="sharebar"' in index_es
+    # compact masthead share icon (popover) present alongside the bottom bar
+    assert 'class="sharewrap"' in index and 'class="sharepop"' in index
+    assert 'class="sharewrap"' in index_es
 
 
 def test_story_share_strings_bilingual_parity():

@@ -8,6 +8,7 @@ committed. CI never regenerates it (no browser); build_site copies it into site/
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from src.paths import PROCESSED, REPORTS, SITE
@@ -169,3 +170,100 @@ def build_story_cards() -> str:
                 pg.close()
         b.close()
     return str(outroot)
+
+
+STORY_VIDEO = REPORTS / "figures" / "story.mp4"
+STORY_VIDEO_ES = REPORTS / "figures" / "story.es.mp4"
+RENDER_STATE = REPORTS / "figures" / "render_state.json"
+_AUTOPLAY_PER_MS = 3200  # must match the per-slide timer in story_copy.py ?autoplay mode
+
+
+def build_story_video() -> str:
+    """Render the story as a downloadable 1080x1920 MP4 per language (needs Playwright + ffmpeg).
+
+    Opens the already-built site/story.html?autoplay=1 (auto-advances the slides, chrome hidden) in a
+    Playwright context that records video, then transcodes the .webm to a phone-friendly H.264 MP4 via
+    the pip-installed static ffmpeg (imageio-ffmpeg) — sized for Instagram Story/Reel + TikTok. Writes
+    reports/figures/story.mp4 + story.es.mp4, committed like og.png. Run via `pipeline --story-video`.
+    """
+    import subprocess
+    import tempfile
+
+    import imageio_ffmpeg
+    from playwright.sync_api import sync_playwright
+
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    W, H = 1080, 1920
+    pages = {"en": (SITE / "story.html", STORY_VIDEO), "es": (SITE / "story.es.html", STORY_VIDEO_ES)}
+    out: list[str] = []
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(headless=True)
+        for _lang, (path, dest) in pages.items():
+            if not path.exists():
+                continue
+            base = path.resolve().as_uri()
+            probe = b.new_page(viewport={"width": W, "height": H})
+            probe.goto(f"{base}?still=1", wait_until="networkidle")
+            n = int(probe.evaluate("document.querySelectorAll('.slide').length"))
+            probe.close()
+            duration = n * _AUTOPLAY_PER_MS + 1600  # advance through every slide, then a brief hold
+            with tempfile.TemporaryDirectory() as td:
+                ctx = b.new_context(viewport={"width": W, "height": H},
+                                    record_video_dir=td,
+                                    record_video_size={"width": W, "height": H})
+                pg = ctx.new_page()
+                pg.goto(f"{base}?autoplay=1", wait_until="networkidle")
+                pg.wait_for_timeout(duration)
+                pg.close()
+                webm = pg.video.path()
+                ctx.close()  # flush the webm to disk
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(
+                    [ffmpeg, "-y", "-i", webm, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                     "-r", "30", "-movflags", "+faststart", "-an", str(dest)],
+                    check=True, capture_output=True,
+                )
+            out.append(str(dest))
+        b.close()
+    return ", ".join(out)
+
+
+def refresh_social(force: bool = False) -> str:
+    """Regenerate the committed social artifacts (og cards + story stills + story videos) IF the
+    headline numbers moved since the last render — keeping the downloadable images/video in step with
+    the data without churning binaries when nothing changed. Best-effort: if a renderer's deps are
+    missing (no browser/ffmpeg) it logs and skips, and the render-state is only advanced when every
+    renderer succeeded, so a partial run retries next time. Called by the daily scripts after build."""
+    from src.report.build_site import finding_signature
+
+    sig = finding_signature()
+    if not sig:
+        print("[refresh-social] no processed data; skip")
+        return "skip"
+    prev = None
+    if RENDER_STATE.exists():
+        try:
+            prev = json.loads(RENDER_STATE.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            prev = None
+    if prev == sig and not force:
+        print("[refresh-social] up to date")
+        return "up-to-date"
+
+    done, failed = [], []
+    for name, fn in (("og-card", build_share_card),
+                     ("story-cards", build_story_cards),
+                     ("story-video", build_story_video)):
+        try:
+            fn()
+            done.append(name)
+        except Exception as e:  # missing browser/ffmpeg, render error — never break the daily run
+            failed.append(name)
+            print(f"[refresh-social] {name} skipped: {type(e).__name__}: {e}")
+    if failed:
+        print(f"[refresh-social] partial render ({', '.join(done) or 'none'}); leaving state for retry")
+        return "partial"
+    RENDER_STATE.parent.mkdir(parents=True, exist_ok=True)
+    RENDER_STATE.write_text(json.dumps(sig, indent=2, sort_keys=True), encoding="utf-8")
+    print(f"[refresh-social] rendered: {', '.join(done)}")
+    return "rendered"

@@ -112,6 +112,7 @@ TEMPLATE = """<!DOCTYPE html>
         <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
         {{LIVE_UPDATED}} {{UPDATED_DATE}}
       </div>
+      {{SHARE_BTN}}
     </div>
   </header>
   <div id="freshness" role="status" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E"><span aria-hidden="true">⚠</span> {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>

@@ -91,18 +91,28 @@ def _lang_toggle(lang: str, page: str = "index") -> str:
     return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
 
 
+def _share_intents(S: dict, url: str) -> dict:
+    """The WhatsApp / X / Telegram web share-intent URLs for a page (one source of truth, reused
+    by the bottom share bar and the masthead share icon). Note: Instagram has no web share-intent —
+    it is reached via the native OS sheet / the 9:16 image, not a link."""
+    text = S["SHARE_TEXT"]
+    qtext, qurl = quote(text), quote(url)
+    return {
+        "text": text,
+        "wa": f"https://wa.me/?text={quote(text + ' ' + url)}",
+        "x": f"https://twitter.com/intent/tweet?text={qtext}&url={qurl}",
+        "tg": f"https://t.me/share/url?url={qurl}&text={qtext}",
+    }
+
+
 def _share_bar(S: dict, url: str) -> str:
     """One-tap share row: WhatsApp / X / Telegram URL-intents (work on desktop + mobile) + a
     copy-link button and a native OS share-sheet button (shown only where navigator.share exists,
     which is how Instagram/Messages are reached). All labels localized via STRINGS[lang]. The HTML
     is fully inline-styled so it renders the same on the main page and the story CTA slide; a small
-    self-contained script wires copy + native. Note: Instagram has no web share-intent URL, so it
-    is intentionally absent here and handled by the native sheet / the 9:16 image."""
-    text = S["SHARE_TEXT"]
-    qtext, qurl = quote(text), quote(url)
-    wa = f"https://wa.me/?text={quote(text + ' ' + url)}"
-    x = f"https://twitter.com/intent/tweet?text={qtext}&url={qurl}"
-    tg = f"https://t.me/share/url?url={qurl}&text={qtext}"
+    self-contained script wires copy + native."""
+    it = _share_intents(S, url)
+    text, wa, x, tg = it["text"], it["wa"], it["x"], it["tg"]
     btn = ("display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.02em;"
            "line-height:1;color:#EFEBDF;background:#1A1813;text-decoration:none;padding:8px 12px;"
            "border-radius:4px;border:0;cursor:pointer")
@@ -135,6 +145,56 @@ def _share_bar(S: dict, url: str) -> str:
         "if(nt&&navigator.share){nt.hidden=false;nt.addEventListener('click',function(){"
         "navigator.share({title:nt.getAttribute('data-title'),text:nt.getAttribute('data-text'),url:nt.getAttribute('data-url')}).catch(function(){});});}"
         "})(bars[i]);}})();</script>"
+    )
+
+
+def _share_button(S: dict, url: str) -> str:
+    """Compact share icon for the masthead. On mobile (navigator.share) a tap opens the native OS
+    sheet — the path to Instagram / TikTok / WhatsApp / Messages. On desktop it toggles a small
+    popover with the WhatsApp / X / Telegram / copy-link intents (closes on Esc / outside-click).
+    Self-contained markup + script; reuses the shared intent URLs."""
+    it = _share_intents(S, url)
+    text, wa, x, tg = it["text"], it["wa"], it["x"], it["tg"]
+    icon = ("<svg viewBox='0 0 24 24' width='17' height='17' fill='none' stroke='currentColor' "
+            "stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"
+            "<path d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/><path d='M12 15V3'/>"
+            "<path d='M8 7l4-4 4 4'/></svg>")
+    bs = ("display:inline-flex;align-items:center;justify-content:center;min-width:30px;min-height:30px;"
+          "padding:6px;background:none;border:0;cursor:pointer;color:#6B6557;border-radius:4px")
+    item = ("display:block;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.02em;"
+            "color:#1A1813;text-decoration:none;padding:8px 12px;border-radius:4px;text-align:left;"
+            "background:none;border:0;width:100%;cursor:pointer")
+    pop = ("position:absolute;top:calc(100% + 8px);right:0;z-index:50;min-width:158px;background:#FCFAF3;"
+           "border:1px solid #E0DAC9;border-radius:6px;box-shadow:0 14px 40px rgba(26,24,19,.22);padding:5px")
+    a = 'target="_blank" rel="noopener noreferrer" role="menuitem"'
+    return (
+        '<div class="sharewrap" style="position:relative;display:inline-flex">'
+        f'<button type="button" class="sharebtn no-nav" aria-label="{html.escape(S["SHARE_LABEL"], quote=True)}" '
+        f'aria-haspopup="true" aria-expanded="false" style="{bs}" '
+        f'data-title="{html.escape(S["SHARE_TITLE"], quote=True)}" data-text="{html.escape(text, quote=True)}" '
+        f'data-url="{html.escape(url, quote=True)}">{icon}</button>'
+        f'<div class="sharepop" hidden role="menu" style="{pop}">'
+        f'<a style="{item}" href="{html.escape(wa, quote=True)}" {a}>{html.escape(S["SHARE_WHATSAPP"])}</a>'
+        f'<a style="{item}" href="{html.escape(x, quote=True)}" {a}>{html.escape(S["SHARE_X"])}</a>'
+        f'<a style="{item}" href="{html.escape(tg, quote=True)}" {a}>{html.escape(S["SHARE_TELEGRAM"])}</a>'
+        f'<button type="button" style="{item}" role="menuitem" data-copy="{html.escape(url, quote=True)}" '
+        f'data-copied="{html.escape(S["SHARE_COPIED"], quote=True)}">{html.escape(S["SHARE_COPY"])}</button>'
+        '</div></div>'
+        "<script>(function(){var w=document.currentScript.previousElementSibling;"
+        "var b=w.querySelector('.sharebtn'),p=w.querySelector('.sharepop');"
+        "function close(){p.hidden=true;b.setAttribute('aria-expanded','false');}"
+        "function open(){p.hidden=false;b.setAttribute('aria-expanded','true');}"
+        "b.addEventListener('click',function(e){e.stopPropagation();"
+        "if(navigator.share){navigator.share({title:b.getAttribute('data-title'),text:b.getAttribute('data-text'),url:b.getAttribute('data-url')}).catch(function(){});return;}"
+        "if(p.hidden)open();else close();});"
+        "document.addEventListener('click',function(e){if(!w.contains(e.target))close();});"
+        "document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});"
+        "var cp=p.querySelector('[data-copy]');"
+        "if(cp){cp.addEventListener('click',function(){var u=cp.getAttribute('data-copy');"
+        "function done(){var t=cp.getAttribute('data-copied')||'Copied';var o=cp.textContent;"
+        "cp.textContent=t;setTimeout(function(){cp.textContent=o;close();},1100);}"
+        "if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(done).catch(done);}else{done();}});}"
+        "})();</script>"
     )
 
 
@@ -641,6 +701,37 @@ def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, up
   </section>"""
 
 
+def finding_signature() -> dict:
+    """The headline numbers the committed social artifacts (og.png, story stills, story.mp4) depend
+    on — recomputed from the committed parquet exactly as build() computes them. refresh_social()
+    compares this against reports/figures/render_state.json so the binaries are only re-rendered when
+    the underlying data actually moves (no daily churn when no new matches landed)."""
+    if not STOPPAGES_PARQUET.exists():
+        return {}
+    df = load_processed()
+    if df.is_empty():
+        return {}
+    by = {e["stoppage_type"]: e for e in effect_by_type(df)}
+    hyd = by.get("hydration", {})
+    p26 = _placebo_meanci("placebo2026.parquet")
+    from src.analysis.descriptive import gap_adjusted_ci
+    _ppath = PROCESSED / "placebo2026.parquet"
+    _g = gap_adjusted_ci(df, pl.read_parquet(_ppath)) if _ppath.exists() else None
+    snaps = load_all_snapshots()
+    sig = {
+        "hero": round(abs(hyd["mean_delta"])) if hyd and hyd.get("n") else None,
+        "p26": round(abs(p26[0])) if p26 else None,
+        "n_matches": int(df["match_id"].n_unique()),
+        "snap": snaps[-1]["date"] if snaps else None,
+    }
+    if _g:
+        sig["gap"] = round(abs(_g["gap"]))
+        sig["gap_lo"] = round(-_g["hi"])
+        sig["gap_hi"] = round(-_g["lo"])
+        sig["gap_excl0"] = bool(_g["hi"] < 0 or _g["lo"] > 0)
+    return sig
+
+
 def build() -> str:
     SITE.mkdir(parents=True, exist_ok=True)
     site_figures = SITE / "figures"
@@ -648,7 +739,8 @@ def build() -> str:
     # social/share assets + the committed methodology PDFs live at the site root (generated
     # locally — CI has no browser — and copied in on every build, like og.png).
     for icon in ("og.png", "og.es.png", "apple-touch-icon.png",
-                 "wc2026-methodology.pdf", "wc2026-methodology.es.pdf"):
+                 "wc2026-methodology.pdf", "wc2026-methodology.es.pdf",
+                 "story.mp4", "story.es.mp4"):
         src = REPORTS / "figures" / icon
         if src.exists():
             shutil.copyfile(src, SITE / icon)
@@ -781,6 +873,7 @@ def build() -> str:
             "METHOD_HREF": _page_link("method", lang),
             "STORY_HREF": _page_link("story", lang),
             "SHARE_BAR": _share_bar(S, _LANG_META[lang]["OG_URL"]),
+            "SHARE_BTN": _share_button(S, _LANG_META[lang]["OG_URL"]),
             "LANG_TOGGLE": _lang_toggle(lang),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
@@ -870,6 +963,7 @@ def build_story_pages(data_tokens: dict, snap_date: str | None) -> None:
             "STORY_CANONICAL": SITE_BASE + story_file,
             "HOME_HREF": _page_link("index", lang),
             "STORY_DIR": lang,
+            "STORY_VID": "story.mp4" if lang == "en" else "story.es.mp4",
             "STORY_LANG": story_lang,
             "SHARE_BAR": _share_bar(S, SITE_BASE + story_file),
             "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
