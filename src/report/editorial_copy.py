@@ -99,7 +99,6 @@ TEMPLATE = """<!DOCTYPE html>
   <header style="max-width:840px;margin:0 auto;padding:22px 40px 0;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
     <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
       <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#1A1813;font-weight:600">{{MAST_TITLE}}</span>
-      <a href="{{METHOD_HREF}}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E5482E;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.4)">{{NAV_METHOD}}</a>
     </div>
     <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
       <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
@@ -609,24 +608,32 @@ TEMPLATE = """<!DOCTYPE html>
       ctx.fillStyle=t.ink; ctx.font="500 50px 'Newsreader'"; ctx.fillText(m.home+score+m.away, P, P+62);
       ctx.fillStyle=t.sub; ctx.font="18px 'IBM Plex Mono'"; var dt=fmtDate(m.ts); ctx.fillText((dt?dt+'  ·  ':'')+(m.series.length)+" "+T.shareMinutes+"  ·  "+((m.stoppages||[]).length)+" "+T.shareStoppages, P, P+96);
       drawWave(ctx, m, t, {x:P, y:200, w:Wl-2*P, h:300});
-      // legend row 1: team fills (who's on top)
+      // legend row 1: team fills (who's on top). Match the page legend: team names in a muted tint,
+      // the "on top" label in the muted tone — not the page's near-black ink, which reads too heavy here.
       ctx.textAlign='left'; var ly=550; ctx.font="600 18px 'IBM Plex Mono'";
-      ctx.fillStyle=t.homeFill; ctx.fillRect(P, ly-13, 24, 13); ctx.fillStyle=t.ink; ctx.fillText(m.home+' '+T.onTop, P+34, ly);
-      var ox=P+34+ctx.measureText(m.home+' '+T.onTop).width+44;
-      ctx.fillStyle=t.awayFill; ctx.fillRect(ox, ly-13, 24, 13); ctx.fillStyle=t.ink; ctx.fillText(m.away+' '+T.onTop, ox+34, ly);
+      var nameH=theme.mode==='dark'?t.homeFill:'#3E5E78', nameA=theme.mode==='dark'?t.awayFill:'#9A6A3A';
+      ctx.fillStyle=t.homeFill; ctx.fillRect(P, ly-13, 24, 13);
+      ctx.fillStyle=nameH; ctx.fillText(m.home, P+34, ly);
+      var hw=ctx.measureText(m.home).width;
+      ctx.fillStyle=t.sub; ctx.fillText(' '+T.onTop, P+34+hw, ly);
+      var ox=P+34+hw+ctx.measureText(' '+T.onTop).width+44;
+      ctx.fillStyle=t.awayFill; ctx.fillRect(ox, ly-13, 24, 13);
+      ctx.fillStyle=nameA; ctx.fillText(m.away, ox+34, ly);
+      var aw=ctx.measureText(m.away).width;
+      ctx.fillStyle=t.sub; ctx.fillText(' '+T.onTop, ox+34+aw, ly);
       // legend row 2: stoppage + goal markers
       var my=586, mx=P; ctx.font="600 16px 'IBM Plex Mono'";
       function legLine(label, col, dotted){
         var cy=my-5;
         ctx.strokeStyle=col; ctx.lineWidth=dotted?2.6:2.2; ctx.lineCap=dotted?'round':'butt'; ctx.setLineDash(dotted?[0.5,6]:[6,4]);
         ctx.beginPath(); ctx.moveTo(mx, cy); ctx.lineTo(mx+26, cy); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap='butt';
-        ctx.fillStyle=t.ink; ctx.fillText(label, mx+34, my); mx += 34+ctx.measureText(label).width+30;
+        ctx.fillStyle=t.sub; ctx.fillText(label, mx+34, my); mx += 34+ctx.measureText(label).width+30;
       }
       legLine(T.legHydration, '#3E88C7', false);
       legLine(T.legVar, '#7A5CC0', true);
       legLine(T.legInjury, '#E08A4B', false);
       ctx.beginPath(); ctx.arc(mx+8, my-6, 7, 0, 6.2832); ctx.fillStyle='#6E90AE'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=t.bg; ctx.stroke();
-      ctx.fillStyle=t.ink; ctx.fillText(T.legGoal, mx+24, my);
+      ctx.fillStyle=t.sub; ctx.fillText(T.legGoal, mx+24, my);
       // footer
       ctx.strokeStyle=t.grid; ctx.globalAlpha=.3; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(P, Hl-66); ctx.lineTo(Wl-P, Hl-66); ctx.stroke(); ctx.globalAlpha=1;
       ctx.textAlign='left'; ctx.fillStyle=t.sub; ctx.font="16px 'IBM Plex Mono'"; ctx.fillText(T.shareFoot, P, Hl-36);

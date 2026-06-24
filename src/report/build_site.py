@@ -303,10 +303,18 @@ def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str, F: dict
         if pre is None or d is None:
             continue
         leader = home if pre > 0 else away
-        lead_delta = d if pre > 0 else -d  # from the leader's perspective
+        lead_delta = d if pre > 0 else -d  # change over the 5 min after, from the leader's perspective
         m = int(r["clock_minute"])
-        key = "exp_lost" if lead_delta < 0 else "exp_pushed"
-        parts.append(F[key].format(m=m, leader=leader, x=f"{abs(lead_delta):.0f}"))
+        # Grade the lead clause to how big the pre-break edge actually was. The text reads the 5-min
+        # average *before* the break, which can be a faint, fading edge (e.g. a bottom-decile +4.6) —
+        # calling that "dominating" misreads the chart. Thresholds from the |pre| distribution
+        # (p10~5, p50~25, p75~42): under 8 = roughly even, 40+ = clearly on top.
+        a = abs(pre)
+        tier = "exp_lead_marginal" if a < 8 else ("exp_lead_strong" if a >= 40 else "exp_lead_moderate")
+        lead = F[tier].format(leader=leader)
+        x = f"{abs(lead_delta):.0f}"
+        key = "exp_held" if x == "0" else ("exp_lost" if lead_delta < 0 else "exp_pushed")
+        parts.append(F[key].format(m=m, lead=lead, x=x))
     sw = max(rows, key=lambda r: abs(r.get("momentum_delta") or 0))
     if sw.get("momentum_delta") is not None:
         st = sw["stoppage_type"]
