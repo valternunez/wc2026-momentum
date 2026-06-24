@@ -86,6 +86,10 @@ TEMPLATE = """<!DOCTYPE html>
   details.grp[open]>summary .grp-n::after{content:'  –'}
   details.grp>summary:hover{color:#E5482E}
   details.grp[open]>.grp-grid{margin-top:14px}
+  /* §03 extremes: column-major fill over 6 shared rows (1 header + 5) so the two columns stay
+     row-aligned even when a long match-up wraps; collapses to one stacked column on mobile. */
+  .extremes-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(6,auto);column-gap:44px}
+  @media (max-width:800px){ .extremes-grid{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none} }
   @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card,.mb-tab,#tip-pop,.mb-seg button{transition:none}.mb-card:hover{transform:none} }
 </style></head>
 <body>
