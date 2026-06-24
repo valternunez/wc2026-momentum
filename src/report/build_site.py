@@ -245,8 +245,9 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]], F: dict
         return (f'<button type="button" class="mb-card" data-mid="{mid}" '
                 f'aria-label="{aria}" style="cursor:pointer;display:flex;width:100%;font:inherit;text-align:left;background:none;border:none;'
                 f'justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid #E6E0CF">'
-                f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813">{h} {vs} {a}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#1A1813;white-space:nowrap">'
+                # single-line + ellipsis so every row is the same height -> the two columns stay row-aligned
+                f'<span style="font-family:\'IBM Plex Sans\',sans-serif;font-size:14px;color:#1A1813;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{h} {vs} {a}</span>'
+                f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#1A1813;white-space:nowrap;flex:0 0 auto">'
                 f'{team} {sign}{abs(drop):.0f} '
                 f'<span style="color:#5A5547">{frm} +{r["momentum_pre_5min_mean"]:.0f} · {int(r["clock_minute"])}\'</span></span></button>')
 
@@ -254,11 +255,11 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]], F: dict
       <div style="margin:4px 0 32px">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,258px),1fr));gap:22px 44px">
           <div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px">{F["extremes_biggest"]}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:6px;white-space:nowrap">{F["extremes_biggest"]}</div>
             {"".join(row(r) for r in biggest)}
           </div>
           <div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5A5547;font-weight:600;margin-bottom:6px">{F["extremes_quietest"]}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5A5547;font-weight:600;margin-bottom:6px;white-space:nowrap">{F["extremes_quietest"]}</div>
             {"".join(row(r) for r in quietest)}
           </div>
         </div>
