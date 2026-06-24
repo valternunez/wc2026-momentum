@@ -97,11 +97,24 @@ def _is_wc2026(match_id: str) -> bool:
 
 
 def _guard_rowcount(prev: int, new: int, *, force: bool) -> None:
-    """Raise if the rebuilt table lost >50% of rows vs the committed parquet (unless forced)."""
-    if not force and prev > 0 and new < max(1, prev // 2):
+    """Raise if the rebuilt table changed implausibly vs the committed parquet (unless forced).
+
+    Two directions: a >50% row DROP (a source/payload regression), or a sudden >2.5x INFLATION once
+    the table is already sizeable — phantom stoppages or a non-WC competition leak, the documented
+    contamination direction. The inflation check is gated on prev>=60 so legitimate early-tournament
+    accumulation (small N growing fast) doesn't trip it.
+    """
+    if force or prev <= 0:
+        return
+    if new < max(1, prev // 2):
         raise RuntimeError(
             f"Refusing to overwrite stoppages.parquet: rows {prev} -> {new} (>50% drop). "
             "Likely a source/payload regression — investigate, or re-run with --force to override."
+        )
+    if prev >= 60 and new > prev * 2.5:
+        raise RuntimeError(
+            f"Refusing to overwrite stoppages.parquet: rows {prev} -> {new} (>2.5x inflation). "
+            "Likely phantom stoppages or a non-WC competition leak — investigate, or --force to override."
         )
 
 

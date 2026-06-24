@@ -83,10 +83,25 @@ def _get(client, api_path: str, *, retries: int = 3) -> dict[str, Any]:
     for attempt in range(retries):
         r = client.get(BASE + api_path, headers={"x-mas": x_mas(api_path)}, timeout=25)
         if r.status_code == 200:
-            return r.json()
-        last = f"{r.status_code} {r.text[:80]}"
-        time.sleep(1.5 * (attempt + 1))
-    raise RuntimeError(f"FotMob GET failed: {api_path} :: {last}")
+            try:
+                return r.json()
+            except Exception as e:
+                # 200 but not JSON — usually a Cloudflare interstitial HTML page. Don't keep retrying.
+                ct = r.headers.get("content-type", "?")
+                raise RuntimeError(f"FotMob 200 non-JSON ({ct}, {type(e).__name__}): {api_path}") from e
+        # 4xx (other than 429 rate-limit) are auth/path errors that won't fix themselves — fail fast.
+        if 400 <= r.status_code < 500 and r.status_code != 429:
+            raise RuntimeError(f"FotMob GET {r.status_code}: {api_path}")
+        last = str(r.status_code)  # log the status, not the body
+        wait = 1.5 * (attempt + 1)
+        ra = r.headers.get("Retry-After")
+        if ra:
+            try:
+                wait = max(wait, float(ra))
+            except ValueError:
+                pass
+        time.sleep(wait)
+    raise RuntimeError(f"FotMob GET failed: {api_path} :: last status {last}")
 
 
 # --- fetch / persist --------------------------------------------------------

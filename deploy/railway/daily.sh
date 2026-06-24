@@ -49,6 +49,19 @@ elif [ -z "${GH_TOKEN:-}" ]; then
   echo "[railway-daily] changes built OK but GH_TOKEN unset — skipping push (validation run)"
 else
   git commit -m "data: daily update $TODAY (railway)"
-  git push origin main
-  echo "[railway-daily] pushed $TODAY"
+  # main may have advanced since our fetch (the residential Task Scheduler runner, or a manual
+  # push). Rebase our single data commit and retry so a concurrent update is integrated rather
+  # than lost to a non-fast-forward rejection (which previously failed the whole job).
+  pushed=0
+  for attempt in 1 2 3; do
+    if git push origin main; then pushed=1; break; fi
+    echo "[railway-daily] push rejected (attempt $attempt) — rebasing onto origin/main"
+    git fetch origin main && git rebase origin/main || git rebase --abort || true
+  done
+  if [ "$pushed" = 1 ]; then
+    echo "[railway-daily] pushed $TODAY"
+  else
+    echo "[railway-daily] push failed after retries" >&2
+    exit 1
+  fi
 fi

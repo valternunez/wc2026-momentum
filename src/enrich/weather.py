@@ -228,11 +228,13 @@ def geocode_city(name: str, *, client=None) -> tuple[float, float] | None:
         own = client is None
         cl = client or httpx.Client(timeout=30)
         data = {}
+        got_response = False  # did ANY request actually come back (vs all raising)?
         try:
             for cand in candidates:
                 try:
                     resp = cl.get(GEOCODE_URL, params={"name": cand, "count": 1, "language": "en"})
                     resp.raise_for_status()
+                    got_response = True
                     d = resp.json()
                     if d.get("results"):
                         data = d
@@ -242,8 +244,12 @@ def geocode_city(name: str, *, client=None) -> tuple[float, float] | None:
         finally:
             if own:
                 cl.close()
-        GEOCODE_RAW.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data), encoding="utf-8")
+        # Only cache a real answer — a successful response, including a legitimate empty "no results".
+        # If EVERY request raised (a transient network/Cloudflare blip), do not poison the cache with
+        # {} (which would make the venue permanently "not found"); leave it absent so the next run retries.
+        if got_response:
+            GEOCODE_RAW.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data), encoding="utf-8")
     results = data.get("results") or []
     if not results:
         return None

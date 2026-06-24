@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from src.parse.reconcile import MINUTE_TOLERANCE, reconcile
-from src.scrape.commentary import normalize_lines
+from src.scrape.commentary import classify_comment, normalize_lines
 from src.scrape.commentary_sources import (
     fetch_bbc_commentary,
     fetch_espn_commentary,
@@ -29,6 +29,33 @@ def _bbc_html() -> str:
 
 def _espn_json() -> dict:
     return json.loads((SAMPLES / "espn_sample.json").read_text(encoding="utf-8"))
+
+
+# --- classifier: positives still fire, ordinary play-by-play does NOT (no phantom stoppages) ---
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        # true positives — must still classify
+        ("The players take a cooling break in the heat", "hydration"),
+        ("Drinks break as the referee pauses play", "hydration"),
+        ("VAR is checking for a possible penalty", "var"),
+        ("The referee goes to the pitch-side monitor", "var"),
+        ("This goal is under review", "var"),
+        ("The stretcher is called for", "injury"),
+        ("He is receiving treatment from the physio", "injury"),
+        ("Lewandowski comes on for Morata", "substitution"),
+        # negatives — ordinary play-by-play that previously misfired (audit #6)
+        ("The referee is checking for the corner flag", "none"),
+        ("Checking the run of the full-back down the wing", "none"),
+        ("He takes a knock but plays on", "none"),
+        ("A lovely passing move ends with a shot wide", "none"),
+        ("They review their options and recycle possession", "none"),
+    ],
+)
+def test_classify_comment_positives_and_negatives(text, expected):
+    assert classify_comment(text) == expected
 
 
 # --- BBC pure parser --------------------------------------------------------

@@ -38,18 +38,22 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "var",
         re.compile(
-            r"\bVAR\b|video\s+assistant|on[-\s]?field\s+review|checking\s+(for|the)|"
-            r"\b(under|being)\s+review\b|review(ing)?\s+(a\s+)?(goal|penalty|red\s+card)|"
-            r"\b(pitch[-\s]?side|the)\s+monitor\b|\bsent to the monitor\b",
+            # VAR-specific anchors only. "checking" must name a reviewable incident, so ordinary
+            # play-by-play ("checking for the corner flag", "checking the run") no longer misfires.
+            r"\bVAR\b|video\s+assistant|on[-\s]?field\s+review|"
+            r"check(ing|ed)?\s+(for\s+)?(a\s+)?(possible\s+)?(goal|penalty|offside|foul|hand\s?ball|red\s+card)\b|"
+            r"\b(under|being)\s+review\b|review(ing)?\s+(a\s+)?(goal|penalty|red\s+card)\b|"
+            r"\bpitch[-\s]?side\s+monitor\b|\bsent to the monitor\b",
             re.IGNORECASE,
         ),
     ),
     (
         "injury",
         re.compile(
-            r"\b(injur(y|ed)|treatment|stretcher|physio|medical\s+staff|"
-            r"down\s+(injured|in\s+pain)|receiving\s+treatment|knock)\b|"
-            r"\bstays down\b|\bgoes down holding\b|\bneeds treatment\b",
+            # Anchored injury signals only — bare "knock" dropped (matched "takes a knock but plays on").
+            r"\b(injur(y|ed)|stretcher|physio|medical\s+staff|"
+            r"down\s+(injured|in\s+pain)|receiving\s+treatment|needs?\s+treatment)\b|"
+            r"\bstays down\b|\bgoes down holding\b",
             re.IGNORECASE,
         ),
     ),
