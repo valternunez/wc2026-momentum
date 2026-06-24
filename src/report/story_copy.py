@@ -77,15 +77,20 @@ TEMPLATE = """<!DOCTYPE html>
   .anim{opacity:0;transform:translateY(12px)}
   .slide.active .anim{opacity:1;transform:none;transition:opacity .55s ease, transform .55s ease}
   .slide.active .d1{transition-delay:.04s}.slide.active .d2{transition-delay:.16s}.slide.active .d3{transition-delay:.30s}
+  /* close (back to the analysis) */
+  .close{position:absolute;top:5.5cqw;right:4cqw;z-index:7;display:flex;align-items:center;justify-content:center;
+         min-width:9cqw;min-height:9cqw;font-family:'IBM Plex Mono',monospace;font-size:4.4cqw;line-height:1;
+         color:#6B6557;text-decoration:none;background:none;border:0;cursor:pointer}
+  .close:hover{color:#C03A22}
   /* chrome */
-  .chrome{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:0 6cqw 5.5cqw;
-          display:flex;align-items:center;justify-content:space-between;gap:3cqw;flex-wrap:wrap}
-  .ctrls{display:flex;gap:4cqw;align-items:center}
-  .cbtn{font-family:'IBM Plex Mono',monospace;font-size:3.1cqw;letter-spacing:.06em;color:#46412F;
+  .chrome{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:0 6cqw 5cqw;
+          display:flex;flex-direction:column;gap:2.4cqw}
+  .hint{font-family:'IBM Plex Mono',monospace;font-size:2.4cqw;letter-spacing:.08em;color:#9A927E;pointer-events:none}
+  .crow{display:flex;align-items:center;justify-content:space-between;gap:3cqw;flex-wrap:wrap}
+  .ctrls{display:flex;gap:3.6cqw;align-items:center;flex-wrap:wrap}
+  .cbtn{font-family:'IBM Plex Mono',monospace;font-size:2.6cqw;letter-spacing:.05em;color:#46412F;
         text-decoration:none;border-bottom:1px solid rgba(70,65,47,.35);background:none;border-top:0;border-left:0;border-right:0;cursor:pointer;padding:0 0 1px}
-  .counter{font-family:'IBM Plex Mono',monospace;font-size:3.1cqw;letter-spacing:.08em;color:#8A8268}
-  .hint{position:absolute;left:0;right:0;bottom:11cqw;text-align:center;font-family:'IBM Plex Mono',monospace;
-        font-size:2.9cqw;letter-spacing:.08em;color:#9A927E;pointer-events:none}
+  .counter{font-family:'IBM Plex Mono',monospace;font-size:2.6cqw;letter-spacing:.08em;color:#8A8268;white-space:nowrap}
   .navchev{position:absolute;top:50%;transform:translateY(-50%);z-index:5;background:none;border:0;cursor:pointer;
            font-size:6cqw;color:rgba(26,24,19,.28);padding:4cqw;display:none}
   @media (hover:hover) and (min-width:520px){ .navchev{display:block} }
@@ -108,7 +113,7 @@ TEMPLATE = """<!DOCTYPE html>
   body.still{overflow:hidden}
   body.still .stage{padding:0}
   body.still .frame{width:100vw;height:100vh;border-radius:0;box-shadow:none;cursor:default}
-  body.still .progress,body.still .chrome,body.still .hint,body.still .navchev{display:none}
+  body.still .progress,body.still .chrome,body.still .hint,body.still .navchev,body.still .close{display:none}
   body.still .slide{opacity:0;visibility:hidden}
   body.still .slide.show{opacity:1;visibility:visible;z-index:3}
   body.still .anim{opacity:1;transform:none;transition:none}
@@ -124,6 +129,7 @@ TEMPLATE = """<!DOCTYPE html>
       <span class="seg"></span><span class="seg"></span><span class="seg"></span>
     </div>
 
+    <a class="close no-nav same-tab" href="{{HOME_HREF}}" aria-label="{{MODAL_CLOSE_ARIA}}"><span aria-hidden="true">&#10005;</span></a>
     <button class="navchev prev no-nav" data-go="prev" aria-label="{{STORY_PREV}}">&#8249;</button>
     <button class="navchev next no-nav" data-go="next" aria-label="{{STORY_NEXT}}">&#8250;</button>
 
@@ -181,14 +187,15 @@ TEMPLATE = """<!DOCTYPE html>
       <div class="anim d3">{{SHARE_BAR}}</div>
     </section>
 
-    <div class="hint" id="hint">{{STORY_HINT}}</div>
     <div class="chrome">
-      <div class="ctrls">
-        <a class="cbtn no-nav" id="save" href="story/{{STORY_DIR}}/slide1.png" download>&#8595; {{STORY_SAVE}}</a>
-        <a class="cbtn no-nav same-tab" href="{{HOME_HREF}}">{{STORY_BACK}}</a>
-        {{STORY_LANG}}
+      <div class="hint" id="hint">{{STORY_HINT}}</div>
+      <div class="crow">
+        <div class="ctrls">
+          <a class="cbtn no-nav" id="save" href="story/{{STORY_DIR}}/slide1.png" download>&#8595; {{STORY_SAVE}}</a>
+          {{STORY_LANG}}
+        </div>
+        <div class="counter" id="counter" data-of="{{STORY_OF}}"></div>
       </div>
-      <div class="counter" id="counter" data-of="{{STORY_OF}}"></div>
     </div>
 
   </div>
