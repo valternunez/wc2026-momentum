@@ -500,6 +500,7 @@ def main() -> None:
     ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
     ap.add_argument("--twfe", action="store_true", help="fit the signed-off TWFE model and persist twfe.json (needs the dev/events extra) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
+    ap.add_argument("--story-cards", action="store_true", help="render the 1080x1920 story-slide still PNGs (needs a built site/story.html) and exit")
     ap.add_argument("--method-pdf", action="store_true", help="render the methodology pages to committed PDFs and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
@@ -529,6 +530,11 @@ def main() -> None:
         from src.viz.social import build_share_card
 
         print("[og-card]", build_share_card())
+        return
+    if args.story_cards:
+        from src.viz.social import build_story_cards
+
+        print("[story-cards]", build_story_cards())
         return
     if args.method_pdf:
         from src.viz.method_pdf import build_methodology_pdf

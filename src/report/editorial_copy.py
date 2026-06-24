@@ -106,9 +106,12 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
       <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#1A1813;font-weight:600">{{MAST_TITLE}}</span>
     </div>
-    <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
-      <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
-      {{LIVE_UPDATED}} {{UPDATED_DATE}}
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <a class="same-tab" href="{{STORY_HREF}}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#C03A22;font-weight:600;text-decoration:none;border-bottom:1px solid rgba(192,58,34,.4)"><span aria-hidden="true">&#9654;</span> {{STORY_ENTRY}}</a>
+      <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
+        <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
+        {{LIVE_UPDATED}} {{UPDATED_DATE}}
+      </div>
     </div>
   </header>
   <div id="freshness" role="status" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E"><span aria-hidden="true">⚠</span> {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>
@@ -272,6 +275,10 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="border-top:2px solid #1A1813;border-bottom:2px solid #1A1813;padding:44px 0">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:24px">{{BOTTOM_HEAD}}</div>
       <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">{{BOTTOM_TEXT}}</p>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:30px">
+        <a class="same-tab" href="{{STORY_HREF}}" style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#EFEBDF;background:#1A1813;padding:12px 18px;border-radius:3px;text-decoration:none"><span aria-hidden="true">&#9654;</span>&nbsp;{{STORY_OPEN}}</a>
+        {{SHARE_BAR}}
+      </div>
     </div>
   </section>
 

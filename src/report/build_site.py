@@ -16,6 +16,7 @@ import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import polars as pl
 
@@ -88,6 +89,53 @@ def _lang_toggle(lang: str, page: str = "index") -> str:
           else f'<a class="same-tab" href="{page}.es.html" style="{off}">Español</a>')
     sep = f'<span style="{base};color:#5A5547;padding:0 8px">·</span>'
     return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
+
+
+def _share_bar(S: dict, url: str) -> str:
+    """One-tap share row: WhatsApp / X / Telegram URL-intents (work on desktop + mobile) + a
+    copy-link button and a native OS share-sheet button (shown only where navigator.share exists,
+    which is how Instagram/Messages are reached). All labels localized via STRINGS[lang]. The HTML
+    is fully inline-styled so it renders the same on the main page and the story CTA slide; a small
+    self-contained script wires copy + native. Note: Instagram has no web share-intent URL, so it
+    is intentionally absent here and handled by the native sheet / the 9:16 image."""
+    text = S["SHARE_TEXT"]
+    qtext, qurl = quote(text), quote(url)
+    wa = f"https://wa.me/?text={quote(text + ' ' + url)}"
+    x = f"https://twitter.com/intent/tweet?text={qtext}&url={qurl}"
+    tg = f"https://t.me/share/url?url={qurl}&text={qtext}"
+    btn = ("display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.02em;"
+           "line-height:1;color:#EFEBDF;background:#1A1813;text-decoration:none;padding:8px 12px;"
+           "border-radius:4px;border:0;cursor:pointer")
+    ghost = ("display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.02em;"
+             "line-height:1;color:#46412F;background:none;text-decoration:none;padding:7px 11px;"
+             "border-radius:4px;border:1px solid rgba(70,65,47,.4);cursor:pointer")
+    lbl = ("font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;"
+           "text-transform:uppercase;color:#6B6557")
+    a = 'target="_blank" rel="noopener noreferrer"'
+    return (
+        '<div class="sharebar" style="display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:14px">'
+        f'<span style="{lbl}">{html.escape(S["SHARE_LABEL"])}</span>'
+        f'<a class="no-nav" style="{btn}" href="{html.escape(wa, quote=True)}" {a}>{html.escape(S["SHARE_WHATSAPP"])}</a>'
+        f'<a class="no-nav" style="{btn}" href="{html.escape(x, quote=True)}" {a}>{html.escape(S["SHARE_X"])}</a>'
+        f'<a class="no-nav" style="{btn}" href="{html.escape(tg, quote=True)}" {a}>{html.escape(S["SHARE_TELEGRAM"])}</a>'
+        f'<button type="button" class="no-nav" style="{ghost}" data-copy="{html.escape(url, quote=True)}" '
+        f'data-copied="{html.escape(S["SHARE_COPIED"], quote=True)}">{html.escape(S["SHARE_COPY"])}</button>'
+        f'<button type="button" class="no-nav" hidden style="{ghost}" data-native '
+        f'data-title="{html.escape(S["SHARE_TITLE"], quote=True)}" data-text="{html.escape(text, quote=True)}" '
+        f'data-url="{html.escape(url, quote=True)}">{html.escape(S["SHARE_NATIVE"])}</button>'
+        '</div>'
+        "<script>(function(){var bars=document.querySelectorAll('.sharebar');"
+        "for(var i=0;i<bars.length;i++){(function(bar){"
+        "var cp=bar.querySelector('[data-copy]');"
+        "if(cp){cp.addEventListener('click',function(){var u=cp.getAttribute('data-copy');"
+        "function done(){var t=cp.getAttribute('data-copied')||'Copied';var o=cp.textContent;"
+        "cp.textContent=t;setTimeout(function(){cp.textContent=o;},1600);}"
+        "if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(done).catch(done);}else{done();}});}"
+        "var nt=bar.querySelector('[data-native]');"
+        "if(nt&&navigator.share){nt.hidden=false;nt.addEventListener('click',function(){"
+        "navigator.share({title:nt.getAttribute('data-title'),text:nt.getAttribute('data-text'),url:nt.getAttribute('data-url')}).catch(function(){});});}"
+        "})(bars[i]);}})();</script>"
+    )
 
 
 def _money_rows(effects: list[dict], labels: dict) -> str:
@@ -604,6 +652,13 @@ def build() -> str:
         src = REPORTS / "figures" / icon
         if src.exists():
             shutil.copyfile(src, SITE / icon)
+    # story-mode still PNGs (1080x1920, generated locally via --story-cards, committed) → site/story/
+    story_src = REPORTS / "figures" / "story"
+    if story_src.exists():
+        for png in story_src.rglob("*.png"):
+            dest = SITE / "story" / png.relative_to(story_src)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(png, dest)
 
     if not STOPPAGES_PARQUET.exists() or load_processed().is_empty():
         first_out = None
@@ -692,6 +747,8 @@ def build() -> str:
         "BREAKS_MAX": breaks_max,
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
         "HYD_N": str(hyd.get("n", 0)),
+        "N_MATCHES": str(df["match_id"].n_unique()),
+        "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
         "COPA_N": str(copa[3]) if copa else "—",  # on-top windows behind the Copa baseline (for the tooltip)
         **_accl_tokens(),
         **_duration_tokens(df),
@@ -722,6 +779,8 @@ def build() -> str:
             "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated, F),
             "PAGES_URL": PAGES_URL,
             "METHOD_HREF": _page_link("method", lang),
+            "STORY_HREF": _page_link("story", lang),
+            "SHARE_BAR": _share_bar(S, _LANG_META[lang]["OG_URL"]),
             "LANG_TOGGLE": _lang_toggle(lang),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
@@ -747,6 +806,7 @@ def build() -> str:
             first_out = str(out)
 
     build_method_pages(data_tokens, snap_date)
+    build_story_pages(data_tokens, snap_date)
     return first_out or str(SITE / "index.html")
 
 
@@ -786,6 +846,46 @@ def build_method_pages(data_tokens: dict, snap_date: str | None) -> None:
         if leftover:
             raise ValueError(f"unresolved method tokens in {lang} build: {leftover}")
         (SITE / _page_link("method", lang)).write_text(page, encoding="utf-8")
+
+
+def build_story_pages(data_tokens: dict, snap_date: str | None) -> None:
+    """Render the bilingual 9:16 story-mode pages (story.html + story.es.html).
+
+    Mirrors build_method_pages: prose from STRINGS[lang] (STORY_*/SHARE_* keys) + the shared data
+    tokens (HERO_DELTA, P26_DELTA, GAP, GAP_CLAUSE, N_MATCHES…), same multi-pass + leak guard.
+    Pure-Python → runs in CI; the animated page needs no browser. The 1080x1920 still PNGs are a
+    separate, local-only Playwright step (src/viz/social.build_story_cards via `--story-cards`)."""
+    from src.report.story_copy import TEMPLATE as STORY_TEMPLATE
+
+    for lang in LANGS:
+        S = STRINGS[lang]
+        story_file = _page_link("story", lang)
+        other = "story.es.html" if lang == "en" else "story.html"
+        other_label = "Español" if lang == "en" else "English"
+        story_lang = (f'<a class="cbtn no-nav same-tab" href="{other}">{other_label}</a>')
+        tokens = {
+            **S,
+            **data_tokens,
+            **_LANG_META[lang],            # LANG, OG_IMAGE, OG_URL …
+            "STORY_CANONICAL": SITE_BASE + story_file,
+            "HOME_HREF": _page_link("index", lang),
+            "STORY_DIR": lang,
+            "STORY_LANG": story_lang,
+            "SHARE_BAR": _share_bar(S, SITE_BASE + story_file),
+            "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
+        }
+        page = STORY_TEMPLATE
+        for _ in range(6):
+            before = page
+            for k, v in tokens.items():
+                page = page.replace("{{" + k + "}}", str(v))
+            if page == before:
+                break
+        leftover = sorted(set(re.findall(r"\{\{[A-Z0-9_]+\}\}", page)))
+        if leftover:
+            raise ValueError(f"unresolved story tokens in {lang} build: {leftover}")
+        (SITE / story_file).write_text(page, encoding="utf-8")
 
 
 if __name__ == "__main__":

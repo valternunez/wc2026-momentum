@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.paths import PROCESSED, REPORTS
+from src.paths import PROCESSED, REPORTS, SITE
 
 OUT = REPORTS / "figures" / "og.png"
 OUT_ES = REPORTS / "figures" / "og.es.png"
@@ -132,3 +132,40 @@ def build_share_card(out_path: str | Path | None = None) -> str:
         pi.screenshot(path=str(out.parent / "apple-touch-icon.png"))
         b.close()
     return str(out)
+
+
+def build_story_cards() -> str:
+    """Render each story slide as a 1080x1920 (Instagram-Story native) still PNG (needs Playwright).
+
+    Opens the already-built site/story.html (EN) + story.es.html (ES) with ?still=N — which freezes
+    the page to one slide, final state, no animation — and screenshots the #frame element so each PNG
+    is exactly the 9:16 card. Writes reports/figures/story/{en,es}/slide{N}.png, committed; CI (no
+    browser) just copies them into site/story/. Run locally after a build via `pipeline --story-cards`.
+    Returns the output directory.
+    """
+    pages = {"en": SITE / "story.html", "es": SITE / "story.es.html"}
+    outroot = REPORTS / "figures" / "story"
+
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(headless=True)
+        for lang, path in pages.items():
+            if not path.exists():
+                continue
+            dest = outroot / lang
+            dest.mkdir(parents=True, exist_ok=True)
+            base = path.resolve().as_uri()
+            # discover the slide count from the live DOM (single source of truth: the template)
+            probe = b.new_page(viewport={"width": 1080, "height": 1920})
+            probe.goto(f"{base}?still=1", wait_until="networkidle")
+            n = int(probe.evaluate("document.querySelectorAll('.slide').length"))
+            probe.close()
+            for i in range(1, n + 1):
+                pg = b.new_page(viewport={"width": 1080, "height": 1920})
+                pg.goto(f"{base}?still={i}", wait_until="networkidle")
+                pg.wait_for_timeout(900)  # let webfonts swap in
+                pg.locator("#frame").screenshot(path=str(dest / f"slide{i}.png"))
+                pg.close()
+        b.close()
+    return str(outroot)
