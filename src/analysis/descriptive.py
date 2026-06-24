@@ -65,6 +65,67 @@ def pre_level_r2(df: pl.DataFrame) -> float | None:
     return r * r
 
 
+def _isbreak_coef(rows: np.ndarray) -> float:
+    """OLS coefficient on is_break in delta ~ 1 + is_break + pre. NaN if unfittable."""
+    if rows.shape[0] < 3 or np.unique(rows[:, 1]).size < 2:
+        return float("nan")
+    y = rows[:, 0]
+    x = np.column_stack([np.ones(rows.shape[0]), rows[:, 1], rows[:, 2]])
+    beta, *_ = np.linalg.lstsq(x, y, rcond=None)
+    return float(beta[1])
+
+
+def gap_adjusted_ci(
+    df: pl.DataFrame, placebo: pl.DataFrame, *, n_boot: int = 5000, seed: int = 7
+) -> dict | None:
+    """Level-adjusted break-vs-no-break gap for the on-top team, with a match-clustered bootstrap CI.
+
+    Pools on-top hydration-break rows (is_break=1) with on-top within-2026 placebo rows (is_break=0)
+    and estimates the coefficient on is_break in
+
+        momentum_delta ~ is_break + momentum_pre_5min_mean
+
+    i.e. the EXTRA momentum the leader sheds after a mandated break, beyond what its pre-break level
+    already predicts — netting out the regression-to-the-mean gradient that a raw mean-difference
+    leaves in (the placebo and the breaks sit at different pre-momentum levels). Resamples MATCHES
+    (the cluster) for the interval. Returns {gap, lo, hi, n_break, n_placebo, n_matches} or None.
+    `gap` is signed like momentum_delta: negative = the break bites harder than a quiet minute.
+    """
+    hyd = on_top_rows(df).filter(pl.col("stoppage_type") == "hydration")
+    plc = on_top_rows(placebo)
+    if hyd.is_empty() or plc.is_empty():
+        return None
+
+    def by_match(frame: pl.DataFrame, is_break: float) -> dict[str, list[tuple]]:
+        out: dict[str, list[tuple]] = {}
+        for r in frame.select(["match_id", "momentum_delta", "momentum_pre_5min_mean"]).iter_rows():
+            out.setdefault(r[0], []).append((r[1], is_break, r[2]))
+        return out
+
+    hb, pb = by_match(hyd, 1.0), by_match(plc, 0.0)
+    matches = sorted(set(hb) | set(pb))
+
+    def stack(ms: list[str]) -> np.ndarray:
+        acc: list[tuple] = []
+        for m in ms:
+            acc.extend(hb.get(m, ()))
+            acc.extend(pb.get(m, ()))
+        return np.array(acc, dtype=float) if acc else np.empty((0, 3))
+
+    point = _isbreak_coef(stack(matches))
+    if np.isnan(point):
+        return None
+    rng = np.random.default_rng(seed)
+    draws = np.array([c for _ in range(n_boot)
+                      if not np.isnan(c := _isbreak_coef(stack(list(rng.choice(matches, size=len(matches), replace=True)))))])
+    lo, hi = np.percentile(draws, [2.5, 97.5])
+    return {
+        "gap": float(point), "lo": float(lo), "hi": float(hi),
+        "n_break": hyd.height, "n_placebo": plc.height,
+        "n_matches": len(set(hb) | set(pb)),
+    }
+
+
 def effect_by_type(df: pl.DataFrame, **boot_kw) -> list[dict]:
     """Per stoppage type: n, on-top mean delta, and a cluster-bootstrap 95% CI."""
     top = on_top_rows(df)

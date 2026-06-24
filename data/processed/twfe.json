@@ -1,0 +1,1 @@
+{"available": true, "gated": false, "n_obs": 211, "term": "C(stoppage_type, Treatment(reference=\"var\"))[T.hydration]:momentum_pre_5min_mean", "coef": -0.16391155993362694, "se": 0.29676708410237734, "pvalue": 0.5807264434153341, "ci_lo": -0.7455643565712557, "ci_hi": 0.4177412367040019}

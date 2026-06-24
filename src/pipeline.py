@@ -418,9 +418,12 @@ def build_wc2022_placebo() -> pl.DataFrame:
     return df
 
 
-# Within-2026 regression-to-the-mean control: the SAME matches windowed at non-break minutes,
-# all >=5' clear of the real 22'/67' breaks and the 45' half (so pre/post windows aren't contaminated).
-PLACEBO_2026_MINUTES = (10.0, 35.0, 55.0, 80.0)
+# Within-2026 regression-to-the-mean control: the SAME matches windowed at non-break minutes.
+# Position-matched to BRACKET the two real break regions (~22-25' and ~67-68') rather than the old
+# 10'/80' game-state extremes, while staying >=5' clear of the breaks and the 45' half so the pre/post
+# windows aren't contaminated. (The break-vs-placebo gap is additionally pre-level-adjusted downstream,
+# so this control nets out regression to the mean on both clock position and starting momentum.)
+PLACEBO_2026_MINUTES = (15.0, 35.0, 58.0, 78.0)
 
 
 def build_2026_placebo(match_ids: list[str]) -> pl.DataFrame:
@@ -436,6 +439,34 @@ def build_2026_placebo(match_ids: list[str]) -> pl.DataFrame:
     out.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(out)
     return df
+
+
+def build_twfe() -> dict:
+    """Fit the signed-off TWFE causal model and persist the momentum-killer interaction to
+    data/processed/twfe.json, so the statsmodels-free CI site build can report it honestly.
+
+    Best-effort and SAFE: needs the events/dev extra (statsmodels). If statsmodels isn't installed
+    (e.g. a lean Railway run), it logs and leaves any committed twfe.json untouched rather than
+    overwriting the local estimate with a blank. Writes {gated: true} when the MIN_MATCHES/MIN_ROWS
+    gate isn't met yet.
+    """
+    out = PROCESSED / "twfe.json"
+    try:
+        from src.analysis.descriptive import load_processed
+        from src.analysis.regression import momentum_killer_estimate, run_twfe
+
+        res = run_twfe(load_processed())
+        rec = {"available": True, "gated": False, "n_obs": int(res.nobs),
+               **momentum_killer_estimate(res)}
+    except ValueError as e:  # data gate (not enough matches/rows yet)
+        rec = {"available": True, "gated": True, "reason": str(e)[:160]}
+    except Exception as e:  # statsmodels missing, etc. — do NOT clobber a committed estimate
+        print(f"[twfe] skipped, leaving twfe.json untouched ({type(e).__name__}: {e})")
+        return {}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(rec), encoding="utf-8")
+    print(f"[twfe] -> {out}: p={rec.get('pvalue')}, coef={rec.get('coef')}, gated={rec.get('gated')}")
+    return rec
 
 
 def _parse_ids(args: argparse.Namespace) -> list[str]:
@@ -461,6 +492,7 @@ def main() -> None:
     ap.add_argument("--copa-placebo", action="store_true", help="build the Copa América 2024 same-units placebo parquet and exit")
     ap.add_argument("--euro-placebo", action="store_true", help="build the Euro 2024 same-units placebo parquet and exit")
     ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
+    ap.add_argument("--twfe", action="store_true", help="fit the signed-off TWFE model and persist twfe.json (needs the dev/events extra) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
     ap.add_argument("--method-pdf", action="store_true", help="render the methodology pages to committed PDFs and exit")
     ap.add_argument("--discover-days", type=int, default=None,
@@ -483,6 +515,9 @@ def main() -> None:
         return
     if args.acclimatization:
         build_acclimatization(args.date)
+        return
+    if args.twfe:
+        build_twfe()
         return
     if args.og_card:
         from src.viz.social import build_share_card

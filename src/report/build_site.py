@@ -342,6 +342,24 @@ def _mb_data(df: pl.DataFrame, F: dict, types: dict, lang: str) -> str:
     return json.dumps(data, ensure_ascii=False)
 
 
+def _load_twfe():
+    """The committed signed-off TWFE momentum-killer estimate, or None if absent/gated/unavailable.
+
+    Computed locally (statsmodels) by `pipeline.build_twfe` and persisted to data/processed/twfe.json,
+    so the statsmodels-free CI build can report it without re-fitting.
+    """
+    p = PROCESSED / "twfe.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not d.get("available") or d.get("gated") or "coef" not in d:
+        return None
+    return d
+
+
 def _placebo_meanci(parquet_name: str):
     """(mean, lo, hi, n, matches) for an on-top FotMob placebo parquet, or None if absent/empty."""
     p = PROCESSED / parquet_name
@@ -600,7 +618,25 @@ def build() -> str:
     nt = sorted(round(abs(x[0])) for x in (p26, euro, copa, w22) if x)
     hero = round(abs(hyd["mean_delta"])) if hyd and hyd.get("n") else None
     p26r = round(abs(p26[0])) if p26 else None
-    gap = (hero - p26r) if (hero is not None and p26r is not None) else None
+    # Level-adjusted break-vs-no-break gap (nets out regression to the mean) with a match-clustered
+    # bootstrap CI — numpy-only, from the committed stoppages + placebo2026 parquets, so it recomputes
+    # identically in CI. Replaces the old round(|hero|)-round(|p26|) difference, which had no interval.
+    from src.analysis.descriptive import gap_adjusted_ci
+    _ppath = PROCESSED / "placebo2026.parquet"
+    _g = gap_adjusted_ci(df, pl.read_parquet(_ppath)) if _ppath.exists() else None
+    if _g:
+        gap = round(abs(_g["gap"]))
+        gap_lo, gap_hi = -_g["hi"], -_g["lo"]          # extra-drop framing (positive = break bites harder)
+        gap_excl0 = _g["hi"] < 0 or _g["lo"] > 0        # does the difference's 95% CI clear zero?
+    else:
+        gap, gap_lo, gap_hi, gap_excl0 = None, None, None, False
+    twfe = _load_twfe()
+    # calibrated, data-driven verdict clauses (resolved per-language in both the index and method builds):
+    # the gap copy firms up automatically if/when the difference CI ever clears zero; the TWFE clause
+    # reports the actual (currently null) signed-off model.
+    gap_clause_key = "GAP_CLAUSE_SIG" if gap_excl0 else "GAP_CLAUSE_OPEN"
+    twfe_clause_key = ("TWFE_CLAUSE_SIG" if (twfe and twfe["pvalue"] < 0.05)
+                       else "TWFE_CLAUSE_NULL" if twfe else "TWFE_CLAUSE_HELD")
     r2 = pre_level_r2(df)
     heat = _heat_tokens(df)
     breaks_min, breaks_max = _breaks_per_team(df)
@@ -617,6 +653,14 @@ def build() -> str:
         "NOBREAK_LO": str(nt[0]) if nt else "—",
         "NOBREAK_HI": str(nt[-1]) if nt else "—",
         "GAP": str(gap) if gap is not None else "—",
+        "GAP_LO": f"{gap_lo:+.0f}" if gap_lo is not None else "—",
+        "GAP_HI": f"{gap_hi:+.0f}" if gap_hi is not None else "—",
+        "TWFE_COEF": f"{twfe['coef']:+.2f}" if twfe else "—",
+        "TWFE_CI": f"{twfe['ci_lo']:+.2f} to {twfe['ci_hi']:+.2f}" if twfe else "—",
+        "TWFE_P": f"{twfe['pvalue']:.2f}" if twfe else "—",
+        "TWFE_N": str(twfe["n_obs"]) if twfe else "—",
+        "GAP_CLAUSE_KEY": gap_clause_key,
+        "TWFE_CLAUSE_KEY": twfe_clause_key,
         "BREAKS_MIN": breaks_min,
         "BREAKS_MAX": breaks_max,
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
@@ -635,6 +679,8 @@ def build() -> str:
             **S,
             **_LANG_META[lang],
             **data_tokens,
+            "GAP_CLAUSE": S[gap_clause_key],
+            "TWFE_CLAUSE": S[twfe_clause_key],
             "UPDATED_DATE": updated.upper(),
             "N_MATCHES": str(df["match_id"].n_unique()),
             "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
@@ -694,6 +740,8 @@ def build_method_pages(data_tokens: dict, snap_date: str | None) -> None:
             "HOME_HREF": _page_link("index", lang),
             "METHOD_HREF": _page_link("method", lang),
             "METHOD_PDF_HREF": "wc2026-methodology.pdf" if lang == "en" else "wc2026-methodology.es.pdf",
+            "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
             "UPDATED_DATE": updated.upper(),
             "LANG_TOGGLE": _lang_toggle(lang, "method"),
             "PAGES_URL": PAGES_URL,
