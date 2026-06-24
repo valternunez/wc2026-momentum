@@ -93,7 +93,10 @@ TEMPLATE = """<!DOCTYPE html>
 
   <!-- MASTHEAD -->
   <header style="max-width:840px;margin:0 auto;padding:22px 40px 0;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#1A1813;font-weight:600">{{MAST_TITLE}}</div>
+    <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#1A1813;font-weight:600">{{MAST_TITLE}}</span>
+      <a href="{{METHOD_HREF}}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E5482E;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.4)">{{NAV_METHOD}}</a>
+    </div>
     <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
       <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
       {{LIVE_UPDATED}} {{UPDATED_DATE}}
@@ -247,6 +250,7 @@ TEMPLATE = """<!DOCTYPE html>
       {{HEAT_GRID}}
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820">{{S06_CONCL}}</p>
       <p style="font-family:'Newsreader',serif;font-size:19px;line-height:1.6;color:#46412F;margin-top:14px">{{S06_ALT}}</p>
+      <p style="font-family:'Newsreader',serif;font-size:19px;line-height:1.6;color:#46412F;margin-top:14px">{{S06_ACCL}}</p>
       <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;color:#5A5547;margin-top:20px;line-height:1.6">{{S06_FOOTNOTE}}</p>
     </div>
   </section>
@@ -285,6 +289,7 @@ TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
       <div style="height:1px;background:rgba(255,255,255,.14);margin:40px 0 24px"></div>
+      <div style="margin:0 0 16px"><a href="{{METHOD_HREF}}" class="src" style="font-size:13px">{{NAV_METHOD_FOOT}} &#8599;</a></div>
       {{LANG_TOGGLE}}
       <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#7E776A">
         <span>{{FOOT_STAMP1}}</span>

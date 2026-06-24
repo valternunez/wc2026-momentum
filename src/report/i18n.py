@@ -240,6 +240,8 @@ STRINGS = {
         "OG_ALT": "Do hydration breaks really kill momentum? -{{HERO_DELTA}} after a break vs about -{{P26_DELTA}} for the same teams with no break.",
         "TW_DESC": "The team on top drops ~{{HERO_DELTA}} momentum points after a hydration break — but the same teams drop ~{{P26_DELTA}} with no break. Mostly regression to the mean, with a gap left over.",
         "MAST_TITLE": "WC2026 · Stoppage Momentum Study",
+        "NAV_METHOD": "Methodology",
+        "NAV_METHOD_FOOT": "Methodology &amp; the full report",
         "LIVE_UPDATED": "LIVE · UPDATED",
         "FRESH_NOTE": "The live scraper hasn't refreshed in a while; this data was last updated",
         "HERO_KICKER": "The Hydration-Break Experiment",
@@ -295,6 +297,7 @@ STRINGS = {
         "HEAT_DESC_MEDIAN": 'median match WBGT, short of the <strong style="font-weight:600">28°C</strong> high-risk line ({{HEAT_HOT28}} cleared it)',
         "S06_CONCL": "So most matches got a mandatory three-minute interruption with neither a momentum effect nor a heat reason. The breaks may still be worth it for the handful of genuinely brutal afternoons. But a fixed, every-match rule looks unnecessary against the weather.",
         "S06_ALT": '''And altitude is a different argument: {{HEAT_ALT}} matches sat above 1,500 m (Mexico City, Guadalajara), where thinner air is its own fatigue load. That might justify a breather — but it's a separate stressor this momentum analysis doesn't measure, and it isn't what a <em style="font-style:italic">cooling</em> break is for.''',
+        "S06_ACCL": '''A different objection is the heat itself: maybe momentum swings more because players from cool leagues wilt in the US summer, not because of any whistle. So we checked — mapping every player to his club's home city and comparing that heat to match day. Teams furthest from their home climate didn't drop harder; across clubs and across national teams alike, the link came out flat or slightly backwards. The big drops aren't acclimatization — they're regression to the mean. <a class="src" href="method.html#heat">How we tested it →</a>''',
         "S06_FOOTNOTE": "WBGT (wet-bulb globe temperature) approximated from Open-Meteo temperature + humidity at each venue and kickoff. Altitude (Mexico City and Guadalajara sit above 1,500 m) shapes fatigue, not hydration need; the signal for a cooling break is heat and humidity.",
         "BOTTOM_HEAD": "The bottom line, so far",
         "BOTTOM_TEXT": "On the surface the momentum killer is real. The same teams sag without a break too, so regression to the mean is most of it — but not all: the break still drops the leader about {{GAP}} points further than no break does. Whether that gap is a real effect or noise, the knockouts will tell. And there's a second question the heat data raises: whether a break in every match was needed at all. The verdict stays open until the final.",
@@ -325,6 +328,67 @@ STRINGS = {
         "CTL_DARK": "DARK",
         "CTL_SHARE": "&#8595;&nbsp;SHARE IMAGE",
         "MODAL_CHARTNOTE": "Per-minute momentum, FotMob (home-positive). Hover the chart for values.",
+        # --- Methodology / full-report page ---
+        "METHOD_META_TITLE": "Methodology & full report — WC2026 Stoppage Momentum",
+        "METHOD_META_DESC": "How the WC2026 hydration-break momentum analysis is built: the data, how a stoppage becomes a momentum number, the no-break baselines, regression to the mean, the heat / acclimatization check, and the honest limits.",
+        "METHOD_KICKER": "Methodology & the full report",
+        "METHOD_H1": "How this was built",
+        "METHOD_LEDE": "Every number on the main page comes from one committed dataset and the code in this repository. Here is what that dataset is, how a stoppage becomes a momentum number, what the comparisons control for, and where the honest limits are.",
+        "METHOD_BACK": "← The story",
+        "METHOD_PDF_LABEL": "Download the full report (PDF)",
+        "METHOD_FOOT": "WC2026 STOPPAGE MOMENTUM STUDY · METHODOLOGY · EVERY FIGURE COMPUTED FROM THE COMMITTED DATASET",
+        "METHOD_FINDINGS": '''<h2>00 — Findings in brief</h2>
+<p>The team on top of momentum loses about <strong>−{{HERO_DELTA}}</strong> momentum points in the five minutes after a mandatory hydration break. But the <em style="font-style:italic">same</em> teams lose about <strong>−{{P26_DELTA}}</strong> at quiet, break-free minutes — so most of the drop is regression to the mean, the natural cool-off after a hot spell, not the whistle.</p>
+<p>What is left is a gap of about <strong>{{GAP}}</strong> points between a break and no break for the same teams. That is consistent with a small real effect, but the intervals overlap and the sample is still small, so it is suggestive, not proven. A separate look at the weather suggests most matches never reached the heat a cooling break is designed for. None of this is a causal verdict yet — the knockouts will sharpen it.</p>''',
+        "METHOD_WHAT": '''<h2>01 — What this measures</h2>
+<p>The question is narrow and testable: do FIFA's mandatory in-match hydration breaks shift momentum away from the team that was on top? The outcome is <strong>FotMob's</strong> per-minute momentum index — their expected-threat model of which side is on top, built from the flow of attacks and chances, not the scoreline. We <em style="font-style:italic">read</em> that number; we do not compute our own. Positive means the home side is pressing, negative the away side.</p>
+<p>It is a living analysis: the page rebuilds from the committed dataset every matchday through the July 19 final, so the figures move as data accrues.</p>''',
+        "METHOD_DATA": '''<h2>02 — Where the data comes from</h2>
+<p>Three sources, each doing one job:</p>
+<ul>
+<li><strong>FotMob</strong> — the per-minute momentum series, and match lineups (used for the heat check).</li>
+<li><strong>ESPN</strong> — text commentary, which gives the exact timing of stoppages (and VAR / injury events), so breaks are detected from what actually happened, not a hardcoded clock.</li>
+<li><strong>Open-Meteo</strong> — temperature and humidity at each venue and kickoff for WBGT, and the historical climate of clubs' home cities for the acclimatization check.</li>
+</ul>
+<p>We publish <em style="font-style:italic">derived</em> data only: the processed dataset and dated summaries are committed to the repo, but raw scraped payloads are never redistributed, out of respect for the sources' terms. Scraping runs locally on a home connection; the public site is rebuilt by CI from the committed dataset and never scrapes. Git history is the snapshot system — each day's estimate is a commit.</p>''',
+        "METHOD_PIPE": '''<h2>03 — From a stoppage to a number</h2>
+<p>For every detected stoppage we take two five-minute windows of momentum: the <strong>pre</strong> window (the five minutes before the whistle) and the <strong>post</strong> window (the five minutes after), excluding the stoppage minute itself. The outcome is the change between them — <code>momentum_delta = post mean − pre mean</code>.</p>
+<p>Momentum is home-positive, so each stoppage produces <em style="font-style:italic">two</em> rows, one from each team's perspective (the away row is just the negative). Because they mirror each other, the pooled average is zero by construction. So we always report the team that was <strong>on top</strong> before the break — the "momentum killer" claim is specifically that a break pushes momentum away from whoever was ahead.</p>''',
+        "METHOD_BASELINES": '''<h2>04 — The comparison baselines</h2>
+<p>A team that just had a blazing five minutes tends to cool off anyway, break or no break. That regression to the mean is the single biggest threat to reading the raw drop as an effect. So we run the <em style="font-style:italic">exact same measurement</em> where no break was mandated, on the same FotMob scale, and compare:</p>
+<ul>
+<li><strong>The same 2026 teams at quiet minutes</strong> (−{{P26_DELTA}}) — the cleanest control: identical teams, identical tournament, just no whistle. Anything fixed about a team — its quality, its heat, its altitude — is differenced out here.</li>
+<li><strong>World Cup 2022</strong> (−{{WC22_DELTA}}) and <strong>Euro 2024</strong> (−{{EURO_DELTA}}) — national-team football in cooler settings, no mandated breaks.</li>
+<li><strong>Copa América 2024</strong> (−{{COPA_DELTA}}) — national teams in US summer heat, but a noisier single edition.</li>
+<li><strong>Club World Cup 2025</strong> (−{{CWC_DELTA}}) — clubs, which regress harder than national teams; a contrast, not a like-for-like.</li>
+</ul>
+<p>National-team football regresses about −{{NOBREAK_LO}} to −{{NOBREAK_HI}} on its own. The break (−{{HERO_DELTA}}) sits about {{GAP}} points below the same-teams control — the part regression to the mean does not explain.</p>''',
+        "METHOD_CI": '''<h2>05 — Confidence intervals</h2>
+<p>Several stoppages within one match are not independent, so intervals are bootstrapped by resampling <em style="font-style:italic">matches</em>, not rows (a cluster bootstrap). Early in the tournament there are few match-clusters, so the 95% interval is wide — read it as indicative, not a precise p-value. The effect holds whether the window is 4, 5 or 6 minutes long. The headline currently rests on {{HYD_N}} on-top hydration breaks, and the estimate-over-time chart on the main page shows whether it is stabilizing or fading.</p>''',
+        "METHOD_HEAT": '''<h2>06 — The heat &amp; acclimatization check</h2>
+<p>The intuitive objection is that the swings are about heat, not the whistle — players from cool leagues wilting in the US summer. We tested it directly. For every team we built an <em style="font-style:italic">acclimatization gap</em>: the WBGT on match day minus the WBGT the squad is used to back home, mapping each player to his club's home city ({{ACCL_CLUBS}} clubs placed). If heat-displacement drove the drops, teams further from home should fall harder.</p>
+<p>They do not. Across tournaments the biggest gap goes with the <em style="font-style:italic">smallest</em> drop, not the largest:</p>
+<table><thead><tr><th>Tournament</th><th>heat gap</th><th>drop</th></tr></thead><tbody>
+<tr><td>Copa América 2024</td><td>{{ACCL_COPA_GAP}}°C</td><td>{{ACCL_COPA_DROP}}</td></tr>
+<tr><td>Club World Cup 2025</td><td>{{ACCL_CWC_GAP}}°C</td><td>{{ACCL_CWC_DROP}}</td></tr>
+<tr><td>World Cup 2026</td><td>{{ACCL_WC26_GAP}}°C</td><td>{{ACCL_WC26_DROP}}</td></tr>
+<tr><td>Euro 2024</td><td>{{ACCL_EURO_GAP}}°C</td><td>{{ACCL_EURO_DROP}}</td></tr>
+</tbody></table>
+<p>Within groups it is the same story. Among the Club World Cup clubs the gap→drop slope is {{ACCL_SLOPE_CWC}} per °C [{{ACCL_CWC_LO}}, {{ACCL_CWC_HI}}] — if anything, clubs further from home dropped <em style="font-style:italic">less</em>. Pooled across national teams it is {{ACCL_SLOPE_NAT}} per °C [{{ACCL_NAT_LO}}, {{ACCL_NAT_HI}}], essentially flat. So the big drops are not an acclimatization effect, and the high Club World Cup figure is structural — clubs regress more — not heat.</p>
+<p>One honest caveat: the heat gap is tangled up with continent, league and fixture congestion, so this rules out the simple heat story rather than proving a precise null. And it never threatened the headline anyway — the same-teams control already holds a team's heat fixed.</p>''',
+        "METHOD_ALT": '''<h2>07 — Altitude</h2>
+<p>Altitude is a different stressor from heat — thin air, not thermoregulation — and only two venues are high (Mexico City and Guadalajara, both above 1,500 m). That is too few to test, and a cooling break is not built for it, so we note it and leave it alone.</p>''',
+        "METHOD_LIMITS": '''<h2>08 — What we can and cannot say</h2>
+<ul>
+<li><strong>Small sample, for now.</strong> Early in the tournament the intervals are wide; the estimate-over-time chart shows whether the effect stabilizes or fades.</li>
+<li><strong>No exact break durations.</strong> The feed has no per-stoppage timings, so hydration vs VAR vs injury is a comparison by <em style="font-style:italic">type</em>, not duration-matched.</li>
+<li><strong>WBGT is a shade estimate</strong> from temperature and humidity; true on-pitch heat under sun runs higher.</li>
+<li><strong>The acclimatization gap is collinear</strong> with continent, league and schedule, so it is suggestive, not a clean instrument.</li>
+<li><strong>No causal headline yet.</strong> The agreed causal model — a two-way fixed-effects regression with match-clustered errors and the hydration×pre-momentum interaction — is held until the live sample is large enough for stable estimates.</li>
+</ul>''',
+        "METHOD_REPRO": '''<h2>09 — Reproducibility</h2>
+<p>Every figure here and on the main page is computed deterministically from one file — the committed processed dataset — by the code in the repository. Nothing is hand-entered. The full source, the dataset, and this report are public.</p>
+<p><a class="src" href="{{PAGES_URL}}">github.com/valternunez/wc2026-momentum ↗</a></p>''',
     },
     "es": {
         "META_TITLE": "¿Las pausas de hidratación matan el momentum? — WC2026 Momentum en Pausas",
@@ -335,6 +399,8 @@ STRINGS = {
         "OG_ALT": "¿Las pausas de hidratación matan el momentum? -{{HERO_DELTA}} tras una pausa vs aproximadamente -{{P26_DELTA}} para los mismos equipos sin pausa.",
         "TW_DESC": "El equipo dominante pierde ~{{HERO_DELTA}} puntos de momentum tras una pausa de hidratación — pero los mismos equipos pierden ~{{P26_DELTA}} sin pausa. Sobre todo regresión a la media, con una brecha por explicar.",
         "MAST_TITLE": "WC2026 · Estudio de Momentum en Pausas",
+        "NAV_METHOD": "Metodología",
+        "NAV_METHOD_FOOT": "Metodología e informe completo",
         "LIVE_UPDATED": "EN VIVO · ACTUALIZADO",
         "FRESH_NOTE": "El recolector en vivo no se actualiza desde hace un tiempo; estos datos se actualizaron por última vez el",
         "HERO_KICKER": "El experimento de las pausas de hidratación",
@@ -390,6 +456,7 @@ STRINGS = {
         "HEAT_DESC_MEDIAN": 'WBGT mediano por partido, por debajo de la línea de alto riesgo de <strong style="font-weight:600">28°C</strong> ({{HEAT_HOT28}} la superaron)',
         "S06_CONCL": "Así que la mayoría de los partidos tuvieron una interrupción obligatoria de tres minutos, sin efecto sobre el momentum, sin razón climatológica. Las pausas pueden seguir valiendo la pena para el puñado de tardes realmente brutales pero una regla fija, para cada partido, parece innecesaria frente al clima.",
         "S06_ALT": '''Y la altitud es otro argumento: {{HEAT_ALT}} partidos se jugaron por encima de los 1,500 m (Ciudad de México, Guadalajara), donde el aire más delgado es su propia carga de fatiga. Eso quizá justifique un respiro — pero es un factor aparte que este análisis de momentum no mide, y no es para lo que sirve una pausa de <em style="font-style:italic">enfriamiento</em>.''',
+        "S06_ACCL": '''Otra objeción es el calor mismo: tal vez el momentum se mueve tanto porque jugadores de ligas frescas se derriten en el verano de Estados Unidos, y no por un silbatazo. Así que se revisó —ligando a cada jugador con la ciudad de su club y comparando ese calor con el del partido. Los equipos más lejos de su clima de casa no cayeron más; entre clubes y entre selecciones, la relación salió plana o ligeramente al revés. Las caídas grandes no son aclimatación: son regresión a la media. <a class="src" href="method.es.html#heat">Cómo se probó →</a>''',
         "S06_FOOTNOTE": "El WBGT (temperatura de globo y bulbo húmedo) se aproxima a partir de la temperatura + humedad de Open-Meteo en cada sede y horario de inicio. La altitud (Ciudad de México y Guadalajara están por encima de los 1,500 m) moldea la fatiga, no la necesidad de hidratación; la señal para una pausa de enfriamiento son el calor y la humedad.",
         "BOTTOM_HEAD": "La conclusión, por ahora",
         "BOTTOM_TEXT": "En la superficie, pareciera que la muerte del momentum es real. Los mismos equipos se desinflan sin pausa también, así que la regresión a la media es la mayor parte — pero no todo: la pausa todavía baja al líder unos {{GAP}} puntos más que no tener pausa. Si esa brecha es un efecto real o ruido, lo dirán las eliminatorias. Y hay una segunda pregunta que dejan los datos del calor: si hacía falta una pausa en cada partido siquiera. El veredicto sigue abierto hasta la final.",
@@ -420,6 +487,67 @@ STRINGS = {
         "CTL_DARK": "OSCURO",
         "CTL_SHARE": "&#8595;&nbsp;COMPARTIR IMAGEN",
         "MODAL_CHARTNOTE": "Momentum por minuto, FotMob (local en positivo). Pasa el cursor por el gráfico para ver los valores.",
+        # --- Página de metodología / informe completo ---
+        "METHOD_META_TITLE": "Metodología e informe completo — WC2026 Momentum en Pausas",
+        "METHOD_META_DESC": "Cómo se construye el análisis del momentum en las pausas de hidratación del Mundial 2026: los datos, cómo una pausa se vuelve un número de momentum, las referencias sin pausa, la regresión a la media, la prueba de calor / aclimatación y los límites honestos.",
+        "METHOD_KICKER": "Metodología y el informe completo",
+        "METHOD_H1": "Cómo se construyó esto",
+        "METHOD_LEDE": "Cada número de la página principal sale de un solo conjunto de datos versionado y del código de este repositorio. Aquí está qué es ese conjunto de datos, cómo una pausa se convierte en un número de momentum, qué controlan las comparaciones y dónde están los límites honestos.",
+        "METHOD_BACK": "← El reportaje",
+        "METHOD_PDF_LABEL": "Descarga el informe completo (PDF)",
+        "METHOD_FOOT": "WC2026 ESTUDIO DE MOMENTUM EN PAUSAS · METODOLOGÍA · CADA CIFRA SE CALCULA DESDE EL CONJUNTO DE DATOS VERSIONADO",
+        "METHOD_FINDINGS": '''<h2>00 — Los hallazgos, en breve</h2>
+<p>El equipo que va arriba en el momentum pierde alrededor de <strong>−{{HERO_DELTA}}</strong> puntos en los cinco minutos después de una pausa de hidratación obligatoria. Pero los <em style="font-style:italic">mismos</em> equipos pierden alrededor de <strong>−{{P26_DELTA}}</strong> en minutos tranquilos, sin pausa — así que la mayor parte de la caída es regresión a la media, el enfriamiento natural tras un buen rato, no el silbatazo.</p>
+<p>Lo que queda es una diferencia de unos <strong>{{GAP}}</strong> puntos entre pausa y no pausa para los mismos equipos. Eso es compatible con un efecto real pequeño, pero los intervalos se traslapan y la muestra todavía es chica, así que es sugerente, no comprobado. Una mirada aparte al clima sugiere que la mayoría de los partidos nunca llegó al calor para el que sirve una pausa de enfriamiento. Nada de esto es todavía un veredicto causal — la eliminatoria lo afinará.</p>''',
+        "METHOD_WHAT": '''<h2>01 — Qué se mide aquí</h2>
+<p>La pregunta es acotada y comprobable: ¿las pausas de hidratación obligatorias de la FIFA mueven el momentum en contra del equipo que iba arriba? La variable es el índice de momentum por minuto de <strong>FotMob</strong> — su modelo de amenaza esperada sobre qué lado domina, armado con el flujo de ataques y ocasiones, no con el marcador. Nosotros <em style="font-style:italic">leemos</em> ese número; no calculamos el nuestro. Positivo es que el local aprieta, negativo el visitante.</p>
+<p>Es un análisis vivo: la página se reconstruye desde el conjunto de datos versionado cada jornada hasta la final del 19 de julio, así que las cifras se mueven conforme entran datos.</p>''',
+        "METHOD_DATA": '''<h2>02 — De dónde salen los datos</h2>
+<p>Tres fuentes, cada una con un trabajo:</p>
+<ul>
+<li><strong>FotMob</strong> — la serie de momentum por minuto y las alineaciones (que se usan en la prueba de calor).</li>
+<li><strong>ESPN</strong> — la narración de texto, que da el momento exacto de las pausas (y de eventos de VAR / lesión), así que las pausas se detectan por lo que de verdad pasó, no por un reloj fijo.</li>
+<li><strong>Open-Meteo</strong> — temperatura y humedad en cada sede y horario de inicio para el WBGT, y el clima histórico de las ciudades de los clubes para la prueba de aclimatación.</li>
+</ul>
+<p>Publicamos solo datos <em style="font-style:italic">derivados</em>: el conjunto de datos procesado y los resúmenes con fecha quedan versionados en el repo, pero los datos crudos nunca se redistribuyen, por respeto a los términos de las fuentes. El scraping corre localmente en una conexión de casa; el sitio público lo reconstruye CI desde el conjunto de datos versionado y nunca hace scraping. El historial de git es el sistema de instantáneas — la estimación de cada día es un commit.</p>''',
+        "METHOD_PIPE": '''<h2>03 — De una pausa a un número</h2>
+<p>Por cada pausa detectada se toman dos ventanas de cinco minutos de momentum: la ventana <strong>previa</strong> (los cinco minutos antes del silbatazo) y la <strong>posterior</strong> (los cinco minutos después), excluyendo el minuto mismo de la pausa. La variable es el cambio entre ambas — <code>momentum_delta = media posterior − media previa</code>.</p>
+<p>El momentum es local-en-positivo, así que cada pausa produce <em style="font-style:italic">dos</em> filas, una desde la perspectiva de cada equipo (la del visitante es solo el negativo). Como se reflejan, el promedio agrupado es cero por construcción. Por eso siempre reportamos al equipo que iba <strong>arriba</strong> antes de la pausa — la acusación de "matar el momentum" es justamente que la pausa empuja el momentum lejos de quien iba ganándolo.</p>''',
+        "METHOD_BASELINES": '''<h2>04 — Las referencias de comparación</h2>
+<p>Un equipo que acaba de tener cinco minutos ardientes tiende a enfriarse de todos modos, con pausa o sin ella. Esa regresión a la media es la mayor amenaza para leer la caída cruda como un efecto. Así que corremos la <em style="font-style:italic">misma medición exacta</em> donde no había pausa obligatoria, en la misma escala de FotMob, y comparamos:</p>
+<ul>
+<li><strong>Los mismos equipos de 2026 en minutos tranquilos</strong> (−{{P26_DELTA}}) — el control más limpio: mismos equipos, mismo torneo, solo que sin silbatazo. Todo lo fijo de un equipo —su nivel, su calor, su altitud— se cancela aquí.</li>
+<li><strong>Mundial 2022</strong> (−{{WC22_DELTA}}) y <strong>Euro 2024</strong> (−{{EURO_DELTA}}) — futbol de selecciones en climas más frescos, sin pausas obligatorias.</li>
+<li><strong>Copa América 2024</strong> (−{{COPA_DELTA}}) — selecciones en el calor del verano de Estados Unidos, pero una sola edición más ruidosa.</li>
+<li><strong>Mundial de Clubes 2025</strong> (−{{CWC_DELTA}}) — clubes, que regresan más fuerte que las selecciones; un contraste, no una comparación pareja.</li>
+</ul>
+<p>El futbol de selecciones regresa por su cuenta alrededor de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}. La pausa (−{{HERO_DELTA}}) queda unos {{GAP}} puntos por debajo del control de mismos equipos — la parte que la regresión a la media no explica.</p>''',
+        "METHOD_CI": '''<h2>05 — Intervalos de confianza</h2>
+<p>Varias pausas dentro de un mismo partido no son independientes, así que los intervalos se calculan por bootstrap remuestreando <em style="font-style:italic">partidos</em>, no filas (un bootstrap por conglomerados). Temprano en el torneo hay pocos conglomerados, así que el intervalo del 95% es ancho — léelo como indicativo, no como un valor p preciso. El efecto se sostiene con ventanas de 4, 5 o 6 minutos. Por ahora el titular descansa en {{HYD_N}} pausas de hidratación con equipo arriba, y la gráfica de la estimación a lo largo del torneo, en la página principal, muestra si se está estabilizando o desvaneciendo.</p>''',
+        "METHOD_HEAT": '''<h2>06 — La prueba de calor y aclimatación</h2>
+<p>La objeción intuitiva es que los vaivenes son por el calor, no por el silbatazo — jugadores de ligas frescas derritiéndose en el verano de Estados Unidos. Lo probamos directo. Para cada equipo armamos una <em style="font-style:italic">brecha de aclimatación</em>: el WBGT del día del partido menos el WBGT al que está acostumbrado el plantel en casa, ligando a cada jugador con la ciudad de su club ({{ACCL_CLUBS}} clubes ubicados). Si el calor por desplazamiento moviera las caídas, los equipos más lejos de casa deberían caer más fuerte.</p>
+<p>No lo hacen. Entre torneos, la mayor brecha va con la <em style="font-style:italic">menor</em> caída, no con la mayor:</p>
+<table><thead><tr><th>Torneo</th><th>brecha</th><th>caída</th></tr></thead><tbody>
+<tr><td>Copa América 2024</td><td>{{ACCL_COPA_GAP}}°C</td><td>{{ACCL_COPA_DROP}}</td></tr>
+<tr><td>Mundial de Clubes 2025</td><td>{{ACCL_CWC_GAP}}°C</td><td>{{ACCL_CWC_DROP}}</td></tr>
+<tr><td>Mundial 2026</td><td>{{ACCL_WC26_GAP}}°C</td><td>{{ACCL_WC26_DROP}}</td></tr>
+<tr><td>Euro 2024</td><td>{{ACCL_EURO_GAP}}°C</td><td>{{ACCL_EURO_DROP}}</td></tr>
+</tbody></table>
+<p>Dentro de cada grupo es la misma historia. Entre los clubes del Mundial de Clubes la pendiente brecha→caída es {{ACCL_SLOPE_CWC}} por °C [{{ACCL_CWC_LO}}, {{ACCL_CWC_HI}}] — si acaso, los clubes más lejos de casa cayeron <em style="font-style:italic">menos</em>. Agrupando las selecciones es {{ACCL_SLOPE_NAT}} por °C [{{ACCL_NAT_LO}}, {{ACCL_NAT_HI}}], prácticamente plana. Así que las caídas grandes no son aclimatación, y la cifra alta del Mundial de Clubes es estructural —los clubes regresan más— no calor.</p>
+<p>Un matiz honesto: la brecha de calor está enredada con el continente, la liga y la carga de partidos, así que esto descarta la versión simple del calor más que probar un cero exacto. Y de todos modos nunca amenazó al titular — el control de mismos equipos ya deja fijo el calor de cada equipo.</p>''',
+        "METHOD_ALT": '''<h2>07 — Altitud</h2>
+<p>La altitud es un factor distinto del calor —aire delgado, no termorregulación— y solo dos sedes son altas (Ciudad de México y Guadalajara, ambas por encima de los 1,500 m). Son muy pocas para probarlo, y una pausa de enfriamiento no es para eso, así que lo anotamos y lo dejamos.</p>''',
+        "METHOD_LIMITS": '''<h2>08 — Lo que se puede y no se puede decir</h2>
+<ul>
+<li><strong>Muestra chica, por ahora.</strong> Temprano en el torneo los intervalos son anchos; la gráfica de la estimación a lo largo del tiempo muestra si el efecto se estabiliza o se desvanece.</li>
+<li><strong>Sin duraciones exactas de pausa.</strong> El feed no trae los tiempos por pausa, así que hidratación vs VAR vs lesión es una comparación por <em style="font-style:italic">tipo</em>, no emparejada por duración.</li>
+<li><strong>El WBGT es una estimación a la sombra</strong> a partir de temperatura y humedad; el calor real en la cancha bajo el sol es mayor.</li>
+<li><strong>La brecha de aclimatación es colineal</strong> con el continente, la liga y el calendario, así que es sugerente, no un instrumento limpio.</li>
+<li><strong>Todavía no hay titular causal.</strong> El modelo causal acordado —una regresión de efectos fijos a dos vías, con errores por conglomerado de partido y la interacción hidratación×momentum-previo— se mantiene en pausa hasta que la muestra viva sea lo bastante grande para estimaciones estables.</li>
+</ul>''',
+        "METHOD_REPRO": '''<h2>09 — Reproducibilidad</h2>
+<p>Cada cifra de aquí y de la página principal se calcula de forma determinista desde un solo archivo —el conjunto de datos procesado y versionado— con el código del repositorio. Nada se captura a mano. El código completo, los datos y este informe son públicos.</p>
+<p><a class="src" href="{{PAGES_URL}}">github.com/valternunez/wc2026-momentum ↗</a></p>''',
     },
 }
 

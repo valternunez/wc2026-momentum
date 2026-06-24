@@ -27,7 +27,7 @@ from src.analysis.descriptive import (
     pre_level_r2,
 )
 from src.enrich.venues import venue_elev_m
-from src.paths import PROCESSED, REPORTS, SITE, STOPPAGES_PARQUET
+from src.paths import PROCESSED, RAW, REPORTS, SITE, STOPPAGES_PARQUET
 from src.report.editorial_copy import TEMPLATE
 from src.report.i18n import COUNTRIES, FRAG, JS, LABELS, LANGS, MONTHS, STAGE, STRINGS, TYPES
 from src.snapshot import load_all_snapshots
@@ -71,15 +71,21 @@ def _fmt_date_iso(iso: str | None, lang: str) -> str:
     return f"{d.day} {months[d.month]} {d.year}"
 
 
-def _lang_toggle(lang: str) -> str:
-    """Footer English ⇄ Español switch: the current language inert, the other linked."""
+def _page_link(target: str, lang: str) -> str:
+    """Same-language sibling filename for a page family ('index'/'method'). ES adds '.es'."""
+    return f"{target}.html" if lang == "en" else f"{target}.es.html"
+
+
+def _lang_toggle(lang: str, page: str = "index") -> str:
+    """Footer English ⇄ Español switch within the current page family (index/method).
+    The current language is inert, the other links to its sibling file."""
     base = "font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em"
     on = f"{base};color:#E5C9A0;font-weight:600"
     off = f"{base};color:#7E776A;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
     en = (f'<span style="{on}">English</span>' if lang == "en"
-          else f'<a href="index.html" style="{off}">English</a>')
+          else f'<a href="{page}.html" style="{off}">English</a>')
     es = (f'<span style="{on}">Español</span>' if lang == "es"
-          else f'<a href="index.es.html" style="{off}">Español</a>')
+          else f'<a href="{page}.es.html" style="{off}">Español</a>')
     sep = f'<span style="{base};color:#5A5547;padding:0 8px">·</span>'
     return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
 
@@ -443,6 +449,52 @@ def _altitude_count(df: pl.DataFrame, threshold_m: int = 1500) -> int:
     return sum(1 for v in mv["venue"].to_list() if (venue_elev_m(v) or 0) >= threshold_m)
 
 
+def _accl_tokens(parquet_name: str = "acclimatization.parquet") -> dict[str, str]:
+    """Tokens for the methodology heat section, from the committed acclimatization parquet.
+
+    Per-tournament heat gap + drop, the within-group gap→drop slopes (+CIs), and a couple of
+    counts. All "—" if the parquet is absent (the method page then shows a 'pending' note).
+    """
+    keys = ["ACCL_WC26_GAP", "ACCL_WC26_DROP", "ACCL_COPA_GAP", "ACCL_COPA_DROP",
+            "ACCL_EURO_GAP", "ACCL_EURO_DROP", "ACCL_CWC_GAP", "ACCL_CWC_DROP",
+            "ACCL_SLOPE_CWC", "ACCL_CWC_LO", "ACCL_CWC_HI",
+            "ACCL_SLOPE_NAT", "ACCL_NAT_LO", "ACCL_NAT_HI",
+            "ACCL_GAP_MAX", "ACCL_N", "ACCL_CLUBS"]
+    blank = dict.fromkeys(keys, "—")
+    p = PROCESSED / parquet_name
+    if not p.exists():
+        return blank
+    from src.analysis.acclimatization import summarize_acclimatization
+
+    res = summarize_acclimatization(pl.read_parquet(p), n_boot=800)
+    pt = res.get("per_tournament", {})
+    out = dict(blank)
+    for tour, tok in (("WC2026", "WC26"), ("Copa2024", "COPA"), ("Euro2024", "EURO"), ("CWC2025", "CWC")):
+        v = pt.get(tour)
+        if v:
+            out[f"ACCL_{tok}_GAP"] = f"{v['gap_mean']:+.0f}"
+            out[f"ACCL_{tok}_DROP"] = f"{v['drop_mean']:+.0f}"
+
+    def _slope(test_key, lo_tok, hi_tok, slope_tok):
+        r = res.get(test_key, {})
+        s = r.get("slope_per_C")
+        if s and s["slope"] == s["slope"]:  # not NaN
+            out[slope_tok] = f"{s['slope']:+.2f}"
+            out[lo_tok] = f"{s['ci_lo']:+.2f}"
+            out[hi_tok] = f"{s['ci_hi']:+.2f}"
+
+    _slope("cwc_clubs_test", "ACCL_CWC_LO", "ACCL_CWC_HI", "ACCL_SLOPE_CWC")
+    _slope("nations_test", "ACCL_NAT_LO", "ACCL_NAT_HI", "ACCL_SLOPE_NAT")
+    gaps = [v["gap_mean"] for v in pt.values()]
+    if gaps:
+        out["ACCL_GAP_MAX"] = f"{max(gaps):.0f}"
+    n_rows = sum(v["n"] for v in pt.values()) if pt else 0
+    out["ACCL_N"] = str(n_rows) if n_rows else "—"
+    clubs_dir = RAW / "fotmob_clubs"
+    out["ACCL_CLUBS"] = str(len(list(clubs_dir.glob("*.json")))) if clubs_dir.exists() else "—"
+    return out
+
+
 def _breaks_per_team(df: pl.DataFrame) -> tuple[str, str]:
     """(min, max) on-top hydration breaks any single team has had so far (for the extremes note)."""
     if df is None or df.is_empty():
@@ -470,8 +522,10 @@ def build() -> str:
     SITE.mkdir(parents=True, exist_ok=True)
     site_figures = SITE / "figures"
     site_figures.mkdir(parents=True, exist_ok=True)
-    # social/share assets live at the site root for absolute OG URLs (generated locally, committed)
-    for icon in ("og.png", "og.es.png", "apple-touch-icon.png"):
+    # social/share assets + the committed methodology PDFs live at the site root (generated
+    # locally — CI has no browser — and copied in on every build, like og.png).
+    for icon in ("og.png", "og.es.png", "apple-touch-icon.png",
+                 "wc2026-methodology.pdf", "wc2026-methodology.es.pdf"):
         src = REPORTS / "figures" / icon
         if src.exists():
             shutil.copyfile(src, SITE / icon)
@@ -536,6 +590,8 @@ def build() -> str:
         "BREAKS_MIN": breaks_min,
         "BREAKS_MAX": breaks_max,
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
+        "HYD_N": str(hyd.get("n", 0)),
+        **_accl_tokens(),
     }
 
     first_out = None
@@ -560,6 +616,7 @@ def build() -> str:
             "MECH_IH": mech("injury_huddle"), "MECH_INH": mech("injury_no_huddle"),
             "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated, F),
             "PAGES_URL": PAGES_URL,
+            "METHOD_HREF": _page_link("method", lang),
             "LANG_TOGGLE": _lang_toggle(lang),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
@@ -581,7 +638,45 @@ def build() -> str:
         out.write_text(page, encoding="utf-8")
         if first_out is None:
             first_out = str(out)
+
+    build_method_pages(data_tokens, snap_date)
     return first_out or str(SITE / "index.html")
+
+
+def build_method_pages(data_tokens: dict, snap_date: str | None) -> None:
+    """Render the bilingual methodology / full-report pages (method.html + method.es.html).
+
+    Mirrors the index build loop: prose from STRINGS[lang] (METHOD_* keys) + shared data tokens
+    (deltas, acclimatization), same multi-pass + leak guard. Prose-only template, no JS/modal.
+    """
+    from src.report.method_copy import TEMPLATE as METHOD_TEMPLATE
+
+    for lang in LANGS:
+        S = STRINGS[lang]
+        updated = _fmt_date_iso(snap_date, lang)
+        tokens = {
+            **S,
+            **data_tokens,
+            "LANG": lang,
+            "METHOD_CANONICAL": SITE_BASE + _page_link("method", lang),
+            "HOME_HREF": _page_link("index", lang),
+            "METHOD_HREF": _page_link("method", lang),
+            "METHOD_PDF_HREF": "wc2026-methodology.pdf" if lang == "en" else "wc2026-methodology.es.pdf",
+            "UPDATED_DATE": updated.upper(),
+            "LANG_TOGGLE": _lang_toggle(lang, "method"),
+            "PAGES_URL": PAGES_URL,
+        }
+        page = METHOD_TEMPLATE
+        for _ in range(6):
+            before = page
+            for k, v in tokens.items():
+                page = page.replace("{{" + k + "}}", str(v))
+            if page == before:
+                break
+        leftover = sorted(set(re.findall(r"\{\{[A-Z0-9_]+\}\}", page)))
+        if leftover:
+            raise ValueError(f"unresolved method tokens in {lang} build: {leftover}")
+        (SITE / _page_link("method", lang)).write_text(page, encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -423,6 +423,7 @@ def main() -> None:
     ap.add_argument("--euro-placebo", action="store_true", help="build the Euro 2024 same-units placebo parquet and exit")
     ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
+    ap.add_argument("--method-pdf", action="store_true", help="render the methodology pages to committed PDFs and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
     args = ap.parse_args()
@@ -448,6 +449,12 @@ def main() -> None:
         from src.viz.social import build_share_card
 
         print("[og-card]", build_share_card())
+        return
+    if args.method_pdf:
+        from src.viz.method_pdf import build_methodology_pdf
+
+        for p in build_methodology_pdf():
+            print("[method-pdf]", p)
         return
     ids = _parse_ids(args)
     if args.discover_days:
