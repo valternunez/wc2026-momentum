@@ -298,6 +298,40 @@ def build_cwc_placebo() -> pl.DataFrame:
     return df
 
 
+def build_copa_placebo() -> pl.DataFrame:
+    """Build the Copa América 2024 same-units placebo parquet (occasional run; FotMob momentum).
+
+    National teams in US summer heat — the closest no-break analog to WC2026.
+    """
+    from src.analysis.copa_placebo import build_copa_placebo_table, summarize_copa_placebo
+
+    print("[copa-placebo] discovering + scraping Copa América 2024 (FotMob)…")
+    df = build_copa_placebo_table()
+    out = PROCESSED / "copa2024_placebo.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
+    print(f"[copa-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
+    print(f"[copa-placebo] summary: {summarize_copa_placebo(df)}")
+    return df
+
+
+def build_euro_placebo() -> pl.DataFrame:
+    """Build the Euro 2024 same-units placebo parquet (occasional run; FotMob momentum).
+
+    European national teams — the team-side companion to Copa América for the no-break baseline.
+    """
+    from src.analysis.euro_placebo import build_euro_placebo_table, summarize_euro_placebo
+
+    print("[euro-placebo] discovering + scraping Euro 2024 (FotMob)…")
+    df = build_euro_placebo_table()
+    out = PROCESSED / "euro2024_placebo.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
+    print(f"[euro-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
+    print(f"[euro-placebo] summary: {summarize_euro_placebo(df)}")
+    return df
+
+
 def build_wc2022_placebo() -> pl.DataFrame:
     """Build the 2022-WC same-units placebo parquet via FotMob (occasional run)."""
     from datetime import date
@@ -356,6 +390,8 @@ def main() -> None:
     ap.add_argument("--hp-limit", type=int, default=None, help="limit StatsBomb matches for --historical-placebo")
     ap.add_argument("--cwc-placebo", action="store_true", help="build the CWC 2025 same-units placebo parquet and exit")
     ap.add_argument("--wc2022-placebo", action="store_true", help="build the 2022-WC FotMob same-units placebo and exit")
+    ap.add_argument("--copa-placebo", action="store_true", help="build the Copa América 2024 same-units placebo parquet and exit")
+    ap.add_argument("--euro-placebo", action="store_true", help="build the Euro 2024 same-units placebo parquet and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
@@ -368,6 +404,12 @@ def main() -> None:
         return
     if args.wc2022_placebo:
         build_wc2022_placebo()
+        return
+    if args.copa_placebo:
+        build_copa_placebo()
+        return
+    if args.euro_placebo:
+        build_euro_placebo()
         return
     if args.og_card:
         from src.viz.social import build_share_card

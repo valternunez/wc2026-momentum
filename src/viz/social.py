@@ -37,8 +37,8 @@ _CARD = """<!doctype html><html><head><meta charset='utf-8'>
  </div>
  <div class="nums">
    <div><div class="n">{HYD}</div><div class="lbl">momentum after a break</div></div>
-   <div><div class="n alt">{CWC}</div><div class="lbl">with NO break (2025 CWC)</div></div>
-   <div class="arrow">&rarr; it's mostly regression to the mean</div>
+   <div><div class="n alt">{CWC}</div><div class="lbl">with no break (same teams)</div></div>
+   <div class="arrow">&rarr; mostly regression to the mean &mdash; but not all</div>
  </div>
  <div class="foot"><span><b>A living, data-driven analysis</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
 </div></body></html>"""
@@ -67,8 +67,8 @@ _CARD_ES = """<!doctype html><html><head><meta charset='utf-8'>
  </div>
  <div class="nums">
    <div><div class="n">{HYD}</div><div class="lbl">de momentum tras una pausa</div></div>
-   <div><div class="n alt">{CWC}</div><div class="lbl">SIN pausa (Mundial Clubes 2025)</div></div>
-   <div class="arrow">&rarr; es sobre todo regresión a la media</div>
+   <div><div class="n alt">{CWC}</div><div class="lbl">sin pausa (mismos equipos)</div></div>
+   <div class="arrow">&rarr; sobre todo regresión a la media &mdash; pero no todo</div>
  </div>
  <div class="foot"><span><b>Un análisis vivo, basado en datos</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
 </div></body></html>"""
@@ -79,7 +79,9 @@ body{width:180px;height:180px;background:#1A1813;display:flex;align-items:center
 
 
 def _finding_numbers() -> tuple[str, str]:
-    hyd = cwc = None
+    """(break drop, same-teams no-break drop). The no-break number is the within-2026 control
+    (the same WC2026 teams windowed at quiet minutes), the cleanest like-for-like baseline."""
+    hyd = nobreak = None
     try:
         from src.analysis.descriptive import effect_by_type, load_processed
 
@@ -92,13 +94,13 @@ def _finding_numbers() -> tuple[str, str]:
 
         from src.analysis.descriptive import cluster_bootstrap_ci, on_top_rows
 
-        p = PROCESSED / "cwc2025_placebo.parquet"
+        p = PROCESSED / "placebo2026.parquet"
         if p.exists():
-            cwc, _, _ = cluster_bootstrap_ci(on_top_rows(pl.read_parquet(p)))
+            nobreak, _, _ = cluster_bootstrap_ci(on_top_rows(pl.read_parquet(p)))
     except Exception:
         pass
-    return (f"−{abs(hyd):.0f}" if hyd is not None else "−24",
-            f"−{abs(cwc):.0f}" if cwc is not None else "−23")
+    return (f"−{abs(hyd):.0f}" if hyd is not None else "−25",
+            f"−{abs(nobreak):.0f}" if nobreak is not None else "−17")
 
 
 def build_share_card(out_path: str | Path | None = None) -> str:

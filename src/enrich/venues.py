@@ -191,6 +191,22 @@ def _normalize(s: str) -> str:
     return " ".join("".join(out).split())
 
 
+# Approx stadium elevation (metres). Altitude is a fatigue stressor (thin air), separate from heat;
+# Mexico City and Guadalajara are the high-altitude WC2026 venues (> 1,500 m).
+ELEV_M: dict[str, int] = {
+    "MetLife Stadium": 7, "AT&T Stadium": 180, "NRG Stadium": 15, "Mercedes-Benz Stadium": 320,
+    "Hard Rock Stadium": 2, "Lincoln Financial Field": 12, "Gillette Stadium": 90,
+    "Arrowhead Stadium": 270, "Levi's Stadium": 9, "SoFi Stadium": 30, "Lumen Field": 5,
+    "Estadio Azteca": 2240, "Estadio Akron": 1560, "Estadio BBVA": 540, "BMO Field": 76, "BC Place": 3,
+}
+
+
+def venue_elev_m(venue_or_city: str) -> int | None:
+    """Elevation (m) for a venue/city string, via the same alias matching as lookup_venue."""
+    v = lookup_venue(venue_or_city)
+    return ELEV_M.get(v["name"]) if v and v.get("name") else None
+
+
 def lookup_venue(venue_or_city: str) -> dict | None:
     """Fuzzy-match a SofaScore-style venue/city string to a WC2026 venue.
 

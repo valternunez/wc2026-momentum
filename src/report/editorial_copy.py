@@ -58,6 +58,9 @@ TEMPLATE = """<!DOCTYPE html>
   .lp{animation:livepulse 1.8s ease-in-out infinite}
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
+  .ev-min{font-family:'IBM Plex Mono',monospace;font-weight:500;color:#1A1813}
+  .ev-mom{color:#E5482E;font-weight:600}
+  .ev-score{font-family:'IBM Plex Mono',monospace;font-weight:700}
   #mb-table{margin-top:14px}
   #mb-table summary{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5A5547;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px}
   #mb-table summary::-webkit-details-marker{display:none}
@@ -243,6 +246,7 @@ TEMPLATE = """<!DOCTYPE html>
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820;margin-bottom:30px;text-wrap:pretty">{{S06_LEAD}}</p>
       {{HEAT_GRID}}
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820">{{S06_CONCL}}</p>
+      <p style="font-family:'Newsreader',serif;font-size:19px;line-height:1.6;color:#46412F;margin-top:14px">{{S06_ALT}}</p>
       <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;color:#5A5547;margin-top:20px;line-height:1.6">{{S06_FOOTNOTE}}</p>
     </div>
   </section>
@@ -487,7 +491,8 @@ TEMPLATE = """<!DOCTYPE html>
           : '● '+(g.who||'')+(g.sc?' '+g.sc:'')+(g.k&&g.k!=='miss'?' ('+g.k+')':''); });
       var extra=near.concat(ng);
       var who=best[1]>=0?(m.home):(m.away);
-      tip.innerHTML=Math.round(best[0])+"' · "+(best[1]>0?'+':'')+best[1]+' '+who+(extra.length?' · '+extra.join(' · '):'');
+      var momCol=theme.mode==='dark'?'#C03A22':'#FF7A63';   // accent that reads on the (inverted) tooltip bg
+      tip.innerHTML='<span style="opacity:.7">'+Math.round(best[0])+"'</span> · <span style=\"color:"+momCol+";font-weight:600\">"+(best[1]>0?'+':'')+best[1]+'</span> '+who+(extra.length?' · '+extra.join(' · '):'');
       tip.style.opacity=1;
       var tl=x/W*r.width, hw=tip.offsetWidth/2+4;
       tl=Math.max(hw, Math.min(r.width-hw, tl));
@@ -508,7 +513,7 @@ TEMPLATE = """<!DOCTYPE html>
       moments.sort(function(a,b){ return a.min-b.min; });
       var rows='';
       moments.forEach(function(mm){ var v=momAt(mm.min), who=v>=0?m.home:m.away;
-        rows+='<tr><td>'+Math.round(mm.min)+"'</td><td>"+esc(mm.ev)+'</td><td>'+(v>0?'+':'')+v+'</td><td>'+esc(who)+'</td></tr>'; });
+        rows+='<tr><td class="ev-min">'+Math.round(mm.min)+"'</td><td>"+esc(mm.ev)+'</td><td class="ev-mom">'+(v>0?'+':'')+v+'</td><td>'+esc(who)+'</td></tr>'; });
       if(rows){
         box.hidden=false;
         box.innerHTML='<summary>'+esc(T.dataLabel)+'</summary><table><thead><tr><th>'+esc(T.thMin)+'</th><th>'+esc(T.thEvent)+'</th><th>'+esc(T.thMomentum)+'</th><th>'+esc(T.thLeader)+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
@@ -605,7 +610,7 @@ TEMPLATE = """<!DOCTYPE html>
     document.getElementById('mb-title').textContent=m.home+(sc?' '+sc+' ':' v ')+m.away;
     var dt=fmtDate(m.ts);
     document.getElementById('mb-sub').textContent=(dt?dt+' · ':'')+(m.series.length)+' '+T.minutesTracked+' · '+(m.stoppages?m.stoppages.length:0)+' '+T.stoppagesDetected;
-    document.getElementById('mb-explain').textContent=m.explain||'';
+    document.getElementById('mb-explain').innerHTML=m.explain||'';   // explain carries styled spans (ev-min/ev-mom); team names escaped server-side
     var sb=document.getElementById('mb-share'); if(sb){ sb.disabled=false; sb.innerHTML=T.shareBtn; }   // reset any stuck RENDERING… state
     chrome(m); render(m); modal.hidden=false; document.body.style.overflow='hidden';
     if(pageRoot) pageRoot.inert=true;   // hide the backgrounded page from AT/tab order

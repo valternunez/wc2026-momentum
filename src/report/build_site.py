@@ -26,6 +26,7 @@ from src.analysis.descriptive import (
     on_top_rows,
     pre_level_r2,
 )
+from src.enrich.venues import venue_elev_m
 from src.paths import PROCESSED, REPORTS, SITE, STOPPAGES_PARQUET
 from src.report.editorial_copy import TEMPLATE
 from src.report.i18n import COUNTRIES, FRAG, JS, LABELS, LANGS, MONTHS, STAGE, STRINGS, TYPES
@@ -277,7 +278,12 @@ def _compare_sentence(effects: list[dict], F: dict) -> str:
 
 
 def _match_explanation(df: pl.DataFrame, mid: str, home: str, away: str, F: dict, types: dict) -> str:
-    """Short, purely descriptive note on this match's momentum (no causal claims)."""
+    """Short, purely descriptive note on this match's momentum (no causal claims).
+
+    Returns HTML (rendered via innerHTML): minute/momentum values are wrapped in styled spans by
+    the exp_* templates, so team names are escaped here.
+    """
+    home, away = html.escape(home), html.escape(away)
     if df is None or df.is_empty():
         return F["exp_no_df"].format(home=home, away=away)
     rows = (df.filter((pl.col("match_id") == str(mid)) & (pl.col("is_home") == True))  # noqa: E712
@@ -348,18 +354,28 @@ def _compare_chart(effects: list[dict], F: dict) -> str:
     if hyd and hyd.get("n"):
         rows_data.append((F["cc_hyd_label"], F["cc_hyd_sub"],
                           hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], hyd.get("n_matches"), ACCENT, True, F["tip_read"]))
+    NT = "#5A5547"      # national-team no-break baselines
+    CLUBS = "#9A6A3A"   # club football, the contrast
     p26 = _placebo_meanci("placebo2026.parquet")
-    if p26:
+    if p26:  # the same WC2026 teams at quiet minutes — the gold-standard control
         rows_data.append((F["cc_p26_label"], F["cc_p26_sub"],
                           p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, F["tip_placebo"]))
-    cwc = _placebo_meanci("cwc2025_placebo.parquet")
-    if cwc:
-        rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
-                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], "#46412F", True, None))
+    euro = _placebo_meanci("euro2024_placebo.parquet")
+    if euro:
+        rows_data.append((F["cc_euro_label"], F["cc_euro_sub"],
+                          euro[0], euro[1], euro[2], euro[3], euro[4], NT, True, None))
+    copa = _placebo_meanci("copa2024_placebo.parquet")
+    if copa:
+        rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
+                          copa[0], copa[1], copa[2], copa[3], copa[4], NT, True, F["tip_copa"]))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
         rows_data.append((F["cc_wc22_label"], F["cc_wc22_sub"],
-                          w22[0], w22[1], w22[2], w22[3], w22[4], "#8A8268", True, None))
+                          w22[0], w22[1], w22[2], w22[3], w22[4], NT, True, None))
+    cwc = _placebo_meanci("cwc2025_placebo.parquet")
+    if cwc:  # clubs regress more — the contrast that used to flatter the "same drop" story
+        rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
+                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CLUBS, True, None))
 
     out = []
     for label, sub, mean, lo, hi, n, matches, color, solid, tip in rows_data:
@@ -419,10 +435,28 @@ def _heat_grid(has_data: bool) -> str:
     return _HEAT_GRID_HTML if has_data else ""
 
 
+def _altitude_count(df: pl.DataFrame, threshold_m: int = 1500) -> int:
+    """Number of matches whose venue sits at/above `threshold_m` (Mexico City, Guadalajara)."""
+    if df is None or df.is_empty() or "venue" not in df.columns:
+        return 0
+    mv = df.group_by("match_id").agg(pl.col("venue").first()).drop_nulls("venue")
+    return sum(1 for v in mv["venue"].to_list() if (venue_elev_m(v) or 0) >= threshold_m)
+
+
+def _breaks_per_team(df: pl.DataFrame) -> tuple[str, str]:
+    """(min, max) on-top hydration breaks any single team has had so far (for the extremes note)."""
+    if df is None or df.is_empty():
+        return ("—", "—")
+    ot = on_top_rows(df).filter(pl.col("stoppage_type") == "hydration")
+    if ot.is_empty():
+        return ("—", "—")
+    counts = ot.group_by("team").agg(pl.len().alias("n"))["n"]
+    return (str(int(counts.min())), str(int(counts.max())))
+
+
 def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str, F: dict) -> str:
-    est = f"−{abs(hyd_mean):.1f}" if hyd_mean is not None else "—"
-    extra = F["trend_extra"].format(k=len(snapshots)) if len(snapshots) >= 2 else ""
-    body = F["trend_sentence"].format(updated=updated, est=est, n=hyd_n, extra=extra)
+    est = f"−{abs(hyd_mean):.0f}" if hyd_mean is not None else "—"  # integer, matches the −25 headline
+    body = F["trend_sentence"].format(updated=updated, est=est, n=hyd_n)
     return f"""
   <section style="border-top:1px solid #DDD6C5;background:#EAE5D6">
     <div style="max-width:840px;margin:0 auto;padding:46px 40px">
@@ -476,18 +510,31 @@ def build() -> str:
     p26 = _placebo_meanci("placebo2026.parquet")
     cwc = _placebo_meanci("cwc2025_placebo.parquet")
     w22 = _placebo_meanci("wc2022_placebo.parquet")
-    nobreak = sorted(round(abs(x[0])) for x in (p26, cwc, w22) if x)
+    copa = _placebo_meanci("copa2024_placebo.parquet")
+    euro = _placebo_meanci("euro2024_placebo.parquet")
+    # National-team no-break baselines (NOT clubs) for the range cited in §05.
+    nt = sorted(round(abs(x[0])) for x in (p26, euro, copa, w22) if x)
+    hero = round(abs(hyd["mean_delta"])) if hyd and hyd.get("n") else None
+    p26r = round(abs(p26[0])) if p26 else None
+    gap = (hero - p26r) if (hero is not None and p26r is not None) else None
     r2 = pre_level_r2(df)
     heat = _heat_tokens(df)
+    breaks_min, breaks_max = _breaks_per_team(df)
     data_tokens = {
         **heat,
         "HEAT_GRID": _heat_grid(heat["HEAT_N"] != "0"),
+        "HEAT_ALT": str(_altitude_count(df)),
         "HERO_DELTA": _absround(hyd.get("mean_delta")) if hyd else "—",
         "P26_DELTA": _absround(p26[0] if p26 else None),
         "CWC_DELTA": _absround(cwc[0] if cwc else None),
         "WC22_DELTA": _absround(w22[0] if w22 else None),
-        "NOBREAK_LO": str(nobreak[0]) if nobreak else "—",
-        "NOBREAK_HI": str(nobreak[-1]) if nobreak else "—",
+        "COPA_DELTA": _absround(copa[0] if copa else None),
+        "EURO_DELTA": _absround(euro[0] if euro else None),
+        "NOBREAK_LO": str(nt[0]) if nt else "—",
+        "NOBREAK_HI": str(nt[-1]) if nt else "—",
+        "GAP": str(gap) if gap is not None else "—",
+        "BREAKS_MIN": breaks_min,
+        "BREAKS_MAX": breaks_max,
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
     }
 
