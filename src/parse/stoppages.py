@@ -112,31 +112,40 @@ _MIN_BREAK_SEC, _MAX_BREAK_SEC = 5, 400
 
 
 def _delay_pairs(commentary: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Pair each ESPN 'Start Delay' with the next 'End Delay' -> [{minute, duration}] in seconds.
+    """Pair each ESPN 'Start Delay' with the nearest unused 'End Delay' after it -> [{minute, duration, type}].
 
-    Two-pointer over match-clock `seconds`, so each resume is consumed once (handles back-to-back
-    delays like a drinks break immediately followed by an injury delay). The match clock runs
-    through stoppages, so end-minus-start is real elapsed time — not subject to commentary lag.
+    Match-clock `seconds`, so end-minus-start is real elapsed time (immune to commentary posting lag). Each
+    end is consumed by at most one start, and ONLY when it forms an in-bounds pair — so a duplicate start at
+    the same second, or an over-long (rejected) delay, can't steal a later break's resume line.
     """
-    # A break's start is an explicit ESPN "Start Delay" OR any hydration-classified line carrying
-    # seconds (some "drinks break" comments aren't tagged Start Delay but still timestamp the break).
-    starts = sorted(
-        (c for c in commentary
-         if c.get("seconds") is not None and (c.get("delay") == "start" or c.get("type") == "hydration")),
-        key=lambda c: c["seconds"])
+    # A break's start is an explicit ESPN "Start Delay" OR any hydration-classified line carrying seconds
+    # (some "drinks break" comments aren't tagged Start Delay but still timestamp the break). ESPN often
+    # double-logs ONE delay at the same match-second (e.g. "Delay in match (Austria)" + the injured player),
+    # so collapse to one start per second — preferring a hydration-typed line so a break is never dropped.
+    by_sec: dict[float, dict[str, Any]] = {}
+    for c in (c for c in commentary if c.get("seconds") is not None
+              and (c.get("delay") == "start" or c.get("type") == "hydration")):
+        sec = c["seconds"]
+        cur = by_sec.get(sec)
+        if cur is None or (c.get("type") == "hydration" and cur.get("type") != "hydration"):
+            by_sec[sec] = c
+    starts = [by_sec[s] for s in sorted(by_sec)]
     ends = sorted(c["seconds"] for c in commentary
                   if c.get("delay") == "end" and c.get("seconds") is not None)
+    used = [False] * len(ends)
     pairs: list[dict[str, Any]] = []
-    j = 0
     for s in starts:
-        while j < len(ends) and ends[j] <= s["seconds"]:
-            j += 1
-        if j >= len(ends):
+        ss = s["seconds"]
+        for k in range(len(ends)):
+            if used[k] or ends[k] <= ss:
+                continue
+            dur = ends[k] - ss
+            if dur > _MAX_BREAK_SEC:
+                break  # ends are sorted; no nearer valid resume exists further out
+            used[k] = True  # consume this resume — but only because it's an in-window pair
+            if dur >= _MIN_BREAK_SEC:
+                pairs.append({"minute": s.get("minute"), "duration": round(dur), "type": s.get("type")})
             break
-        dur = ends[j] - s["seconds"]
-        j += 1
-        if _MIN_BREAK_SEC <= dur <= _MAX_BREAK_SEC:
-            pairs.append({"minute": s.get("minute"), "duration": round(dur), "type": s.get("type")})
     return pairs
 
 

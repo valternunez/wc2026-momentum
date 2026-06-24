@@ -210,9 +210,11 @@ def _write_momentum_json(match_ids: list[str], df: pl.DataFrame) -> None:
         stoppages = []
         if df is not None and not df.is_empty():
             sub = (df.filter(pl.col("match_id") == str(mid))
-                     .select(["clock_minute", "stoppage_type"]).unique()
+                     .select(["clock_minute", "stoppage_type", "real_duration_seconds"]).unique()
                      .sort(["clock_minute", "stoppage_type"]))  # tie-break for deterministic output
-            stoppages = [[r["clock_minute"], r["stoppage_type"]] for r in sub.to_dicts()]
+            # [minute, type, duration_seconds|null] — the chart shades each break's measured length
+            stoppages = [[r["clock_minute"], r["stoppage_type"], r["real_duration_seconds"]]
+                         for r in sub.to_dicts()]
         tc = (raw.get("general") or {}).get("teamColors") or {}
         colors = None
         if tc.get("lightMode") or tc.get("darkMode"):

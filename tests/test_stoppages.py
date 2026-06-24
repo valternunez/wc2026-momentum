@@ -111,6 +111,32 @@ def test_hydration_duration_absent_seconds_is_none():
     assert _hyd(s) and _hyd(s)[0]["real_duration_seconds"] is None
 
 
+def test_duration_double_logged_start_does_not_steal_resume():
+    # ESPN double-logs one delay at the same second ("Delay in match (X)" + the injured player);
+    # that must not consume the hydration break's later resume line (regression: match 4667815 @23').
+    commentary = normalize_lines([
+        {"minute": "21'", "text": "Delay in match (Austria).", "seconds": 1232.0, "delay": "start"},
+        {"minute": "21'", "text": "Delay in match because of an injury De Paul.", "seconds": 1232.0, "delay": "start"},
+        {"minute": "22'", "text": "Delay over. Ready to continue.", "seconds": 1269.0, "delay": "end"},
+        {"minute": "23'", "text": "Delay in match for a drinks break.", "seconds": 1379.0, "delay": "start"},
+        {"minute": "26'", "text": "Delay over. Ready to continue.", "seconds": 1550.0, "delay": "end"},
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s)[0]["real_duration_seconds"] == 171  # 1550-1379, not the dup's 1269/1550
+
+
+def test_duration_overlong_delay_does_not_steal_resume():
+    # an over-long (rejected, >400s) injury delay before a break must NOT consume the break's resume.
+    commentary = normalize_lines([
+        {"minute": "60'", "text": "Lengthy injury stoppage.", "seconds": 3600.0, "delay": "start"},
+        {"minute": "67'", "text": "Cooling break.", "seconds": 4020.0, "delay": "start"},
+        {"minute": "69'", "text": "Delay over.", "seconds": 4110.0, "delay": "end"},   # break resume
+        {"minute": "70'", "text": "Delay over.", "seconds": 4200.0, "delay": "end"},   # injury resume (600s, rejected)
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s)[0]["real_duration_seconds"] == 90  # 4110-4020, resume not stolen by the 3600 start
+
+
 def test_var_duration_from_generic_delay():
     # a VAR stoppage takes the nearest GENERIC (non-hydration) delay pair's duration
     commentary = normalize_lines([

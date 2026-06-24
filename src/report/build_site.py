@@ -83,9 +83,9 @@ def _lang_toggle(lang: str, page: str = "index") -> str:
     on = f"{base};color:#E5C9A0;font-weight:600"
     off = f"{base};color:#7E776A;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
     en = (f'<span style="{on}">English</span>' if lang == "en"
-          else f'<a href="{page}.html" style="{off}">English</a>')
+          else f'<a class="same-tab" href="{page}.html" style="{off}">English</a>')
     es = (f'<span style="{on}">Español</span>' if lang == "es"
-          else f'<a href="{page}.es.html" style="{off}">Español</a>')
+          else f'<a class="same-tab" href="{page}.es.html" style="{off}">Español</a>')
     sep = f'<span style="{base};color:#5A5547;padding:0 8px">·</span>'
     return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
 
@@ -614,6 +614,7 @@ def build() -> str:
         "BREAKS_MAX": breaks_max,
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
         "HYD_N": str(hyd.get("n", 0)),
+        "COPA_N": str(copa[3]) if copa else "—",  # on-top windows behind the Copa baseline (for the tooltip)
         **_accl_tokens(),
         **_duration_tokens(df),
     }

@@ -457,15 +457,14 @@ TEMPLATE = """<!DOCTYPE html>
     svg.appendChild(el('path',{d:d, fill:t.awayFill, 'clip-path':'url(#mbDn)'}));
     svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:t.grid,'stroke-width':1.1}));
 
-    // soft accent band over the stretch between consecutive hydration breaks (the 'momentum break'
-    // window the story is about). Drawn under the dashed markers; pointer-events off so hover still works.
-    var hydMins=(m.stoppages||[]).filter(function(st){return st[1]==='hydration';})
-      .map(function(st){return st[0];}).sort(function(a,b){return a-b;});
-    var bandFill=theme.mode==='dark'?'rgba(229,72,46,.10)':'rgba(229,72,46,.055)';
-    for(var hi=0;hi+1<hydMins.length;hi++){
-      var bx=X(hydMins[hi]), bw=X(hydMins[hi+1])-bx;
-      if(bw>0) svg.appendChild(el('rect',{x:bx,y:pad.t,width:bw,height:H-pad.t-pad.b,fill:bandFill,'pointer-events':'none'}));
-    }
+    // soft accent band over EACH hydration break's measured length (start -> start+duration); the dashed
+    // marker sits at the start. Skip breaks with no measured duration. Under the markers; hover unaffected.
+    var bandFill=theme.mode==='dark'?'rgba(229,72,46,.14)':'rgba(229,72,46,.075)';
+    (m.stoppages||[]).forEach(function(st){
+      if(st[1]!=='hydration' || st[2]==null) return;
+      var bx=X(st[0]), bw=X(st[0]+st[2]/60)-bx;
+      if(bw>0) svg.appendChild(el('rect',{x:bx,y:pad.t,width:Math.max(bw,1.5),height:H-pad.t-pad.b,fill:bandFill,'pointer-events':'none'}));
+    });
 
     (m.stoppages||[]).forEach(function(st){
       var x=X(st[0]);
@@ -549,6 +548,8 @@ TEMPLATE = """<!DOCTYPE html>
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, zeroY-box.y); ctx.clip(); wavePath(); ctx.fillStyle=t.homeFill; ctx.fill(); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, zeroY, box.w, box.y+box.h-zeroY); ctx.clip(); wavePath(); ctx.fillStyle=t.awayFill; ctx.fill(); ctx.restore();
     ctx.strokeStyle=t.grid; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(box.x, zeroY); ctx.lineTo(box.x+box.w, zeroY); ctx.stroke();
+    ctx.fillStyle=theme.mode==='dark'?'rgba(229,72,46,.14)':'rgba(229,72,46,.075)';
+    (m.stoppages||[]).forEach(function(st){ if(st[1]!=='hydration'||st[2]==null) return; var bx=X(st[0]), bw=X(st[0]+st[2]/60)-bx; if(bw>0) ctx.fillRect(bx, box.y, Math.max(bw,2), box.h); });
     (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); var dot=!!DASH[st[1]]; ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=dot?2.6:2; ctx.lineCap=dot?'round':'butt'; ctx.setLineDash(dot?[0.5,6]:[6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap='butt'; });
     ctx.textAlign='center';
     (m.goals||[]).forEach(function(g){
@@ -666,6 +667,15 @@ TEMPLATE = """<!DOCTYPE html>
   document.getElementById('mb-close').addEventListener('click', close);
   modal.addEventListener('click', function(ev){ if(ev.target===modal) close(); });
   document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && !modal.hidden) close(); });
+})();
+</script>
+<script>
+(function(){
+  var ls=document.querySelectorAll('a[href]');
+  for(var i=0;i<ls.length;i++){ var a=ls[i], h=a.getAttribute('href')||'';
+    if(h.charAt(0)==='#' || a.classList.contains('same-tab')) continue;   // keep in-page anchors + the lang toggle
+    a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
+  }
 })();
 </script>
 </body></html>

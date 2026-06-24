@@ -95,5 +95,14 @@ TEMPLATE = """<!DOCTYPE html>
   </footer>
 
 </article>
+<script>
+(function(){
+  var ls=document.querySelectorAll('a[href]');
+  for(var i=0;i<ls.length;i++){ var a=ls[i], h=a.getAttribute('href')||'';
+    if(h.charAt(0)==='#' || a.classList.contains('same-tab')) continue;   // keep in-page anchors + the lang toggle
+    a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
+  }
+})();
+</script>
 </body>
 </html>"""
