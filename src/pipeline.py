@@ -86,6 +86,16 @@ def discover_scraped_ids() -> list[str]:
     return sorted(p.stem for p in RAW_FOTMOB.glob("*.json")) if RAW_FOTMOB.exists() else []
 
 
+def _is_wc2026(match_id: str) -> bool:
+    """True iff this match's cached FotMob raw belongs to the 2026 World Cup (parentLeagueId 77).
+
+    The discriminator that separates real WC2026 group/knockout matches from qualifiers and other
+    tournaments that may share the RAW_FOTMOB dir. Missing/unreadable raw -> False (excluded).
+    """
+    g = fotmob.load_raw(match_id).get("general") or {}
+    return g.get("parentLeagueId") == fotmob.WORLD_CUP_PRIMARY_ID
+
+
 def _guard_rowcount(prev: int, new: int, *, force: bool) -> None:
     """Raise if the rebuilt table lost >50% of rows vs the committed parquet (unless forced)."""
     if not force and prev > 0 and new < max(1, prev // 2):
@@ -122,6 +132,15 @@ def run(
                 client.close()
 
     all_ids = sorted(set(discover_scraped_ids()) | set(map(str, match_ids)))
+    # Competition gate: only build genuine WC2026 matches (FotMob parentLeagueId 77). Orphan raw from
+    # other competitions (WC qualifiers, Euro, Copa) can land in RAW_FOTMOB from ad-hoc fetches; this
+    # keeps them out of the parquet, matches.json, momentum.json, panels and the within-2026 placebo.
+    wc_ids = [m for m in all_ids if _is_wc2026(m)]
+    dropped = [m for m in all_ids if m not in set(wc_ids)]
+    if dropped:
+        shown = ", ".join(dropped[:12]) + (" …" if len(dropped) > 12 else "")
+        print(f"[gate] excluded {len(dropped)} non-WC2026 raw match(es): {shown}")
+    all_ids = wc_ids
     df = build_table(all_ids)
 
     # coverage: surface matches that produced no rows (pending, missing data, or a payload-shape change)

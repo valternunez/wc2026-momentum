@@ -457,6 +457,16 @@ TEMPLATE = """<!DOCTYPE html>
     svg.appendChild(el('path',{d:d, fill:t.awayFill, 'clip-path':'url(#mbDn)'}));
     svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:t.grid,'stroke-width':1.1}));
 
+    // soft accent band over the stretch between consecutive hydration breaks (the 'momentum break'
+    // window the story is about). Drawn under the dashed markers; pointer-events off so hover still works.
+    var hydMins=(m.stoppages||[]).filter(function(st){return st[1]==='hydration';})
+      .map(function(st){return st[0];}).sort(function(a,b){return a-b;});
+    var bandFill=theme.mode==='dark'?'rgba(229,72,46,.10)':'rgba(229,72,46,.055)';
+    for(var hi=0;hi+1<hydMins.length;hi++){
+      var bx=X(hydMins[hi]), bw=X(hydMins[hi+1])-bx;
+      if(bw>0) svg.appendChild(el('rect',{x:bx,y:pad.t,width:bw,height:H-pad.t-pad.b,fill:bandFill,'pointer-events':'none'}));
+    }
+
     (m.stoppages||[]).forEach(function(st){
       var x=X(st[0]);
       svg.appendChild(el('line',{x1:x,y1:pad.t,x2:x,y2:H-pad.b, stroke:MARK[st[1]]||'#9A927E','stroke-width':1.3,'stroke-dasharray':DASH[st[1]]||'4 3','stroke-linecap':(DASH[st[1]]?'round':'butt')}));

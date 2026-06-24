@@ -174,6 +174,10 @@ def parse_match_meta(details_json: dict[str, Any]) -> dict[str, Any]:
         "home_team_id": (g.get("homeTeam") or {}).get("id"),
         "away_team_id": (g.get("awayTeam") or {}).get("id"),
         "tournament": g.get("leagueName"),
+        "league_id": g.get("leagueId"),
+        # the competition's parent: WC2026 group/knockout leagues all sit under primaryId 77, while
+        # qualifiers (10195/…) and other tournaments (Euro 50, Copa 44) do not — used to gate the build.
+        "parent_league_id": g.get("parentLeagueId"),
         "stage": g.get("leagueRoundName") or g.get("matchRound"),
         "venue_city": stadium.get("city"),
         "venue_stadium": stadium.get("name"),
