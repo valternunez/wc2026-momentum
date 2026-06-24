@@ -113,10 +113,30 @@ def find_event_id(date_str: str, home: str, away: str, *, league: str = WORLD_CU
 
 
 def parse_commentary(summary_json: dict[str, Any]) -> list[dict[str, Any]]:
-    """Raw ESPN summary -> pre-normalized commentary lines [{minute, text}]."""
+    """Raw ESPN summary -> pre-normalized commentary lines.
+
+    Each line: {minute, text, seconds, delay, wallclock}. ESPN tags a stoppage with a
+    "Start Delay" / "End Delay" play (`play.type.text`) and carries a match-clock second value
+    (`play.clock.value`, e.g. 1335.0) plus an ISO wall-clock (`play.wallclock`). Pairing a
+    hydration Start Delay with the next End Delay gives the exact break duration in seconds
+    (the match clock runs through stoppages, so the delta is real elapsed time, immune to the
+    posting lag a wall-clock would carry). We keep all three; downstream uses `seconds`.
+    """
     out = []
     for c in summary_json.get("commentary") or []:
-        out.append({"minute": (c.get("time") or {}).get("displayValue"), "text": c.get("text")})
+        play = c.get("play") or {}
+        ptype = ((play.get("type") or {}).get("text") or "").lower()
+        delay = "start" if "start delay" in ptype else ("end" if "end delay" in ptype else None)
+        secs = (play.get("clock") or {}).get("value")
+        if secs is None:
+            secs = (c.get("time") or {}).get("value")
+        out.append({
+            "minute": (c.get("time") or {}).get("displayValue"),
+            "text": c.get("text"),
+            "seconds": float(secs) if secs is not None else None,
+            "delay": delay,
+            "wallclock": play.get("wallclock"),
+        })
     return out
 
 

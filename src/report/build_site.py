@@ -495,6 +495,29 @@ def _accl_tokens(parquet_name: str = "acclimatization.parquet") -> dict[str, str
     return out
 
 
+def _fmt_mmss(sec: int) -> str:
+    return f"{int(sec) // 60}:{int(sec) % 60:02d}"
+
+
+def _duration_tokens(df: pl.DataFrame) -> dict[str, str]:
+    """Measured hydration-break durations + the longer-breaks-bite-harder split (from ESPN delays)."""
+    keys = ["DUR_MEDIAN", "DUR_MIN", "DUR_MAX", "DUR_N", "DUR_N_ALL", "DUR_SHORT", "DUR_LONG", "DUR_SLOPE"]
+    out = dict.fromkeys(keys, "—")
+    from src.analysis.duration_effect import duration_effect, duration_summary
+
+    s = duration_summary(df)
+    if not s.get("n"):
+        return out
+    out.update({"DUR_MEDIAN": _fmt_mmss(s["median"]), "DUR_MIN": _fmt_mmss(s["min"]),
+                "DUR_MAX": _fmt_mmss(s["max"]), "DUR_N": str(s["n"]), "DUR_N_ALL": str(s["n_all"])})
+    e = duration_effect(df, n_boot=800)
+    if "slope_per_min" in e:
+        out["DUR_SHORT"] = str(round(abs(e["short"]["mean"])))
+        out["DUR_LONG"] = str(round(abs(e["long"]["mean"])))
+        out["DUR_SLOPE"] = str(round(abs(e["slope_per_min"]["slope"])))
+    return out
+
+
 def _breaks_per_team(df: pl.DataFrame) -> tuple[str, str]:
     """(min, max) on-top hydration breaks any single team has had so far (for the extremes note)."""
     if df is None or df.is_empty():
@@ -592,6 +615,7 @@ def build() -> str:
         "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
         "HYD_N": str(hyd.get("n", 0)),
         **_accl_tokens(),
+        **_duration_tokens(df),
     }
 
     first_out = None

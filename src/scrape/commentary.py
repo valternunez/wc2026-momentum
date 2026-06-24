@@ -87,6 +87,12 @@ def normalize_lines(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "minute": _coerce_minute(ln.get("minute")),
                 "text": text,
                 "type": classify_comment(text),
+                # match-clock seconds + delay role (ESPN), kept on EVERY line — including the
+                # "End Delay" resume lines (type 'none') — so stoppage detection can pair a
+                # break's start and end to fill real_duration_seconds. Absent in older sources.
+                "seconds": ln.get("seconds"),
+                "delay": ln.get("delay"),
+                "wallclock": ln.get("wallclock"),
             }
         )
     return out

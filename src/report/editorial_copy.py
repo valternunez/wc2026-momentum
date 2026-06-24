@@ -228,7 +228,8 @@ TEMPLATE = """<!DOCTYPE html>
           <p style="font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;line-height:1.5;color:#A9A290;margin-top:6px">{{MECH_INH_DESC}}</p>
         </div>
       </div>
-      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#D8D2C2;margin-top:34px">{{S04_CONCL}}</p>
+      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#D8D2C2;margin-top:34px">{{S04_DURATION}}</p>
+      <p style="font-family:'Newsreader',serif;font-size:20px;line-height:1.6;color:#D8D2C2;margin-top:16px">{{S04_CONCL}}</p>
     </div>
   </section>
 

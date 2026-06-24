@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from src.parse.stoppages import detect_stoppages
 from src.scrape.commentary import classify_comment, normalize_lines
+from src.scrape.espn import parse_commentary
 
 
 # --- commentary classification ---------------------------------------------
@@ -51,6 +52,75 @@ def test_hydration_clustered_near_nominal_marks(match_inputs):
     # 21' + 22' cluster -> ~21.5 ; lone 66'
     assert abs(hyd[0] - 21.5) < 0.6
     assert abs(hyd[1] - 66.0) < 0.6
+
+
+# --- break duration from ESPN start/end-delay second deltas ------------------
+
+def _hyd(s):
+    return [x for x in s if x["stoppage_type"] == "hydration"]
+
+
+def test_espn_parse_extracts_seconds_and_delay():
+    summary = {"commentary": [
+        {"time": {"displayValue": "23'", "value": 1335.0},
+         "text": "Delay in match for a drinks break.",
+         "play": {"type": {"text": "Start Delay"}, "clock": {"value": 1335.0},
+                  "wallclock": "2026-06-12T02:23:02Z"}},
+        {"time": {"displayValue": "25'", "value": 1465.0},
+         "text": "Delay over. They are ready to continue.",
+         "play": {"type": {"text": "End Delay"}, "clock": {"value": 1465.0},
+                  "wallclock": "2026-06-12T02:25:12Z"}},
+    ]}
+    lines = parse_commentary(summary)
+    assert lines[0]["seconds"] == 1335.0 and lines[0]["delay"] == "start"
+    assert lines[1]["seconds"] == 1465.0 and lines[1]["delay"] == "end"
+
+
+def test_hydration_duration_from_delay_pair():
+    commentary = normalize_lines([
+        {"minute": "22'", "text": "A drinks break is taken.", "seconds": 1320.0, "delay": "start"},
+        {"minute": "24'", "text": "Delay over. Ready to continue.", "seconds": 1445.0, "delay": "end"},
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s)[0]["real_duration_seconds"] == 125  # 1445 - 1320
+
+
+def test_hydration_duration_none_without_resume():
+    commentary = normalize_lines([
+        {"minute": "22'", "text": "A drinks break.", "seconds": 1320.0, "delay": "start"},
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s)[0]["real_duration_seconds"] is None
+
+
+def test_hydration_duration_pairs_nearest_end():
+    # an unrelated end-delay long after must not be chosen over the real resume
+    commentary = normalize_lines([
+        {"minute": "67'", "text": "Cooling break.", "seconds": 4020.0, "delay": "start"},
+        {"minute": "69'", "text": "Delay over.", "seconds": 4110.0, "delay": "end"},
+        {"minute": "80'", "text": "Delay over.", "seconds": 4800.0, "delay": "end"},
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s)[0]["real_duration_seconds"] == 90  # 4110 - 4020, not 4800
+
+
+def test_hydration_duration_absent_seconds_is_none():
+    # old-schema commentary (no seconds) still detects the break, just without a duration
+    commentary = normalize_lines([{"minute": "22'", "text": "Drinks break."}])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    assert _hyd(s) and _hyd(s)[0]["real_duration_seconds"] is None
+
+
+def test_var_duration_from_generic_delay():
+    # a VAR stoppage takes the nearest GENERIC (non-hydration) delay pair's duration
+    commentary = normalize_lines([
+        {"minute": "50'", "text": "VAR is checking a possible penalty.", "seconds": 3000.0},
+        {"minute": "50'", "text": "Delay in match.", "seconds": 3000.0, "delay": "start"},
+        {"minute": "51'", "text": "Delay over.", "seconds": 3050.0, "delay": "end"},
+    ])
+    s = detect_stoppages({"match_id": "m1"}, [], commentary)
+    var = [x for x in s if x["stoppage_type"] == "var"]
+    assert var and var[0]["real_duration_seconds"] == 50
 
 
 def test_injury_huddle_vs_no_huddle_from_sub(match_inputs):

@@ -67,7 +67,12 @@ def scrape_match(match_id: int | str, *, client=None, force: bool = False) -> No
     fotmob.fetch_match_details(match_id, client=client, force=force)
     # Best-effort ESPN commentary (matched by date + team names) for exact
     # hydration timing + VAR/injury. Never fail the scrape if ESPN is missing.
-    if not comm.load_commentary(match_id):
+    existing = comm.load_commentary(match_id)
+    # Re-derive when missing, forced, or stored under the OLD schema (no per-line `seconds`) —
+    # the latter is a one-time self-healing upgrade so real_duration_seconds can be filled.
+    # The ESPN summary itself is cached on disk, so a re-derive only re-runs the light discovery.
+    stale = bool(existing) and not any("seconds" in c for c in existing)
+    if not existing or force or stale:
         meta = fotmob.parse_match_meta(fotmob.load_raw(match_id))
         date_str = _yyyymmdd(meta.get("start_timestamp"))
         if date_str and meta.get("home_team") and meta.get("away_team"):

@@ -45,15 +45,22 @@ def detect_stoppages(
     """
     match_id = meta.get("match_id")
     stoppages: list[dict[str, Any]] = []
+    # ESPN tags every stoppage with a Start/End Delay carrying match-clock seconds; pair them once
+    # so real_duration_seconds can be filled for ANY stoppage type (not just hydration).
+    pairs = _delay_pairs(commentary)
 
     # --- hydration: cluster nearby hydration comments -----------------------
     for minute in _cluster_hydration(commentary):
-        stoppages.append(_base_record(match_id, "hydration", minute, incidents))
+        stoppages.append(
+            _base_record(match_id, "hydration", minute, incidents,
+                         duration=_duration_for(pairs, minute, hydration=True))
+        )
 
     # --- VAR: incidents (SofaScore) AND commentary (FotMob+ESPN) ------------
     var_minutes = [i["minute"] for i in incidents if i["kind"] == "var" and i["minute"] is not None]
     for minute in var_minutes:
-        rec = _base_record(match_id, "var", float(minute), incidents)
+        rec = _base_record(match_id, "var", float(minute), incidents,
+                           duration=_duration_for(pairs, float(minute)))
         # outcome class (goalAwarded / penaltyNotAwarded / ...) for split analysis
         rec["var_outcome"] = next(
             (i.get("detail") for i in incidents if i["kind"] == "var" and i["minute"] == minute),
@@ -64,14 +71,16 @@ def detect_stoppages(
     for minute in _cluster_commentary_type(commentary, "var"):
         if any(abs(minute - vm) <= 2 for vm in var_minutes):
             continue
-        stoppages.append(_base_record(match_id, "var", minute, incidents))
+        stoppages.append(_base_record(match_id, "var", minute, incidents,
+                                      duration=_duration_for(pairs, minute)))
 
     # --- injuries: from commentary, classify huddle vs no_huddle ------------
     for minute in _cluster_commentary_type(commentary, "injury"):
         sub_during = _subs_in_window(incidents, minute)
         is_huddle = (sub_during["home"] + sub_during["away"]) > 0
         stype = "injury_huddle" if is_huddle else "injury_no_huddle"
-        stoppages.append(_base_record(match_id, stype, minute, incidents))
+        stoppages.append(_base_record(match_id, stype, minute, incidents,
+                                      duration=_duration_for(pairs, minute)))
 
     # Stable ids in chronological order
     stoppages.sort(key=lambda s: s["clock_minute"])
@@ -84,24 +93,67 @@ def detect_stoppages(
 
 
 def _cluster_hydration(commentary: list[dict[str, Any]]) -> list[float]:
-    """Cluster hydration comments into one minute per break.
+    """Representative minute per detected hydration break.
 
-    Anchored on commentary (not the clock), but we drop spurious hydration hits
-    far from either nominal mark to reduce false positives from chatter.
+    Anchored on commentary (not the clock); spurious hits far from either nominal mark are
+    dropped to reduce false positives from chatter.
     """
-    minutes = sorted(
-        c["minute"]
-        for c in commentary
-        if c.get("type") == "hydration" and c.get("minute") is not None
-    )
-    clusters = _cluster(minutes, HYDRATION_CLUSTER_GAP)
+    hyd = [c for c in commentary if c.get("type") == "hydration" and c.get("minute") is not None]
     out = []
-    for cl in clusters:
+    for cl in _cluster(sorted(c["minute"] for c in hyd), HYDRATION_CLUSTER_GAP):
         m = sum(cl) / len(cl)
-        # keep if within 12' of a nominal break mark (referee discretion allowed)
         if any(abs(m - nom) <= 12 for nom in HYDRATION_NOMINAL_MINUTES):
             out.append(round(m, 1))
     return out
+
+
+# Sanity bounds (seconds) for a measured stoppage — discards mis-paired delays.
+_MIN_BREAK_SEC, _MAX_BREAK_SEC = 5, 400
+
+
+def _delay_pairs(commentary: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Pair each ESPN 'Start Delay' with the next 'End Delay' -> [{minute, duration}] in seconds.
+
+    Two-pointer over match-clock `seconds`, so each resume is consumed once (handles back-to-back
+    delays like a drinks break immediately followed by an injury delay). The match clock runs
+    through stoppages, so end-minus-start is real elapsed time — not subject to commentary lag.
+    """
+    # A break's start is an explicit ESPN "Start Delay" OR any hydration-classified line carrying
+    # seconds (some "drinks break" comments aren't tagged Start Delay but still timestamp the break).
+    starts = sorted(
+        (c for c in commentary
+         if c.get("seconds") is not None and (c.get("delay") == "start" or c.get("type") == "hydration")),
+        key=lambda c: c["seconds"])
+    ends = sorted(c["seconds"] for c in commentary
+                  if c.get("delay") == "end" and c.get("seconds") is not None)
+    pairs: list[dict[str, Any]] = []
+    j = 0
+    for s in starts:
+        while j < len(ends) and ends[j] <= s["seconds"]:
+            j += 1
+        if j >= len(ends):
+            break
+        dur = ends[j] - s["seconds"]
+        j += 1
+        if _MIN_BREAK_SEC <= dur <= _MAX_BREAK_SEC:
+            pairs.append({"minute": s.get("minute"), "duration": round(dur), "type": s.get("type")})
+    return pairs
+
+
+def _duration_for(
+    pairs: list[dict[str, Any]], minute: float, *, window: float = 3.0, hydration: bool = False
+) -> float | None:
+    """Duration (s) of the nearest delay pair to `minute`.
+
+    A hydration break's Start Delay text ("drinks break") is itself hydration-classified, so we
+    match it by type for precision; other stoppages take the nearest GENERIC delay (and never a
+    hydration pair, so a VAR near a break can't steal the break's resume).
+    """
+    cand = [p for p in pairs if p.get("minute") is not None and abs(p["minute"] - minute) <= window]
+    cand = [p for p in cand if (p.get("type") == "hydration") == hydration]
+    if not cand:
+        return None
+    return min(cand, key=lambda p: abs(p["minute"] - minute))["duration"]
 
 
 def _cluster_commentary_type(commentary: list[dict[str, Any]], label: str) -> list[float]:
@@ -122,7 +174,10 @@ def _cluster(minutes: list[float], gap: float) -> list[list[float]]:
     return clusters
 
 
-def _base_record(match_id: Any, stype: str, minute: float, incidents: list[dict[str, Any]]) -> dict[str, Any]:
+def _base_record(
+    match_id: Any, stype: str, minute: float, incidents: list[dict[str, Any]],
+    *, duration: float | None = None,
+) -> dict[str, Any]:
     home_score, away_score = _score_at(incidents, minute)
     reds = _red_cards_before(incidents, minute)
     subs = _subs_in_window(incidents, minute)
@@ -130,7 +185,7 @@ def _base_record(match_id: Any, stype: str, minute: float, incidents: list[dict[
         "match_id": match_id,
         "stoppage_type": stype,
         "clock_minute": float(minute),
-        "real_duration_seconds": None,  # filled if commentary timestamps allow
+        "real_duration_seconds": duration,  # ESPN start/end-delay second delta (hydration); else None
         "home_score_pre": home_score,
         "away_score_pre": away_score,
         "red_cards_home_pre": reds["home"],
