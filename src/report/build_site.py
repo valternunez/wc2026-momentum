@@ -725,8 +725,10 @@ def build() -> str:
             "LANG_TOGGLE": _lang_toggle(lang),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
-            "JS_STRINGS": json.dumps(JS[lang], ensure_ascii=False),
-            "MB_DATA": _mb_data(df, F, TYPES[lang], lang),
+            # escape "</" so a stray "</script>" inside any team name / string can't close the
+            # inline <script> early (standard safe-JSON-in-HTML practice; "<\/" parses back to "</")
+            "JS_STRINGS": json.dumps(JS[lang], ensure_ascii=False).replace("</", "<\\/"),
+            "MB_DATA": _mb_data(df, F, TYPES[lang], lang).replace("</", "<\\/"),
         }
 
         page = TEMPLATE
