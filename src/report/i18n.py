@@ -240,7 +240,7 @@ FRAG = {
 # Static template tokens (UPPERCASE keys == {{TOKEN}} names in editorial_copy.TEMPLATE).
 STRINGS = {
     "en": {
-        "META_TITLE": "Do hydration breaks really kill momentum? — WC2026 Stoppage Momentum",
+        "META_TITLE": "Do hydration breaks really kill momentum? — WC2026",
         "META_DESC": "Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A living, data-driven analysis, updated every matchday.",
         "OG_SITENAME": "WC2026 Stoppage Momentum",
         "OG_TITLE": "Do hydration breaks really kill momentum?",
@@ -398,7 +398,7 @@ STRINGS = {
 <p><a class="src" href="{{PAGES_URL}}">github.com/valternunez/wc2026-momentum ↗</a></p>''',
     },
     "es": {
-        "META_TITLE": "¿Las pausas de hidratación matan el momentum? — WC2026 Momentum en Pausas",
+        "META_TITLE": "¿Las pausas de hidratación matan el momentum? — WC2026",
         "META_DESC": "¿Las pausas de hidratación obligatorias de la FIFA cambian el momentum durante los partidos del Mundial 2026? Un análisis vivo, basado en datos — actualizado cada jornada.",
         "OG_SITENAME": "WC2026 Momentum en Pausas",
         "OG_TITLE": "¿Las pausas de hidratación matan el momentum?",
