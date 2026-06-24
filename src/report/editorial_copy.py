@@ -562,7 +562,7 @@ TEMPLATE = """<!DOCTYPE html>
         rows+='<tr><td class="ev-min">'+Math.round(mm.min)+"'</td><td>"+esc(mm.ev)+'</td><td class="ev-mom">'+(v>0?'+':'')+v+'</td><td>'+esc(who)+'</td></tr>'; });
       if(rows){
         box.hidden=false;
-        box.innerHTML='<summary>'+esc(T.dataLabel)+'</summary><table><thead><tr><th>'+esc(T.thMin)+'</th><th>'+esc(T.thEvent)+'</th><th>'+esc(T.thMomentum)+'</th><th>'+esc(T.thLeader)+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
+        box.innerHTML='<summary>'+esc(T.dataLabel)+'</summary><table><caption style="text-align:left;font-family:IBM Plex Mono,monospace;font-size:11px;color:#5A5547;padding:4px 0">'+esc(fillHA(T.svgTitle))+'</caption><thead><tr><th scope="col">'+esc(T.thMin)+'</th><th scope="col">'+esc(T.thEvent)+'</th><th scope="col">'+esc(T.thMomentum)+'</th><th scope="col">'+esc(T.thLeader)+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
       } else { box.hidden=true; box.innerHTML=''; }
     }
   }
@@ -607,7 +607,14 @@ TEMPLATE = """<!DOCTYPE html>
 
   function shareCard(m){
     var btn=document.getElementById('mb-share'); btn.disabled=true; var lbl=btn.innerHTML; btn.innerHTML=T.rendering;
-    (document.fonts?document.fonts.ready:Promise.resolve()).then(function(){
+    // load the exact canvas-only weights (not just fonts.ready) so a cold mobile paint doesn't
+    // rasterize the share card in a fallback font
+    var _fl=document.fonts?Promise.all([
+      document.fonts.load("600 19px 'IBM Plex Mono'"), document.fonts.load("500 50px 'Newsreader'"),
+      document.fonts.load("18px 'IBM Plex Mono'"), document.fonts.load("600 18px 'IBM Plex Mono'"),
+      document.fonts.load("22px 'IBM Plex Mono'")
+    ]).catch(function(){}):Promise.resolve();
+    _fl.then(function(){
       var t=resolveTheme(m), S=2, Wl=1200, Hl=675;
       var cv=document.createElement('canvas'); cv.width=Wl*S; cv.height=Hl*S;
       var ctx=cv.getContext('2d'); ctx.scale(S,S);

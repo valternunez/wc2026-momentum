@@ -391,22 +391,25 @@ def _compare_chart(effects: list[dict], F: dict) -> str:
     if p26:  # the same WC2026 teams at quiet minutes — the gold-standard control
         rows_data.append((F["cc_p26_label"], F["cc_p26_sub"],
                           p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, F["tip_placebo"]))
+    # All baselines below are NO-BREAK controls -> hollow dot (solid=False), so the encoding is
+    # consistent: only the mandated break (hydration, above) gets a filled dot. Colour carries the
+    # group: accent = same 2026 teams, grey = other national teams, brown = club football.
     euro = _placebo_meanci("euro2024_placebo.parquet")
     if euro:
         rows_data.append((F["cc_euro_label"], F["cc_euro_sub"],
-                          euro[0], euro[1], euro[2], euro[3], euro[4], NT, True, None))
+                          euro[0], euro[1], euro[2], euro[3], euro[4], NT, False, None))
     copa = _placebo_meanci("copa2024_placebo.parquet")
     if copa:
         rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
-                          copa[0], copa[1], copa[2], copa[3], copa[4], NT, True, F["tip_copa"]))
+                          copa[0], copa[1], copa[2], copa[3], copa[4], NT, False, F["tip_copa"]))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
         rows_data.append((F["cc_wc22_label"], F["cc_wc22_sub"],
-                          w22[0], w22[1], w22[2], w22[3], w22[4], NT, True, None))
+                          w22[0], w22[1], w22[2], w22[3], w22[4], NT, False, None))
     cwc = _placebo_meanci("cwc2025_placebo.parquet")
     if cwc:  # clubs regress more — the contrast that used to flatter the "same drop" story
         rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
-                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CLUBS, True, None))
+                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CLUBS, False, None))
 
     out = []
     for label, sub, mean, lo, hi, n, matches, color, solid, tip in rows_data:
@@ -432,8 +435,23 @@ def _compare_chart(effects: list[dict], F: dict) -> str:
     if not out:
         return ""
     axis = ('<div style="display:flex;justify-content:space-between;font-family:\'IBM Plex Mono\',monospace;'
-            'font-size:10.5px;color:#5A5547;margin-top:2px"><span>−30</span><span>−20</span><span>−10</span><span>0</span></div>')
-    return '<div style="margin:26px 0 8px">' + "".join(out) + axis + "</div>"
+            'font-size:10.5px;color:#5A5547;margin-top:2px"><span>−30</span><span>−20</span><span>−10</span><span>0</span></div>'
+            f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6B6557;margin-top:3px">{F["cc_axis_dir"]}</div>')
+
+    def _sw(html: str) -> str:  # one legend swatch + label
+        return f'<span style="display:inline-flex;align-items:center;gap:6px">{html}</span>'
+
+    legend = (
+        '<div style="display:flex;gap:14px 18px;flex-wrap:wrap;align-items:center;'
+        'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5A5547;margin:0 0 18px">'
+        + _sw(f'<span style="width:11px;height:11px;border-radius:50%;background:{ACCENT};border:2px solid {ACCENT}"></span>{F["cc_leg_break"]}')
+        + _sw(f'<span style="width:11px;height:11px;border-radius:50%;background:#EFEBDF;border:2px solid #5A5547"></span>{F["cc_leg_ctrl"]}')
+        + _sw(f'<span style="width:12px;height:4px;background:{ACCENT}"></span>{F["cc_leg_2026"]}')
+        + _sw(f'<span style="width:12px;height:4px;background:{NT}"></span>{F["cc_leg_nt"]}')
+        + _sw(f'<span style="width:12px;height:4px;background:{CLUBS}"></span>{F["cc_leg_club"]}')
+        + '</div>'
+    )
+    return '<div style="margin:26px 0 8px">' + legend + "".join(out) + axis + "</div>"
 
 
 def _heat_tokens(df: pl.DataFrame) -> dict[str, str]:
