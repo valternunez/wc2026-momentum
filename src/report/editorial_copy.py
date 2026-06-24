@@ -461,13 +461,18 @@ TEMPLATE = """<!DOCTYPE html>
     svg.appendChild(el('path',{d:d, fill:t.awayFill, 'clip-path':'url(#mbDn)'}));
     svg.appendChild(el('line',{x1:pad.l,y1:zeroY,x2:W-pad.r,y2:zeroY, stroke:t.grid,'stroke-width':1.1}));
 
-    // soft accent band over EACH hydration break's measured length (start -> start+duration); the dashed
-    // marker sits at the start. Skip breaks with no measured duration. Under the markers; hover unaffected.
-    var bandFill=theme.mode==='dark'?'rgba(229,72,46,.14)':'rgba(229,72,46,.075)';
+    // EACH hydration break is dead time: play stops, so FotMob logs no momentum points for those minutes and
+    // the wave through here is pure interpolation. Rather than let that imply "threat" mid-break, blank the
+    // band (erase the coloured fill with the page bg), lay a neutral grey "no-play" tint, and draw a flat
+    // dashed line at zero. The live curve resumes on each side; the dashed start marker is drawn after, on top.
+    var deadTint=theme.mode==='dark'?'rgba(154,146,126,.16)':'rgba(120,113,98,.10)';
+    var deadLine=theme.mode==='dark'?'rgba(154,146,126,.6)':'rgba(120,113,98,.55)';
     (m.stoppages||[]).forEach(function(st){
       if(st[1]!=='hydration' || st[2]==null) return;
-      var bx=X(st[0]), bw=X(st[0]+st[2]/60)-bx;
-      if(bw>0) svg.appendChild(el('rect',{x:bx,y:pad.t,width:Math.max(bw,1.5),height:H-pad.t-pad.b,fill:bandFill,'pointer-events':'none'}));
+      var bx=X(st[0]), bw=Math.max(X(st[0]+st[2]/60)-bx, 1.5);
+      svg.appendChild(el('rect',{x:bx,y:pad.t,width:bw,height:H-pad.t-pad.b,fill:t.bg,'pointer-events':'none'}));
+      svg.appendChild(el('rect',{x:bx,y:pad.t,width:bw,height:H-pad.t-pad.b,fill:deadTint,'pointer-events':'none'}));
+      svg.appendChild(el('line',{x1:bx,y1:zeroY,x2:bx+bw,y2:zeroY,stroke:deadLine,'stroke-width':1.4,'stroke-dasharray':'3 3','pointer-events':'none'}));
     });
 
     (m.stoppages||[]).forEach(function(st){
@@ -500,6 +505,18 @@ TEMPLATE = """<!DOCTYPE html>
     hit.addEventListener('mousemove', function(ev){
       var r=svg.getBoundingClientRect(); var px=(ev.clientX-r.left)/r.width*W;
       var min=minMin+(px-pad.l)/pw*(maxMin-minMin);
+      // inside a hydration break there is no play and no momentum reading — show the break, not a number
+      var brk=(m.stoppages||[]).filter(function(st){ return st[1]==='hydration' && st[2]!=null && min>=st[0] && min<=st[0]+st[2]/60; })[0];
+      if(brk){
+        var bxh=X(min);
+        cross.setAttribute('x1',bxh); cross.setAttribute('x2',bxh); cross.setAttribute('opacity',.5);
+        dot.setAttribute('opacity',0);
+        tip.innerHTML='<span style="opacity:.7">'+Math.round(min)+"'</span> · "+typeName('hydration');
+        tip.style.opacity=1;
+        var tlh=bxh/W*r.width, hwh=tip.offsetWidth/2+4; tlh=Math.max(hwh, Math.min(r.width-hwh, tlh));
+        tip.style.left=tlh+'px'; tip.style.top=(zeroY/H*r.height)+'px';
+        return;
+      }
       var best=s[0]; for(var i=0;i<s.length;i++){ if(Math.abs(s[i][0]-min)<Math.abs(best[0]-min)) best=s[i]; }
       var x=X(best[0]), y=Y(best[1]);
       cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity',.5);
@@ -552,8 +569,13 @@ TEMPLATE = """<!DOCTYPE html>
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, zeroY-box.y); ctx.clip(); wavePath(); ctx.fillStyle=t.homeFill; ctx.fill(); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.rect(box.x, zeroY, box.w, box.y+box.h-zeroY); ctx.clip(); wavePath(); ctx.fillStyle=t.awayFill; ctx.fill(); ctx.restore();
     ctx.strokeStyle=t.grid; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(box.x, zeroY); ctx.lineTo(box.x+box.w, zeroY); ctx.stroke();
-    ctx.fillStyle=theme.mode==='dark'?'rgba(229,72,46,.14)':'rgba(229,72,46,.075)';
-    (m.stoppages||[]).forEach(function(st){ if(st[1]!=='hydration'||st[2]==null) return; var bx=X(st[0]), bw=X(st[0]+st[2]/60)-bx; if(bw>0) ctx.fillRect(bx, box.y, Math.max(bw,2), box.h); });
+    // dead-time gap per hydration break (mirror of render(): erase the coloured wave, grey "no-play" tint, flat dashed zero line)
+    (m.stoppages||[]).forEach(function(st){ if(st[1]!=='hydration'||st[2]==null) return;
+      var bx=X(st[0]), bw=Math.max(X(st[0]+st[2]/60)-bx, 2);
+      ctx.fillStyle=t.bg; ctx.fillRect(bx, box.y, bw, box.h);
+      ctx.fillStyle=theme.mode==='dark'?'rgba(154,146,126,.16)':'rgba(120,113,98,.10)'; ctx.fillRect(bx, box.y, bw, box.h);
+      ctx.strokeStyle=theme.mode==='dark'?'rgba(154,146,126,.6)':'rgba(120,113,98,.55)'; ctx.lineWidth=1.6; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(bx, zeroY); ctx.lineTo(bx+bw, zeroY); ctx.stroke(); ctx.setLineDash([]);
+    });
     (m.stoppages||[]).forEach(function(st){ var x=X(st[0]); var dot=!!DASH[st[1]]; ctx.strokeStyle=MARK[st[1]]||'#9A927E'; ctx.lineWidth=dot?2.6:2; ctx.lineCap=dot?'round':'butt'; ctx.setLineDash(dot?[0.5,6]:[6,4]); ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y+box.h); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap='butt'; });
     ctx.textAlign='center';
     (m.goals||[]).forEach(function(g){
