@@ -20,6 +20,7 @@ TEMPLATE = """<!DOCTYPE html>
 <link rel="canonical" href="{{METHOD_CANONICAL}}">
 <meta name="theme-color" content="#EFEBDF">
 <meta name="color-scheme" content="light">
+<meta name="darkreader-lock">  <!-- light-only editorial design: tell Dark Reader to defer to our styling -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%231A1813'/><circle cx='16' cy='16' r='6' fill='%23E5482E'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
