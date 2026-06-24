@@ -101,6 +101,7 @@ def _fetch_raw(lat: float, lon: float, date: str, *, client: httpx.Client | None
                 resp.raise_for_status()
                 data = resp.json()
                 if data.get("hourly", {}).get("time"):
+                    data["_om_endpoint"] = "archive" if url == ARCHIVE_URL else "forecast"
                     return data
                 last_exc = RuntimeError(f"empty hourly from {url}")
             except Exception as e:  # try the fallback endpoint
@@ -115,7 +116,15 @@ def _load_or_fetch(lat: float, lon: float, date: str, *, client=None) -> dict:
     """Idempotent cache: read persisted raw if present, else fetch + persist."""
     path = _cache_path(lat, lon, date)
     if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
+        cached = json.loads(path.read_text(encoding="utf-8"))
+        # A now-settled date cached from the FORECAST endpoint is non-canonical: refresh it once
+        # from the ERA5 archive so committed weather converges to a stable value (clean-rebuild
+        # determinism for the §06 heat numbers). Anything else (archive-sourced, or still recent)
+        # is served from cache as before.
+        stale_forecast = (_choose_endpoint(date) == ARCHIVE_URL
+                          and cached.get("_om_endpoint") == "forecast")
+        if not stale_forecast:
+            return cached
     data = _fetch_raw(lat, lon, date, client=client)
     WEATHER_RAW.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data), encoding="utf-8")
@@ -278,6 +287,7 @@ def _fetch_range(lat: float, lon: float, start: str, end: str, *, client=None) -
                 resp.raise_for_status()
                 data = resp.json()
                 if data.get("hourly", {}).get("time"):
+                    data["_om_endpoint"] = "archive" if url == ARCHIVE_URL else "forecast"
                     return data
                 last_exc = RuntimeError(f"empty hourly from {url}")
             except Exception as e:
