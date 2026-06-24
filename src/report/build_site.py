@@ -515,8 +515,17 @@ def _accl_tokens(parquet_name: str = "acclimatization.parquet") -> dict[str, str
         out["ACCL_GAP_MAX"] = f"{max(gaps):.0f}"
     n_rows = sum(v["n"] for v in pt.values()) if pt else 0
     out["ACCL_N"] = str(n_rows) if n_rows else "—"
-    clubs_dir = RAW / "fotmob_clubs"
-    out["ACCL_CLUBS"] = str(len(list(clubs_dir.glob("*.json")))) if clubs_dir.exists() else "—"
+    # Clubs-placed count: prefer the committed meta (written by build_acclimatization) so the CI
+    # site build — which has no gitignored raw/fotmob_clubs dir — renders the real number, not "—".
+    meta = PROCESSED / "accl_meta.json"
+    if meta.exists():
+        try:
+            out["ACCL_CLUBS"] = str(json.loads(meta.read_text(encoding="utf-8")).get("clubs_placed", "—"))
+        except Exception:
+            out["ACCL_CLUBS"] = "—"
+    else:
+        clubs_dir = RAW / "fotmob_clubs"
+        out["ACCL_CLUBS"] = str(len(list(clubs_dir.glob("*.json")))) if clubs_dir.exists() else "—"
     return out
 
 

@@ -390,6 +390,12 @@ def build_acclimatization(date_str: str | None = None) -> "pl.DataFrame":
     OUT.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(OUT)
     print(f"[accl] {df.height} rows ({df['match_id'].n_unique()} matches) -> {OUT}")
+    # Persist the clubs-placed count so the (raw-free) CI site build can render it instead of "—".
+    _clubs = RAW / "fotmob_clubs"
+    _n = len(list(_clubs.glob("*.json"))) if _clubs.exists() else 0
+    if _n:
+        (PROCESSED / "accl_meta.json").write_text(json.dumps({"clubs_placed": _n}), encoding="utf-8")
+        print(f"[accl] meta -> clubs_placed={_n}")
     res = summarize_acclimatization(df)
     print_summary(res)
     d = date_str or datetime.now(timezone.utc).date().isoformat()
