@@ -336,8 +336,8 @@ TEMPLATE = """<!DOCTYPE html>
      #mb-share:disabled{opacity:.55;cursor:default}
     </style>
     <div style="display:flex;flex-wrap:wrap;gap:12px 14px;align-items:center;margin-top:18px;padding-top:15px;border-top:1px solid #E2DBCA">
-      <span class="mb-lbl" id="lbl-colours">{{CTL_COLOURS}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-colours" data-group="palette"><button type="button" data-val="editorial" class="on" aria-pressed="true">{{CTL_EDITORIAL}}</button><button type="button" data-val="kits" aria-pressed="false">{{CTL_KITS}}</button></div>
-      <span class="mb-lbl" id="lbl-mode">{{CTL_MODE}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-mode" data-group="mode"><button type="button" data-val="light" class="on" aria-pressed="true">{{CTL_LIGHT}}</button><button type="button" data-val="dark" aria-pressed="false">{{CTL_DARK}}</button></div>
+      <span style="display:inline-flex;align-items:center;white-space:nowrap"><span class="mb-lbl" id="lbl-colours">{{CTL_COLOURS}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-colours" data-group="palette"><button type="button" data-val="editorial" class="on" aria-pressed="true">{{CTL_EDITORIAL}}</button><button type="button" data-val="kits" aria-pressed="false">{{CTL_KITS}}</button></div></span>
+      <span style="display:inline-flex;align-items:center;white-space:nowrap"><span class="mb-lbl" id="lbl-mode">{{CTL_MODE}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-mode" data-group="mode"><button type="button" data-val="light" class="on" aria-pressed="true">{{CTL_LIGHT}}</button><button type="button" data-val="dark" aria-pressed="false">{{CTL_DARK}}</button></div></span>
       <button id="mb-share">{{CTL_SHARE}}</button>
     </div>
     <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:#5A5547;margin-top:12px">{{MODAL_CHARTNOTE}}</p>
