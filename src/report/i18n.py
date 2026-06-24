@@ -439,7 +439,7 @@ STRINGS = {
         "LEG_GOAL": "GOL",
         "S03_FOOTNOTE": "Momentum por minuto generado a partir de FotMob (solo análisis derivado; no se redistribuyen los datos crudos). Un panel por partido recolectado; los marcadores de pausas provienen del cruce de FotMob + el relato de ESPN.",
         "S04_HEAD": "04 — ¿Son las indicaciones técnicas, no el agua?",
-        "S04_LEAD": "Al ordenar las interrupciones según cuánto espacio para dar indicaciones técnicas crean, vemos que la variación de momentum las acompaña a grandes rasgos. Cuanto más se parece una pausa a un tiempo muerto, más fuerte tiende a caer el equipo que dominaba.",
+        "S04_LEAD": "Al ordenar las interrupciones según cuánto espacio para dar indicaciones técnicas crean, se ve que la variación de momentum las acompaña a grandes rasgos. Cuanto más se parece una pausa a un tiempo muerto, más fuerte tiende a caer el equipo que dominaba.",
         "MECH_HYD_LABEL": "Pausa de hidratación",
         "MECH_HYD_DESC": "Tres minutos programados. Indicaciones técnicas completas, agua, reinicio táctico.",
         "MECH_VAR_LABEL": "Revisión del VAR",

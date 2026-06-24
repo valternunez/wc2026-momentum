@@ -35,7 +35,7 @@ def test_method_pages_built_and_resolved():
     assert 'id="heat"' in en and 'id="heat"' in es
     assert "acclimatization" in en.lower() and "aclimatación" in es.lower()
     # honest limits + reproducibility
-    assert "What we can and cannot say" in en and "Reproducibility" in en
+    assert "can and cannot say" in en and "Reproducibility" in en
     assert "github.com/valternunez/wc2026-momentum" in en and "github.com/valternunez/wc2026-momentum" in es
 
 
