@@ -492,7 +492,7 @@ TEMPLATE = """<!DOCTYPE html>
       var extra=near.concat(ng);
       var who=best[1]>=0?(m.home):(m.away);
       var momCol=theme.mode==='dark'?'#C03A22':'#FF7A63';   // accent that reads on the (inverted) tooltip bg
-      tip.innerHTML='<span style="opacity:.7">'+Math.round(best[0])+"'</span> · <span style=\"color:"+momCol+";font-weight:600\">"+(best[1]>0?'+':'')+best[1]+'</span> '+who+(extra.length?' · '+extra.join(' · '):'');
+      tip.innerHTML='<span style="opacity:.7">'+Math.round(best[0])+"'</span> · "+'<span style="color:'+momCol+';font-weight:600">'+(best[1]>0?'+':'')+best[1]+'</span> '+who+(extra.length?' · '+extra.join(' · '):'');
       tip.style.opacity=1;
       var tl=x/W*r.width, hw=tip.offsetWidth/2+4;
       tl=Math.max(hw, Math.min(r.width-hw, tl));

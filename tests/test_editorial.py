@@ -88,6 +88,21 @@ def test_build_editorial_page():
     assert "aria-label" in html and "el('title'" in html  # svg/goal titles for screen readers
 
 
+def test_template_has_no_escaped_doublequotes():
+    """Regression guard (the 'clicking a match does nothing' bug).
+
+    editorial_copy.TEMPLATE is a NON-raw triple-quoted Python string, so a literal
+    backslash-escaped double-quote (\\") in the embedded JS is collapsed by Python to a
+    bare " — which prematurely closes the surrounding JS string and throws a syntax error
+    at parse time, killing EVERY click handler. The whole inline <script> dies silently.
+    Inside this non-raw template, JS strings must use single-quoted segments with literal
+    double-quotes (e.g. '<span style="color:'), never \\". So the source must contain none.
+    """
+    src = (Path(__file__).parents[1] / "src" / "report" / "editorial_copy.py").read_text(encoding="utf-8")
+    assert 'TEMPLATE = """' in src and 'TEMPLATE = r"""' not in src  # still non-raw (guard's premise holds)
+    assert '\\"' not in src, "escaped double-quote in non-raw JS template breaks the inline <script>"
+
+
 def test_parse_goals():
     raw = {"content": {"matchFacts": {"events": {"events": [
         {"type": "Goal", "time": 9, "isHome": True, "nameStr": "A", "newScore": [1, 0], "goalDescriptionKey": ""},
