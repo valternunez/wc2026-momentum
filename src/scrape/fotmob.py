@@ -242,6 +242,34 @@ def parse_goals(details_json: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+def parse_lineup(details_json: dict[str, Any]) -> list[dict[str, Any]]:
+    """Per-player lineup with club affiliation, from `content.lineup`.
+
+    Each row: {player_id, name, side ('home'|'away'), is_starter, club_id, club_name}.
+    `club_id`/`club_name` come from FotMob's `primaryTeamId`/`primaryTeamName` — the player's
+    club at match time, which the acclimatization study maps to a home-city climate. These are
+    present for recent national-team matches (WC2026/Copa24/Euro24) but ABSENT for some payloads
+    (CWC 2025, WC 2022) — callers must tolerate club_id=None. Returns [] when no lineup exists.
+    """
+    lineup = (details_json.get("content") or {}).get("lineup") or {}
+    out: list[dict[str, Any]] = []
+    for side in ("home", "away"):
+        team = lineup.get(f"{side}Team") or {}
+        for group, is_starter in (("starters", True), ("subs", False)):
+            for p in team.get(group) or []:
+                out.append(
+                    {
+                        "player_id": p.get("id"),
+                        "name": p.get("name"),
+                        "side": side,
+                        "is_starter": is_starter,
+                        "club_id": p.get("primaryTeamId"),
+                        "club_name": p.get("primaryTeamName"),
+                    }
+                )
+    return out
+
+
 def nominal_hydration_commentary(momentum: list[dict[str, float]]) -> list[dict[str, Any]]:
     """Synthetic hydration markers at nominal WC2026 minutes the match actually reached.
 

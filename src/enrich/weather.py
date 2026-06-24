@@ -30,6 +30,8 @@ WEATHER_RAW = RAW / "weather"
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
+GEOCODE_RAW = RAW / "geocode"
 
 # Archive (ERA5) typically lags ~5 days. Use forecast for anything more recent.
 _ARCHIVE_LAG_DAYS = 6
@@ -166,3 +168,115 @@ def get_weather(lat: float, lon: float, date: str, hour: int = 18, *, client=Non
     temp_c, humidity = _extract_hour(raw, hour)
     w = None if (temp_c is None or humidity is None) else wbgt(temp_c, humidity)
     return {"temp_c": temp_c, "humidity": humidity, "wbgt": w}
+
+
+# --- climate normals (one ranged call) -------------------------------------
+def _climate_cache_path(lat: float, lon: float, start: str, end: str, hour: int):
+    key = f"clim_{round(float(lat), 3)}_{round(float(lon), 3)}_{start}_{end}_{hour}.json"
+    return WEATHER_RAW / key
+
+
+def climate_mean_wbgt(
+    lat: float, lon: float, start_date: str, end_date: str, hour: int = 18, *, client=None
+) -> float | None:
+    """Mean daily WBGT at local `hour` over [start_date, end_date] — ONE Open-Meteo call.
+
+    Used for a club's recent home thermal load (the pre-tournament run-in), which is the
+    acclimatization reference. Persists the raw ranged response under data/raw/weather/ and
+    is idempotent (re-runs hit disk). Returns None if no usable hours came back.
+    """
+    path = _climate_cache_path(lat, lon, start_date, end_date, hour)
+    if path.exists():
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    else:
+        params_date = (start_date, end_date)
+        raw = _fetch_range(lat, lon, *params_date, client=client)
+        WEATHER_RAW.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(raw), encoding="utf-8")
+    hourly = raw.get("hourly", {})
+    times = hourly.get("time") or []
+    temps = hourly.get("temperature_2m") or []
+    hums = hourly.get("relative_humidity_2m") or []
+    vals: list[float] = []
+    for t, tc, rh in zip(times, temps, hums):
+        try:
+            if int(t[11:13]) == int(hour) and tc is not None and rh is not None:
+                vals.append(wbgt(float(tc), float(rh)))
+        except (ValueError, IndexError):
+            continue
+    return (sum(vals) / len(vals)) if vals else None
+
+
+def geocode_city(name: str, *, client=None) -> tuple[float, float] | None:
+    """(lat, lon) for a city/venue name via Open-Meteo geocoding. None if not found.
+
+    Cached raw under data/raw/geocode/ (idempotent per name). Used to place non-WC tournament
+    venues (Copa/Euro/CWC) for match-day WBGT; WC2026 venues already carry coords in venues.py.
+    """
+    if not name or not str(name).strip():
+        return None
+    key = "_".join(str(name).lower().split())
+    path = GEOCODE_RAW / f"{key}.json"
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+    else:
+        # Open-Meteo matches a single place name, so "Miami Gardens, Florida" fails — try the
+        # full string, then the pre-comma token ("Miami Gardens"), then the last comma segment.
+        head = str(name).split(",")[0].strip()
+        tail = str(name).split(",")[-1].strip()
+        candidates = [c for c in dict.fromkeys([str(name).strip(), head, tail]) if c]
+        own = client is None
+        cl = client or httpx.Client(timeout=30)
+        data = {}
+        try:
+            for cand in candidates:
+                try:
+                    resp = cl.get(GEOCODE_URL, params={"name": cand, "count": 1, "language": "en"})
+                    resp.raise_for_status()
+                    d = resp.json()
+                    if d.get("results"):
+                        data = d
+                        break
+                except Exception:
+                    continue
+        finally:
+            if own:
+                cl.close()
+        GEOCODE_RAW.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data), encoding="utf-8")
+    results = data.get("results") or []
+    if not results:
+        return None
+    r = results[0]
+    try:
+        return float(r["latitude"]), float(r["longitude"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _fetch_range(lat: float, lon: float, start: str, end: str, *, client=None) -> dict:
+    """Fetch hourly temp+humidity for a DATE RANGE (archive first, forecast fallback)."""
+    primary = _choose_endpoint(start)  # window start governs which endpoint has the data
+    fallback = FORECAST_URL if primary == ARCHIVE_URL else ARCHIVE_URL
+    params = {
+        "latitude": lat, "longitude": lon, "start_date": start, "end_date": end,
+        "hourly": "temperature_2m,relative_humidity_2m", "timezone": "auto",
+    }
+    own = client is None
+    cl = client or httpx.Client(timeout=60)
+    try:
+        last_exc: Exception | None = None
+        for url in (primary, fallback):
+            try:
+                resp = cl.get(url, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+                if data.get("hourly", {}).get("time"):
+                    return data
+                last_exc = RuntimeError(f"empty hourly from {url}")
+            except Exception as e:
+                last_exc = e
+        raise RuntimeError(f"open-meteo range fetch failed for {lat},{lon},{start}..{end}: {last_exc}")
+    finally:
+        if own:
+            cl.close()

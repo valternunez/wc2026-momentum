@@ -23,7 +23,7 @@ import polars as pl
 
 from src.features.momentum_features import COLUMNS, expand_stoppage_rows
 from src.parse.stoppages import detect_stoppages
-from src.paths import DATA, PROCESSED, RAW, RAW_FOTMOB, STOPPAGES_PARQUET, ensure_dirs
+from src.paths import DATA, PROCESSED, RAW, RAW_FOTMOB, SNAPSHOTS, STOPPAGES_PARQUET, ensure_dirs
 from src.scrape import commentary as comm
 from src.scrape import espn, fotmob
 from src.snapshot import write_snapshot
@@ -332,6 +332,35 @@ def build_euro_placebo() -> pl.DataFrame:
     return df
 
 
+def build_acclimatization(date_str: str | None = None) -> "pl.DataFrame":
+    """Build the acclimatization table (home-vs-venue heat gap) + summary + snapshot.
+
+    Occasional LOCAL run: scrapes each club's home-stadium coords (FotMob team endpoint) and
+    a pre-tournament home-climate window (Open-Meteo), both cached. Writes
+    data/processed/acclimatization.parquet and snapshots/<date>/acclimatization.json.
+    """
+    from src.analysis.acclimatization import (
+        OUT, build_acclimatization_table, print_summary, summarize_acclimatization,
+    )
+
+    print("[accl] building acclimatization table (scrapes club home coords + climate)…")
+    df = build_acclimatization_table()
+    if df.is_empty():
+        print("[accl] no rows built — nothing written")
+        return df
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(OUT)
+    print(f"[accl] {df.height} rows ({df['match_id'].n_unique()} matches) -> {OUT}")
+    res = summarize_acclimatization(df)
+    print_summary(res)
+    d = date_str or datetime.now(timezone.utc).date().isoformat()
+    snap = SNAPSHOTS / d / "acclimatization.json"
+    snap.parent.mkdir(parents=True, exist_ok=True)
+    snap.write_text(json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[accl] snapshot -> {snap}")
+    return df
+
+
 def build_wc2022_placebo() -> pl.DataFrame:
     """Build the 2022-WC same-units placebo parquet via FotMob (occasional run)."""
     from datetime import date
@@ -392,6 +421,7 @@ def main() -> None:
     ap.add_argument("--wc2022-placebo", action="store_true", help="build the 2022-WC FotMob same-units placebo and exit")
     ap.add_argument("--copa-placebo", action="store_true", help="build the Copa América 2024 same-units placebo parquet and exit")
     ap.add_argument("--euro-placebo", action="store_true", help="build the Euro 2024 same-units placebo parquet and exit")
+    ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
     ap.add_argument("--discover-days", type=int, default=None,
                     help="auto-discover finished WC matches over the last N days and merge into match_ids.json")
@@ -410,6 +440,9 @@ def main() -> None:
         return
     if args.euro_placebo:
         build_euro_placebo()
+        return
+    if args.acclimatization:
+        build_acclimatization(args.date)
         return
     if args.og_card:
         from src.viz.social import build_share_card
