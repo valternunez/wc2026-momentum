@@ -154,7 +154,6 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="border-left:3px solid #DDD6C5;padding:2px 0 2px 20px;margin:0 0 28px">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5A5547;margin-bottom:8px">{{S02_MOMLABEL}}</div>
       <p style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#46412F">{{S02_MOMDEF}}</p>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6;letter-spacing:.02em;color:#5A5547;margin-top:12px">{{S02_MOMTECH}}</p>
     </div>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.58;color:#2B2820;margin-bottom:40px">{{S02_LEAD}}</p>
 
