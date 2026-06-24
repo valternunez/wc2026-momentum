@@ -167,7 +167,7 @@ def _match_cards(site_figures: Path, F: dict, stage: dict, lang: str) -> str:
         aria = F["open_chart_aria"].format(h=home, a=away)
         card = f"""
           <button type="button" class="mb-card" data-mid="{m['id']}" aria-label="{aria}" style="background:#FCFAF3;border:1px solid #E2DBCA;border-radius:3px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:10px;cursor:pointer;font:inherit;text-align:left;width:100%">
-            <span style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#5A5547">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C9BFA6">↗</span></span>
+            <span style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#5A5547">M{idx:02d}{f" · {date}" if date else ""}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8A8268">↗</span></span>
             <span style="display:flex;flex-direction:column;gap:4px">
               <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E88C7;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#1A1813;line-height:1.15">{home}</span></span>
               <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#E08A4B;flex:none"></span><span style="font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;color:#746E5F;line-height:1.15">{away}</span></span>
@@ -401,7 +401,7 @@ def _compare_chart(effects: list[dict], F: dict) -> str:
         <div style="position:relative;margin-bottom:20px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
             <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:15.5px;color:{color}">{label}{_info(tip, aria) if tip else ""}</span>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A927E">{n_lbl}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B6557">{n_lbl}</span>
           </div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.02em;color:#5A5547;margin-bottom:8px">{sub}</div>
           <div style="position:relative;height:26px">

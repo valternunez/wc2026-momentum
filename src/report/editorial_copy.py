@@ -62,7 +62,7 @@ TEMPLATE = """<!DOCTYPE html>
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
   .ev-min{font-family:'IBM Plex Mono',monospace;font-weight:500;color:#1A1813}
-  .ev-mom{color:#E5482E;font-weight:600}
+  .ev-mom{color:#C03A22;font-weight:600}
   .ev-score{font-family:'IBM Plex Mono',monospace;font-weight:700}
   #mb-table{margin-top:14px}
   #mb-table summary{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5A5547;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px}
@@ -73,12 +73,12 @@ TEMPLATE = """<!DOCTYPE html>
   #mb-table th,#mb-table td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid #E6E0CF;white-space:nowrap}
   #mb-table th{color:#5A5547;font-weight:600;letter-spacing:.04em}
   .src{font-family:'IBM Plex Mono',monospace;color:#C03A22;text-decoration:none;border-bottom:1px solid #C03A22}
-  .info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #BBB29A;background:none;color:#8A8268;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:11px;font-weight:700;line-height:1;cursor:pointer;vertical-align:baseline;margin-left:5px;padding:0;transition:border-color .12s,color .12s,background .12s}
+  .info{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:1px solid #8A8268;background:none;color:#6B6557;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:12px;font-weight:700;line-height:1;cursor:pointer;vertical-align:middle;margin-left:4px;padding:0;transition:border-color .12s,color .12s,background .12s}
   .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
   #tip-pop{position:absolute;z-index:90;max-width:300px;background:#1A1813;color:#EFEBDF;font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.5;padding:12px 15px;border-radius:5px;box-shadow:0 12px 34px rgba(26,24,19,.34);opacity:0;pointer-events:none;transition:opacity .12s}
   #tip-pop.on{opacity:1;pointer-events:auto}
   .mb-tabs{display:inline-flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-  .mb-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:7px 14px;border:1px solid #D2CAB6;border-radius:3px;background:#F4F0E5;color:#8A8268;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+  .mb-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:7px 14px;border:1px solid #D2CAB6;border-radius:3px;background:#F4F0E5;color:#6B6557;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
   .mb-tab.on{background:#1A1813;color:#EFEBDF;border-color:#1A1813}
   .mb-tab:hover:not(.on){border-color:#1A1813;color:#1A1813}
   details.grp{margin:28px 0 0}
@@ -108,12 +108,12 @@ TEMPLATE = """<!DOCTYPE html>
       {{LIVE_UPDATED}} {{UPDATED_DATE}}
     </div>
   </header>
-  <div id="freshness" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E">⚠ {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>
+  <div id="freshness" role="status" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E"><span aria-hidden="true">⚠</span> {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>
   <div style="max-width:840px;margin:14px auto 0;padding:0 40px"><div style="height:2px;background:#1A1813"></div></div>
 
   <!-- HERO -->
   <section style="max-width:840px;margin:0 auto;padding:56px 40px 30px">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:26px">{{HERO_KICKER}}</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:26px">{{HERO_KICKER}}</div>
     <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(46px,7.4vw,104px);line-height:.95;letter-spacing:-.015em;max-width:15ch;text-wrap:balance">{{HERO_H1}}</h1>
     <p style="font-family:'Newsreader',serif;font-size:clamp(20px,2.4vw,28px);line-height:1.45;max-width:760px;margin-top:30px;color:#332F26;text-wrap:pretty">{{HERO_LEDE}}</p>
     <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:34px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
@@ -141,7 +141,7 @@ TEMPLATE = """<!DOCTYPE html>
 
   <!-- 01 — THE CLAIM -->
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
-    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">{{S01_HEAD}}</h2>
+    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:22px">{{S01_HEAD}}</h2>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">{{S01_LEAD}}</p>
     <blockquote style="font-family:'Newsreader',serif;font-style:italic;font-size:clamp(24px,2.9vw,33px);line-height:1.34;color:#1A1813;border-left:3px solid #E5482E;padding:6px 0 6px 28px;margin:34px 0 16px">{{S01_QUOTE}}</blockquote>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.13em;color:#6B6557;text-transform:uppercase;padding-left:28px;margin-bottom:34px">{{S01_ATTR}}</div>
@@ -150,7 +150,7 @@ TEMPLATE = """<!DOCTYPE html>
 
   <!-- 02 — MONEY CHART -->
   <section style="max-width:840px;margin:0 auto;padding:50px 40px 30px">
-    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">{{S02_HEAD}}</h2>
+    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:10px">{{S02_HEAD}}</h2>
     <div style="border-left:3px solid #DDD6C5;padding:2px 0 2px 20px;margin:0 0 28px">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5A5547;margin-bottom:8px">{{S02_MOMLABEL}}</div>
       <p style="font-family:'Newsreader',serif;font-size:18px;line-height:1.55;color:#46412F">{{S02_MOMDEF}}</p>
@@ -186,7 +186,7 @@ TEMPLATE = """<!DOCTYPE html>
   <section style="border-top:1px solid #DDD6C5;background:#EAE5D6;margin-top:30px">
     <div style="max-width:840px;margin:0 auto;padding:60px 40px 56px">
       <div style="margin-bottom:34px">
-        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:18px">{{S03_HEAD}}</h2>
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:18px">{{S03_HEAD}}</h2>
         <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.55;color:#2B2820;text-wrap:pretty">{{S03_LEAD}}</p>
       </div>
       <div style="margin-bottom:32px">
@@ -240,7 +240,7 @@ TEMPLATE = """<!DOCTYPE html>
 
   <!-- 05 — THE CATCH -->
   <section style="max-width:840px;margin:0 auto;padding:64px 40px 18px">
-    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">{{S05_HEAD}}</h2>
+    <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:22px">{{S05_HEAD}}</h2>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:20px">{{S05_LEAD1}}</p>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-bottom:8px">{{S05_LEAD2}}</p>
     {{COMPARE_CHART}}
@@ -251,7 +251,7 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- 06 — DO THEY NEED THEM -->
   <section style="border-top:1px solid #DDD6C5;background:#EAE5D6">
     <div style="max-width:840px;margin:0 auto;padding:60px 40px 56px">
-      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:22px">{{S06_HEAD}}</h2>
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:22px">{{S06_HEAD}}</h2>
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820;margin-bottom:30px;text-wrap:pretty">{{S06_LEAD}}</p>
       {{HEAT_GRID}}
       <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.6;color:#2B2820">{{S06_CONCL}}</p>
@@ -267,7 +267,7 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- BOTTOM LINE -->
   <section style="max-width:840px;margin:0 auto;padding:46px 40px 20px">
     <div style="border-top:2px solid #1A1813;border-bottom:2px solid #1A1813;padding:44px 0">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:24px">{{BOTTOM_HEAD}}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:24px">{{BOTTOM_HEAD}}</div>
       <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">{{BOTTOM_TEXT}}</p>
     </div>
   </section>
@@ -308,8 +308,8 @@ TEMPLATE = """<!DOCTYPE html>
 <!-- MATCH MODAL -->
 <div id="mb-modal" hidden style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(26,24,19,.55);padding:20px">
   <div role="dialog" aria-modal="true" aria-labelledby="mb-title" style="background:#FCFAF3;color:#1A1813;width:min(780px,96vw);max-width:96vw;max-height:92vh;overflow-y:auto;overflow-x:hidden;border-radius:4px;box-shadow:0 24px 70px rgba(26,24,19,.4);position:relative;padding:30px 32px 28px">
-    <button id="mb-close" aria-label="{{MODAL_CLOSE_ARIA}}" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#E5482E"><span aria-hidden="true">{{MODAL_CLOSE}}</span></button>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E5482E;font-weight:600;margin-bottom:10px">{{MODAL_KICKER}}</div>
+    <button id="mb-close" aria-label="{{MODAL_CLOSE_ARIA}}" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;color:#C03A22"><span aria-hidden="true">{{MODAL_CLOSE}}</span></button>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:10px">{{MODAL_KICKER}}</div>
     <h3 id="mb-title" style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(24px,4vw,34px);line-height:1.1;margin-bottom:6px"></h3>
     <div id="mb-sub" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;letter-spacing:.06em;margin-bottom:18px"></div>
     <div id="mb-chart" style="position:relative;width:100%;overflow:hidden;border-radius:3px"></div>
@@ -333,8 +333,8 @@ TEMPLATE = """<!DOCTYPE html>
      #mb-share:disabled{opacity:.55;cursor:default}
     </style>
     <div style="display:flex;flex-wrap:wrap;gap:12px 14px;align-items:center;margin-top:18px;padding-top:15px;border-top:1px solid #E2DBCA">
-      <span class="mb-lbl">{{CTL_COLOURS}}</span><div class="mb-seg" data-group="palette"><button data-val="editorial" class="on">{{CTL_EDITORIAL}}</button><button data-val="kits">{{CTL_KITS}}</button></div>
-      <span class="mb-lbl">{{CTL_MODE}}</span><div class="mb-seg" data-group="mode"><button data-val="light" class="on">{{CTL_LIGHT}}</button><button data-val="dark">{{CTL_DARK}}</button></div>
+      <span class="mb-lbl" id="lbl-colours">{{CTL_COLOURS}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-colours" data-group="palette"><button type="button" data-val="editorial" class="on" aria-pressed="true">{{CTL_EDITORIAL}}</button><button type="button" data-val="kits" aria-pressed="false">{{CTL_KITS}}</button></div>
+      <span class="mb-lbl" id="lbl-mode">{{CTL_MODE}}</span><div class="mb-seg" role="group" aria-labelledby="lbl-mode" data-group="mode"><button type="button" data-val="light" class="on" aria-pressed="true">{{CTL_LIGHT}}</button><button type="button" data-val="dark" aria-pressed="false">{{CTL_DARK}}</button></div>
       <button id="mb-share">{{CTL_SHARE}}</button>
     </div>
     <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:#5A5547;margin-top:12px">{{MODAL_CHARTNOTE}}</p>
@@ -417,7 +417,7 @@ TEMPLATE = """<!DOCTYPE html>
   function resolveTheme(m){
     var dark=theme.mode==='dark';
     var t={ bg: dark?'#1A1813':'#FCFAF3', ink: dark?'#EFEBDF':'#1A1813',
-            grid: dark?'rgba(239,235,223,.85)':'#1A1813', sub: dark?'#8E8773':'#9A927E',
+            grid: dark?'rgba(239,235,223,.85)':'#1A1813', sub: dark?'#8E8773':'#6B6557',
             homeFill: dark?'#7FB2D8':'#9CC4E0', awayFill: dark?'#E2B07E':'#EBC09A' };
     if(theme.palette==='kits' && m.colors && m.colors[theme.mode]){
       var c=m.colors[theme.mode];
@@ -502,8 +502,8 @@ TEMPLATE = """<!DOCTYPE html>
     var dot=el('circle',{r:4, fill:t.ink, stroke:t.bg,'stroke-width':2, opacity:0}); svg.appendChild(dot);
     var tip=document.createElement('div'); tip.style.cssText='position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-120%);background:'+t.ink+';color:'+t.bg+';font-family:IBM Plex Mono,monospace;font-size:11px;padding:5px 8px;border-radius:3px;white-space:nowrap;transition:opacity .08s';
     chart.appendChild(tip);
-    var hit=el('rect',{x:pad.l,y:pad.t,width:pw,height:ph,fill:'transparent',style:'cursor:crosshair'}); svg.appendChild(hit);
-    hit.addEventListener('mousemove', function(ev){
+    var hit=el('rect',{x:pad.l,y:pad.t,width:pw,height:ph,fill:'transparent',style:'cursor:crosshair;touch-action:pan-y'}); svg.appendChild(hit);
+    function mbScrub(ev){
       var r=svg.getBoundingClientRect(); var px=(ev.clientX-r.left)/r.width*W;
       var min=minMin+(px-pad.l)/pw*(maxMin-minMin);
       // inside a hydration break there is no play and no momentum reading — show the break, not a number
@@ -534,8 +534,14 @@ TEMPLATE = """<!DOCTYPE html>
       var tl=x/W*r.width, hw=tip.offsetWidth/2+4;
       tl=Math.max(hw, Math.min(r.width-hw, tl));
       tip.style.left=tl+'px'; tip.style.top=(y/H*r.height)+'px';
-    });
-    hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity',0); dot.setAttribute('opacity',0); tip.style.opacity=0; });
+    }
+    function mbLeave(){ cross.setAttribute('opacity',0); dot.setAttribute('opacity',0); tip.style.opacity=0; }
+    // pointer events cover mouse + touch + pen, so the scrub works on phones (the chart was dead on touch);
+    // touch-action:pan-y on the hit rect keeps vertical page scroll while we handle the horizontal drag.
+    hit.addEventListener('pointerdown', mbScrub);
+    hit.addEventListener('pointermove', mbScrub);
+    hit.addEventListener('pointerleave', mbLeave);
+    hit.addEventListener('pointercancel', mbLeave);
     chart.appendChild(svg);
 
     // keyboard + screen-reader fallback: a collapsible "Chart data" table of the key moments
@@ -677,7 +683,7 @@ TEMPLATE = """<!DOCTYPE html>
     if(modal.hidden || ev.key!=='Tab') return;
     var f=Array.prototype.filter.call(
       modal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])'),
-      function(e){ return !e.disabled && e.offsetParent!==null; });
+      function(e){ return !e.disabled && e.getClientRects().length>0; });
     if(!f.length) return;
     var first=f[0], last=f[f.length-1];
     if(ev.shiftKey && document.activeElement===first){ ev.preventDefault(); last.focus(); }
@@ -694,7 +700,7 @@ TEMPLATE = """<!DOCTYPE html>
     seg.addEventListener('click', function(ev){
       var b=ev.target.closest('button'); if(!b) return;
       theme[seg.getAttribute('data-group')]=b.getAttribute('data-val');
-      seg.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+      seg.querySelectorAll('button').forEach(function(x){ var on=(x===b); x.classList.toggle('on', on); x.setAttribute('aria-pressed', on?'true':'false'); });
       if(cur){ chrome(cur); render(cur); }
     });
   });
