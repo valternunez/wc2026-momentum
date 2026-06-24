@@ -52,8 +52,8 @@ def test_build_editorial_page():
     # social meta + favicon
     assert 'property="og:image"' in html and 'name="twitter:card"' in html
     assert 'rel="apple-touch-icon"' in html and 'rel="icon"' in html
-    # momentum explainer (we read it, not compute it)
-    assert "we don't compute it" in html or "we don't compute our own" in html
+    # momentum explainer (read from FotMob, not computed here) — impersonal voice
+    assert "Read here, not computed" in html or "doesn't compute one" in html
     # §05 break-vs-no-break comparison chart (incl. the within-2026 placebo) + honest caption
     assert "Club World Cup 2025" in html and "World Cup 2022" in html
     assert "same 2026 matches" in html and "Same statistic, same scale" in html
