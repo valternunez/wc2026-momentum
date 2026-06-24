@@ -93,6 +93,9 @@ TEMPLATE = """<!DOCTYPE html>
      row-aligned even when a long match-up wraps; collapses to one stacked column on mobile. */
   .extremes-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(6,auto);column-gap:44px}
   @media (max-width:800px){ .extremes-grid{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none} }
+  /* Narrow phones: trim the inline 40px side gutters on the 840px content wrappers (external !important
+     beats the inline shorthand) so 21px prose and the charts get the width back; ~22% gutter -> ~5%. */
+  @media (max-width:600px){ [style*="max-width:840px"]{padding-left:18px!important;padding-right:18px!important} }
   @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card,.mb-tab,#tip-pop,.mb-seg button{transition:none}.mb-card:hover{transform:none} }
 </style></head>
 <body>
