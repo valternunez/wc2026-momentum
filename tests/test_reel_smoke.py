@@ -37,11 +37,11 @@ def test_reel_pages_built_and_resolved():
     for html in (en, es):
         assert "{{" not in html              # every token substituted (also guarded in build())
         assert "<!DOCTYPE html>" in html
-        assert html.count('class="scene"') == 5            # hook · proof · twist · verdict · cta
-        assert "setTimeout" in html and "data-scene" in html  # the kinetic timeline is embedded
+        assert html.count('data-scene=') == 4              # hook · graph · verdict · cta
+        assert "setTimeout" in html and "step2" in html    # the kinetic timeline + graph staging
         assert "95% CI" in html                            # verdict carries the interval
-        # the myth-buster pair (break drop vs no-break control) both appear
-        assert html.count("&#8722;") >= 3                  # at least the -hero (x2) + -p26 numbers
+        # the myth-buster pair (break drop vs no-break control) both appear on the graph
+        assert html.count("&#8722;") >= 2                  # -hero and -p26 numbers
     # honest verdict clause, CI-templated, in each language
     assert ("not proven" in en) or ("really bites" in en)
     assert ("sin probar" in es) or ("sí pega" in es)

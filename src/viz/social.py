@@ -179,7 +179,7 @@ REEL_VIDEO_ES = REPORTS / "figures" / "reel.es.mp4"
 RENDER_STATE = REPORTS / "figures" / "render_state.json"
 _VID_W, _VID_H = 1080, 1920          # Instagram Story/Reel + TikTok native size
 _AUTOPLAY_PER_MS = 3200              # must match the per-slide timer in story_copy.py ?autoplay
-_REEL_MS = 15600                     # must cover the reel_copy.py timeline (last beat 14000 + hold)
+_REEL_MS = 20500                     # must cover the reel_copy.py timeline (last beat 17000 + hold)
 
 
 def _record_and_transcode(b, url: str, dest, duration_ms: int, ffmpeg: str, play_js: str | None = None) -> str:
