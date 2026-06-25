@@ -64,17 +64,23 @@ def test_story_share_and_nav_links():
     assert 'href="index.es.html"' in es and 'href="story.html"' in es
 
 
-def test_main_page_links_to_story():
+def test_main_page_story_share_entry_points():
+    """The main-page Story + share entry points follow the STORY_SHARE_ENABLED feature flag — present
+    when enabled, fully absent when temporarily hidden (the pages/code stay built either way)."""
     pages = _build_pages()
     if pages is None:
         pytest.skip("no processed data committed")
     index = (SITE / "index.html").read_text(encoding="utf-8")
     index_es = (SITE / "index.es.html").read_text(encoding="utf-8")
-    assert 'href="story.html"' in index and 'class="sharebar"' in index
-    assert 'href="story.es.html"' in index_es and 'class="sharebar"' in index_es
-    # compact masthead share icon (popover) present alongside the bottom bar
-    assert 'class="sharewrap"' in index and 'class="sharepop"' in index
-    assert 'class="sharewrap"' in index_es
+    if build_site.STORY_SHARE_ENABLED:
+        assert 'href="story.html"' in index and 'class="sharebar"' in index
+        assert 'href="story.es.html"' in index_es and 'class="sharebar"' in index_es
+        assert 'class="sharewrap"' in index and 'class="sharepop"' in index   # masthead share icon
+        assert 'class="sharewrap"' in index_es
+    else:
+        for html in (index, index_es):
+            assert 'class="sharebar"' not in html and 'class="sharewrap"' not in html
+            assert "story.html" not in html and "story.es.html" not in html
 
 
 def test_story_share_strings_bilingual_parity():

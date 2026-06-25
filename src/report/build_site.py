@@ -39,6 +39,11 @@ SCALE = 32.0  # momentum axis: 0 .. -32
 PAGES_URL = "https://github.com/valternunez/wc2026-momentum"
 SITE_BASE = "https://valternunez.github.io/wc2026-momentum/"
 
+# Temporarily hide the Story-mode + Share entry points on the MAIN page (masthead Story link +
+# share icon, bottom "Open story" button + share bar). The story/reel pages and all the code stay
+# built and intact — flip this back to True to restore the entry points. See the project memory note.
+STORY_SHARE_ENABLED = False
+
 _ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
 _KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
 UNKNOWN_TEAM = "?"  # single placeholder for a missing team name (used everywhere)
@@ -196,6 +201,26 @@ def _share_button(S: dict, url: str) -> str:
         "if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(done).catch(done);}else{done();}});}"
         "})();</script>"
     )
+
+
+def _mast_story_link(S: dict, lang: str) -> str:
+    """The masthead '▶ Story' link (gated by STORY_SHARE_ENABLED)."""
+    href = _page_link("story", lang)
+    return (f'<a class="same-tab" href="{href}" style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;'
+            'letter-spacing:.12em;text-transform:uppercase;color:#C03A22;font-weight:600;text-decoration:none;'
+            'border-bottom:1px solid rgba(192,58,34,.4)"><span aria-hidden="true">&#9654;</span> '
+            f'{html.escape(S["STORY_ENTRY"])}</a>')
+
+
+def _story_share_row(S: dict, lang: str) -> str:
+    """The bottom-line 'Open story mode' button + the full share bar (gated by STORY_SHARE_ENABLED)."""
+    href = _page_link("story", lang)
+    btn = (f'<a class="same-tab" href="{href}" style="display:inline-block;font-family:\'IBM Plex Mono\',monospace;'
+           'font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#EFEBDF;'
+           'background:#1A1813;padding:12px 18px;border-radius:3px;text-decoration:none">'
+           f'<span aria-hidden="true">&#9654;</span>&nbsp;{html.escape(S["STORY_OPEN"])}</a>')
+    return ('<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:30px">'
+            + btn + _share_bar(S, _LANG_META[lang]["OG_URL"]) + '</div>')
 
 
 def _money_rows(effects: list[dict], labels: dict) -> str:
@@ -871,9 +896,11 @@ def build() -> str:
             "TREND": _trend_section(snapshots, hyd.get("mean_delta"), hyd.get("n", 0), updated, F),
             "PAGES_URL": PAGES_URL,
             "METHOD_HREF": _page_link("method", lang),
-            "STORY_HREF": _page_link("story", lang),
-            "SHARE_BAR": _share_bar(S, _LANG_META[lang]["OG_URL"]),
-            "SHARE_BTN": _share_button(S, _LANG_META[lang]["OG_URL"]),
+            # Story-mode + share entry points — temporarily hidden via STORY_SHARE_ENABLED (the pages
+            # and helpers stay intact; flip the flag to restore). See project memory.
+            "MAST_STORY": _mast_story_link(S, lang) if STORY_SHARE_ENABLED else "",
+            "STORY_SHARE_ROW": _story_share_row(S, lang) if STORY_SHARE_ENABLED else "",
+            "SHARE_BTN": _share_button(S, _LANG_META[lang]["OG_URL"]) if STORY_SHARE_ENABLED else "",
             "LANG_TOGGLE": _lang_toggle(lang),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
