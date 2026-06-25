@@ -174,26 +174,61 @@ def build_story_cards() -> str:
 
 STORY_VIDEO = REPORTS / "figures" / "story.mp4"
 STORY_VIDEO_ES = REPORTS / "figures" / "story.es.mp4"
+REEL_VIDEO = REPORTS / "figures" / "reel.mp4"
+REEL_VIDEO_ES = REPORTS / "figures" / "reel.es.mp4"
 RENDER_STATE = REPORTS / "figures" / "render_state.json"
-_AUTOPLAY_PER_MS = 3200  # must match the per-slide timer in story_copy.py ?autoplay mode
+_VID_W, _VID_H = 1080, 1920          # Instagram Story/Reel + TikTok native size
+_AUTOPLAY_PER_MS = 3200              # must match the per-slide timer in story_copy.py ?autoplay
+_REEL_MS = 15600                     # must cover the reel_copy.py timeline (last beat 14000 + hold)
+
+
+def _record_and_transcode(b, url: str, dest, duration_ms: int, ffmpeg: str, play_js: str | None = None) -> str:
+    """Record `url` for duration_ms in a video-capturing Playwright context, then transcode the .webm
+    to a phone-friendly H.264 MP4 (yuv420p, 30fps, faststart, silent). `b` is a launched browser.
+
+    If `play_js` is given, the page is loaded, fonts are settled, then play_js is evaluated to START a
+    timeline at a known instant; we wait duration_ms and trim the MP4 to exactly that trailing window
+    (so the variable load/font pre-roll is dropped). Without play_js the page is recorded as-is."""
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        ctx = b.new_context(viewport={"width": _VID_W, "height": _VID_H},
+                            record_video_dir=td,
+                            record_video_size={"width": _VID_W, "height": _VID_H})
+        pg = ctx.new_page()
+        pg.goto(url, wait_until=("load" if play_js else "networkidle"))
+        if play_js:
+            try:
+                pg.evaluate("document.fonts && document.fonts.ready")  # settle webfonts before play
+            except Exception:
+                pass
+            pg.evaluate(play_js)
+        pg.wait_for_timeout(duration_ms)
+        pg.close()
+        webm = pg.video.path()
+        ctx.close()  # flush the webm to disk
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        cmd = [ffmpeg, "-y"]
+        if play_js:  # the timeline occupies the final duration_ms of the clip → keep just that window
+            cmd += ["-sseof", f"-{duration_ms / 1000.0:.2f}"]
+        cmd += ["-i", webm, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-r", "30", "-movflags", "+faststart", "-an", str(dest)]
+        subprocess.run(cmd, check=True, capture_output=True)
+    return str(dest)
 
 
 def build_story_video() -> str:
     """Render the story as a downloadable 1080x1920 MP4 per language (needs Playwright + ffmpeg).
 
-    Opens the already-built site/story.html?autoplay=1 (auto-advances the slides, chrome hidden) in a
-    Playwright context that records video, then transcodes the .webm to a phone-friendly H.264 MP4 via
-    the pip-installed static ffmpeg (imageio-ffmpeg) — sized for Instagram Story/Reel + TikTok. Writes
-    reports/figures/story.mp4 + story.es.mp4, committed like og.png. Run via `pipeline --story-video`.
+    Opens the already-built site/story.html?autoplay=1 (auto-advances the slides, chrome hidden),
+    records it, and transcodes to MP4 — Instagram Story/Reel + TikTok sized. Writes story.mp4 +
+    story.es.mp4 under reports/figures, committed like og.png. Run via `pipeline --story-video`.
     """
-    import subprocess
-    import tempfile
-
     import imageio_ffmpeg
     from playwright.sync_api import sync_playwright
 
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-    W, H = 1080, 1920
     pages = {"en": (SITE / "story.html", STORY_VIDEO), "es": (SITE / "story.es.html", STORY_VIDEO_ES)}
     out: list[str] = []
     with sync_playwright() as pw:
@@ -202,28 +237,37 @@ def build_story_video() -> str:
             if not path.exists():
                 continue
             base = path.resolve().as_uri()
-            probe = b.new_page(viewport={"width": W, "height": H})
+            probe = b.new_page(viewport={"width": _VID_W, "height": _VID_H})
             probe.goto(f"{base}?still=1", wait_until="networkidle")
             n = int(probe.evaluate("document.querySelectorAll('.slide').length"))
             probe.close()
             duration = n * _AUTOPLAY_PER_MS + 1600  # advance through every slide, then a brief hold
-            with tempfile.TemporaryDirectory() as td:
-                ctx = b.new_context(viewport={"width": W, "height": H},
-                                    record_video_dir=td,
-                                    record_video_size={"width": W, "height": H})
-                pg = ctx.new_page()
-                pg.goto(f"{base}?autoplay=1", wait_until="networkidle")
-                pg.wait_for_timeout(duration)
-                pg.close()
-                webm = pg.video.path()
-                ctx.close()  # flush the webm to disk
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                subprocess.run(
-                    [ffmpeg, "-y", "-i", webm, "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                     "-r", "30", "-movflags", "+faststart", "-an", str(dest)],
-                    check=True, capture_output=True,
-                )
-            out.append(str(dest))
+            out.append(_record_and_transcode(b, f"{base}?autoplay=1", dest, duration, ffmpeg))
+        b.close()
+    return ", ".join(out)
+
+
+def build_reel_video() -> str:
+    """Render the ~15s kinetic reel as a 1080x1920 MP4 per language (needs Playwright + ffmpeg).
+
+    Records the already-built site/reel.html (auto-plays its myth-buster timeline on load) and
+    transcodes to MP4 — Reel/TikTok ready. Writes reel.mp4 + reel.es.mp4 under reports/figures,
+    committed like og.png. Run via `pipeline --reel-video`.
+    """
+    import imageio_ffmpeg
+    from playwright.sync_api import sync_playwright
+
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    pages = {"en": (SITE / "reel.html", REEL_VIDEO), "es": (SITE / "reel.es.html", REEL_VIDEO_ES)}
+    out: list[str] = []
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(headless=True)
+        for _lang, (path, dest) in pages.items():
+            if not path.exists():
+                continue
+            url = f"{path.resolve().as_uri()}?rec=1"
+            out.append(_record_and_transcode(b, url, dest, _REEL_MS, ffmpeg,
+                                             play_js="window.__play && window.__play()"))
         b.close()
     return ", ".join(out)
 
@@ -253,7 +297,8 @@ def refresh_social(force: bool = False) -> str:
     done, failed = [], []
     for name, fn in (("og-card", build_share_card),
                      ("story-cards", build_story_cards),
-                     ("story-video", build_story_video)):
+                     ("story-video", build_story_video),
+                     ("reel-video", build_reel_video)):
         try:
             fn()
             done.append(name)

@@ -200,6 +200,7 @@ TEMPLATE = """<!DOCTYPE html>
         <div class="ctrls">
           <a class="cbtn no-nav" id="save" href="story/{{STORY_DIR}}/slide1.png" download>&#8595; {{STORY_SAVE}}</a>
           <a class="cbtn no-nav" href="{{STORY_VID}}" download>&#8595; {{STORY_VIDEO}}</a>
+          <a class="cbtn no-nav" href="{{STORY_REEL_VID}}" download>&#8595; {{REEL_LINK}}</a>
           {{STORY_LANG}}
         </div>
         <div class="counter" id="counter" data-of="{{STORY_OF}}"></div>

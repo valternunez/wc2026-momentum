@@ -740,7 +740,7 @@ def build() -> str:
     # locally — CI has no browser — and copied in on every build, like og.png).
     for icon in ("og.png", "og.es.png", "apple-touch-icon.png",
                  "wc2026-methodology.pdf", "wc2026-methodology.es.pdf",
-                 "story.mp4", "story.es.mp4"):
+                 "story.mp4", "story.es.mp4", "reel.mp4", "reel.es.mp4"):
         src = REPORTS / "figures" / icon
         if src.exists():
             shutil.copyfile(src, SITE / icon)
@@ -900,6 +900,7 @@ def build() -> str:
 
     build_method_pages(data_tokens, snap_date)
     build_story_pages(data_tokens, snap_date)
+    build_reel_pages(data_tokens, snap_date)
     return first_out or str(SITE / "index.html")
 
 
@@ -964,6 +965,7 @@ def build_story_pages(data_tokens: dict, snap_date: str | None) -> None:
             "HOME_HREF": _page_link("index", lang),
             "STORY_DIR": lang,
             "STORY_VID": "story.mp4" if lang == "en" else "story.es.mp4",
+            "STORY_REEL_VID": "reel.mp4" if lang == "en" else "reel.es.mp4",
             "STORY_LANG": story_lang,
             "SHARE_BAR": _share_bar(S, SITE_BASE + story_file),
             "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
@@ -980,6 +982,38 @@ def build_story_pages(data_tokens: dict, snap_date: str | None) -> None:
         if leftover:
             raise ValueError(f"unresolved story tokens in {lang} build: {leftover}")
         (SITE / story_file).write_text(page, encoding="utf-8")
+
+
+def build_reel_pages(data_tokens: dict, snap_date: str | None) -> None:
+    """Render the bilingual ~15s kinetic reel pages (reel.html + reel.es.html).
+
+    Same per-lang token fill + leak guard as build_story_pages; this page auto-plays a fast timeline
+    and exists to be recorded into a Reel/TikTok (src/viz/social.build_reel_video). The short verdict
+    clause is CI-templated from the same GAP_CLAUSE_KEY the rest of the site uses, so it can't drift."""
+    from src.report.reel_copy import TEMPLATE as REEL_TEMPLATE
+
+    for lang in LANGS:
+        S = STRINGS[lang]
+        reel_verdict = S["REEL_VERDICT_SIG"] if data_tokens["GAP_CLAUSE_KEY"].endswith("SIG") else S["REEL_VERDICT_OPEN"]
+        tokens = {
+            **S,
+            **data_tokens,
+            **_LANG_META[lang],
+            "REEL_VERDICT": reel_verdict,
+            "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
+        }
+        page = REEL_TEMPLATE
+        for _ in range(6):
+            before = page
+            for k, v in tokens.items():
+                page = page.replace("{{" + k + "}}", str(v))
+            if page == before:
+                break
+        leftover = sorted(set(re.findall(r"\{\{[A-Z0-9_]+\}\}", page)))
+        if leftover:
+            raise ValueError(f"unresolved reel tokens in {lang} build: {leftover}")
+        (SITE / ("reel.html" if lang == "en" else "reel.es.html")).write_text(page, encoding="utf-8")
 
 
 if __name__ == "__main__":
