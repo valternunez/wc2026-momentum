@@ -125,6 +125,7 @@ TEMPLATE = """<!DOCTYPE html>
   body.autoplay .stage{padding:0}
   body.autoplay .frame{width:100vw;height:100vh;border-radius:0;box-shadow:none;cursor:default}
   body.autoplay .chrome,body.autoplay .hint,body.autoplay .navchev,body.autoplay .close{display:none}
+  body.autoplay .sharebar{display:none!important}  /* no tappable share buttons in a recorded video (beat the inline display:flex) */
 </style></head>
 <body>
 <div class="stage">
