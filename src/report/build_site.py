@@ -25,7 +25,6 @@ from src.analysis.descriptive import (
     effect_by_type,
     load_processed,
     on_top_rows,
-    pre_level_r2,
 )
 from src.enrich.venues import venue_elev_m
 from src.paths import PROCESSED, RAW, REPORTS, SITE, STOPPAGES_PARQUET
@@ -394,7 +393,6 @@ def _extremes_block(df: pl.DataFrame, names: dict[str, tuple[str, str]], F: dict
     return f"""
       <div style="margin:4px 0 32px">
         <div class="extremes-grid">{body}</div>
-        <p style="font-family:'Newsreader',serif;font-size:17px;line-height:1.55;color:#5A5547;margin-top:20px;max-width:64ch">{F["extremes_note"]}</p>
       </div>"""
 
 
@@ -703,17 +701,6 @@ def _duration_tokens(df: pl.DataFrame) -> dict[str, str]:
     return out
 
 
-def _breaks_per_team(df: pl.DataFrame) -> tuple[str, str]:
-    """(min, max) on-top hydration breaks any single team has had so far (for the extremes note)."""
-    if df is None or df.is_empty():
-        return ("—", "—")
-    ot = on_top_rows(df).filter(pl.col("stoppage_type") == "hydration")
-    if ot.is_empty():
-        return ("—", "—")
-    counts = ot.group_by("team").agg(pl.len().alias("n"))["n"]
-    return (str(int(counts.min())), str(int(counts.max())))
-
-
 def _trend_section(snapshots: list[dict], hyd_mean: float | None, hyd_n: int, updated: str, F: dict) -> str:
     est = f"−{abs(hyd_mean):.0f}" if hyd_mean is not None else "—"  # integer, matches the −25 headline
     body = F["trend_sentence"].format(updated=updated, est=est, n=hyd_n)
@@ -836,9 +823,7 @@ def build() -> str:
     gap_clause_key = "GAP_CLAUSE_SIG" if gap_excl0 else "GAP_CLAUSE_OPEN"
     twfe_clause_key = ("TWFE_CLAUSE_SIG" if (twfe and twfe["pvalue"] < 0.05)
                        else "TWFE_CLAUSE_NULL" if twfe else "TWFE_CLAUSE_HELD")
-    r2 = pre_level_r2(df)
     heat = _heat_tokens(df)
-    breaks_min, breaks_max = _breaks_per_team(df)
     data_tokens = {
         **heat,
         "HEAT_GRID": _heat_grid(heat["HEAT_N"] != "0"),
@@ -860,9 +845,6 @@ def build() -> str:
         "TWFE_N": str(twfe["n_obs"]) if twfe else "—",
         "GAP_CLAUSE_KEY": gap_clause_key,
         "TWFE_CLAUSE_KEY": twfe_clause_key,
-        "BREAKS_MIN": breaks_min,
-        "BREAKS_MAX": breaks_max,
-        "PRE_R2": str(round(r2 * 100)) if r2 is not None else "—",
         "HYD_N": str(hyd.get("n", 0)),
         "N_MATCHES": str(df["match_id"].n_unique()),
         "N_STOPPAGES": str(df["stoppage_id"].n_unique()),

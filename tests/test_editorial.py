@@ -70,9 +70,8 @@ def test_build_editorial_page():
     assert 'id="mb-share"' in html and 'id="mb-leg-home"' in html
     assert 'data-group="palette"' in html and 'data-group="mode"' in html
     assert '"ts"' in html and '"colors"' in html  # date + kit colours embedded for the modal
-    # §03 "the extremes" (matches, not teams) + honest note
+    # §03 "the extremes" (matches, not teams)
     assert "The extremes" in html and "Biggest swings" in html and "Quietest breaks" in html
-    assert "matches and not teams" in html and "break-prone" in html
     # match date on grid cards (DD/MM/YYYY)
     import re
     assert re.search(r"\d{2}/\d{2}/\d{4}", html)
