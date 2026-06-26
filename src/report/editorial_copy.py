@@ -72,8 +72,10 @@ TEMPLATE = """<!DOCTYPE html>
   #mb-table table{border-collapse:collapse;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#2B2820}
   #mb-table th,#mb-table td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid #E6E0CF;white-space:nowrap}
   #mb-table th{color:#5A5547;font-weight:600;letter-spacing:.04em}
-  .src{font-family:'IBM Plex Mono',monospace;color:#C03A22;text-decoration:none;border-bottom:1px solid #C03A22}
-  .info{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:1px solid #8A8268;background:none;color:#6B6557;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:12px;font-weight:700;line-height:1;cursor:pointer;vertical-align:middle;margin-left:4px;padding:0;transition:border-color .12s,color .12s,background .12s}
+  /* monospace links/citations render visually larger than the serif body at the same px; scale them down to match */
+  .src{font-family:'IBM Plex Mono',monospace;font-size:.88em;color:#C03A22;text-decoration:none;border-bottom:1px solid #C03A22}
+  .info{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #8A8268;background:none;color:#6B6557;font-family:Georgia,'Newsreader',serif;font-style:italic;font-size:10px;font-weight:700;line-height:1;cursor:pointer;vertical-align:middle;margin-left:3px;padding:0;transition:border-color .12s,color .12s,background .12s}
+  .info::before{content:'';position:absolute;inset:-5px}  /* keep a ~26px tap target while the visible glyph is small */
   .info:hover,.info:focus-visible{border-color:#E5482E;color:#fff;background:#E5482E;outline:none}
   #tip-pop{position:absolute;z-index:90;max-width:300px;background:#1A1813;color:#EFEBDF;font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.5;padding:12px 15px;border-radius:5px;box-shadow:0 12px 34px rgba(26,24,19,.34);opacity:0;pointer-events:none;transition:opacity .12s}
   #tip-pop.on{opacity:1;pointer-events:auto}
