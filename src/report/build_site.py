@@ -870,6 +870,7 @@ def build() -> str:
             "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
             "HYD_N": str(hyd.get("n", 0)),
             "MONEY_ROWS": _money_rows(effects, LABELS[lang]),
+            "CI_INFO": _info(F["tip_bootstrap"], F["info_aria"]),
             "COMPARE_SENTENCE": _compare_sentence(effects, F),
             "COMPARE_CHART": _compare_chart(effects, F),
             "EXTREMES": _extremes_block(df, names, F, lang),

@@ -175,7 +175,7 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="border-top:2px solid #1A1813;padding-top:30px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:26px;gap:16px;flex-wrap:wrap">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;color:#6B6557">{{S02_CHARTLABEL}}</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.1em;color:#6B6557">{{CI_CAPTION}}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.1em;color:#6B6557">{{CI_CAPTION}}{{CI_INFO}}</span>
       </div>
       <div style="position:relative">
         <div style="position:absolute;inset:0;pointer-events:none">
