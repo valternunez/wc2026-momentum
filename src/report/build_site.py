@@ -826,6 +826,7 @@ def build() -> str:
     # the gap copy firms up automatically if/when the difference CI ever clears zero; the TWFE clause
     # reports the actual (currently null) signed-off model.
     gap_clause_key = "GAP_CLAUSE_SIG" if gap_excl0 else "GAP_CLAUSE_OPEN"
+    gap_pts_key = "GAP_PTS_ONE" if gap == 1 else "GAP_PTS_MANY"  # singular/plural for "{{GAP}} {{GAP_PTS}}"
     twfe_clause_key = ("TWFE_CLAUSE_SIG" if (twfe and twfe["pvalue"] < 0.05)
                        else "TWFE_CLAUSE_NULL" if twfe else "TWFE_CLAUSE_HELD")
     heat = _heat_tokens(df)
@@ -850,6 +851,7 @@ def build() -> str:
         "TWFE_P": f"{twfe['pvalue']:.2f}" if twfe else "—",
         "TWFE_N": str(twfe["n_obs"]) if twfe else "—",
         "GAP_CLAUSE_KEY": gap_clause_key,
+        "GAP_PTS_KEY": gap_pts_key,
         "TWFE_CLAUSE_KEY": twfe_clause_key,
         "HYD_N": str(hyd.get("n", 0)),
         "N_MATCHES": str(df["match_id"].n_unique()),
@@ -870,6 +872,7 @@ def build() -> str:
             **_LANG_META[lang],
             **data_tokens,
             "GAP_CLAUSE": S[gap_clause_key],
+            "GAP_PTS": S[gap_pts_key],
             "TWFE_CLAUSE": S[twfe_clause_key],
             "BOTTOM_LEAD": S["BOTTOM_LEAD_SIG" if gap_excl0 else "BOTTOM_LEAD_OPEN"],
             "UPDATED_DATE": updated.upper(),
@@ -942,6 +945,7 @@ def build_method_pages(data_tokens: dict, snap_date: str | None) -> None:
             "METHOD_HREF": _page_link("method", lang),
             "METHOD_PDF_HREF": "wc2026-methodology.pdf" if lang == "en" else "wc2026-methodology.es.pdf",
             "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "GAP_PTS": S[data_tokens["GAP_PTS_KEY"]],
             "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
             "UPDATED_DATE": updated.upper(),
             "LANG_TOGGLE": _lang_toggle(lang, "method"),
@@ -987,6 +991,7 @@ def build_story_pages(data_tokens: dict, snap_date: str | None) -> None:
             "STORY_LANG": story_lang,
             "SHARE_BAR": _share_bar(S, SITE_BASE + story_file),
             "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "GAP_PTS": S[data_tokens["GAP_PTS_KEY"]],
             "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
         }
         page = STORY_TEMPLATE
@@ -1019,6 +1024,7 @@ def build_reel_pages(data_tokens: dict, snap_date: str | None) -> None:
             **_LANG_META[lang],
             "REEL_VERDICT": reel_verdict,
             "GAP_CLAUSE": S[data_tokens["GAP_CLAUSE_KEY"]],
+            "GAP_PTS": S[data_tokens["GAP_PTS_KEY"]],
             "TWFE_CLAUSE": S[data_tokens["TWFE_CLAUSE_KEY"]],
         }
         page = REEL_TEMPLATE
