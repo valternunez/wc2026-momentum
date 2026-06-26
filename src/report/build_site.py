@@ -533,6 +533,10 @@ def _compare_chart(effects: list[dict], F: dict) -> str:
     if copa:
         rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
                           copa[0], copa[1], copa[2], copa[3], copa[4], NT, False, F["tip_copa"]))
+    gold = _placebo_meanci("goldcup_placebo.parquet")
+    if gold:  # CONCACAF national teams, same US/Canada host region + summer as WC2026
+        rows_data.append((F["cc_gold_label"], F["cc_gold_sub"],
+                          gold[0], gold[1], gold[2], gold[3], gold[4], NT, False, F["tip_gold"]))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
         rows_data.append((F["cc_wc22_label"], F["cc_wc22_sub"],
@@ -800,8 +804,9 @@ def build() -> str:
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     copa = _placebo_meanci("copa2024_placebo.parquet")
     euro = _placebo_meanci("euro2024_placebo.parquet")
+    gold = _placebo_meanci("goldcup_placebo.parquet")
     # National-team no-break baselines (NOT clubs) for the range cited in §05.
-    nt = sorted(round(abs(x[0])) for x in (p26, euro, copa, w22) if x)
+    nt = sorted(round(abs(x[0])) for x in (p26, euro, copa, w22, gold) if x)
     hero = round(abs(hyd["mean_delta"])) if hyd and hyd.get("n") else None
     p26r = round(abs(p26[0])) if p26 else None
     # Level-adjusted break-vs-no-break gap (nets out regression to the mean) with a match-clustered
@@ -833,6 +838,7 @@ def build() -> str:
         "CWC_DELTA": _absround(cwc[0] if cwc else None),
         "WC22_DELTA": _absround(w22[0] if w22 else None),
         "COPA_DELTA": _absround(copa[0] if copa else None),
+        "GOLD_DELTA": _absround(gold[0] if gold else None),
         "EURO_DELTA": _absround(euro[0] if euro else None),
         "NOBREAK_LO": str(nt[0]) if nt else "—",
         "NOBREAK_HI": str(nt[-1]) if nt else "—",
@@ -849,6 +855,7 @@ def build() -> str:
         "N_MATCHES": str(df["match_id"].n_unique()),
         "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
         "COPA_N": str(copa[3]) if copa else "—",  # on-top windows behind the Copa baseline (for the tooltip)
+        "GOLD_N": str(gold[3]) if gold else "—",  # on-top windows behind the Gold Cup baseline (for the tooltip)
         **_accl_tokens(),
         **_duration_tokens(df),
     }

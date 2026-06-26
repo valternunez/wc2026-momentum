@@ -354,6 +354,24 @@ def build_copa_placebo() -> pl.DataFrame:
     return df
 
 
+def build_goldcup_placebo() -> pl.DataFrame:
+    """Build the CONCACAF Gold Cup 2025 same-units placebo parquet (occasional run; FotMob momentum).
+
+    National teams in the same US/Canada host region and summer as WC2026 — the closest no-break
+    analog. 2023 is excluded (no FotMob momentum series for that edition).
+    """
+    from src.analysis.goldcup_placebo import build_goldcup_placebo_table, summarize_goldcup_placebo
+
+    print("[goldcup-placebo] discovering + scraping CONCACAF Gold Cup 2025 (FotMob)…")
+    df = build_goldcup_placebo_table()
+    out = PROCESSED / "goldcup_placebo.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(out)
+    print(f"[goldcup-placebo] {df.height} rows ({df['match_id'].n_unique()} matches) -> {out}")
+    print(f"[goldcup-placebo] summary: {summarize_goldcup_placebo(df)}")
+    return df
+
+
 def build_euro_placebo() -> pl.DataFrame:
     """Build the Euro 2024 same-units placebo parquet (occasional run; FotMob momentum).
 
@@ -496,6 +514,7 @@ def main() -> None:
     ap.add_argument("--cwc-placebo", action="store_true", help="build the CWC 2025 same-units placebo parquet and exit")
     ap.add_argument("--wc2022-placebo", action="store_true", help="build the 2022-WC FotMob same-units placebo and exit")
     ap.add_argument("--copa-placebo", action="store_true", help="build the Copa América 2024 same-units placebo parquet and exit")
+    ap.add_argument("--goldcup-placebo", action="store_true", help="build the CONCACAF Gold Cup 2025 same-units placebo parquet and exit")
     ap.add_argument("--euro-placebo", action="store_true", help="build the Euro 2024 same-units placebo parquet and exit")
     ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
     ap.add_argument("--twfe", action="store_true", help="fit the signed-off TWFE model and persist twfe.json (needs the dev/events extra) and exit")
@@ -519,6 +538,9 @@ def main() -> None:
         return
     if args.copa_placebo:
         build_copa_placebo()
+        return
+    if args.goldcup_placebo:
+        build_goldcup_placebo()
         return
     if args.euro_placebo:
         build_euro_placebo()

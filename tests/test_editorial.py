@@ -56,6 +56,7 @@ def test_build_editorial_page():
     assert "Read here, not computed" in html or "doesn't compute one" in html
     # §05 break-vs-no-break comparison chart (incl. the within-2026 placebo) + honest caption
     assert "Club World Cup 2025" in html and "World Cup 2022" in html
+    assert "Gold Cup 2025" in html  # CONCACAF same-host no-break baseline
     assert "same 2026 matches" in html and "Same statistic, same scale" in html
     # plain-language info tooltips (accessible ⓘ + popover)
     assert 'class="info"' in html and "#tip-pop" in html
