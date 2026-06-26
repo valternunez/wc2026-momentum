@@ -97,6 +97,12 @@ TEMPLATE = """<!DOCTYPE html>
      beats the inline shorthand) so 21px prose and the charts get the width back; ~22% gutter -> ~5%. */
   @media (max-width:600px){ [style*="max-width:840px"]{padding-left:18px!important;padding-right:18px!important} }
   @media (prefers-reduced-motion:reduce){ .lp{animation:none}.mb-card,.mb-tab,#tip-pop,.mb-seg button{transition:none}.mb-card:hover{transform:none} }
+  /* §bottom-line conclusion: a short lead verdict + scannable label/sentence takeaways (stacks on mobile) */
+  .concl-row{display:grid;grid-template-columns:128px 1fr;gap:20px;align-items:baseline;padding:18px 0;border-top:1px solid #DDD6C5}
+  .concl-row:first-child{border-top:0;padding-top:4px}
+  .concl-lbl{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#C03A22;font-weight:600}
+  .concl-txt{font-family:'Newsreader',serif;font-size:19px;line-height:1.55;color:#2B2820;max-width:52ch}
+  @media (max-width:600px){ .concl-row{grid-template-columns:1fr;gap:5px} }
 </style></head>
 <body>
 <article style="background:#EFEBDF;color:#1A1813;font-family:'IBM Plex Sans',sans-serif;width:100%;min-height:100vh;overflow-x:hidden">
@@ -274,8 +280,13 @@ TEMPLATE = """<!DOCTYPE html>
   <!-- BOTTOM LINE -->
   <section style="max-width:840px;margin:0 auto;padding:46px 40px 20px">
     <div style="border-top:2px solid #1A1813;border-bottom:2px solid #1A1813;padding:44px 0">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:24px">{{BOTTOM_HEAD}}</div>
-      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(26px,3.6vw,46px);line-height:1.22;letter-spacing:-.01em;max-width:26ch">{{BOTTOM_TEXT}}</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#C03A22;font-weight:600;margin-bottom:22px">{{BOTTOM_HEAD}}</div>
+      <p style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(21px,2.6vw,31px);line-height:1.25;letter-spacing:-.01em;max-width:30ch;color:#1A1813;margin-bottom:8px">{{BOTTOM_LEAD}}</p>
+      <div style="margin-top:26px">
+        <div class="concl-row"><div class="concl-lbl">{{BOTTOM_T1_LABEL}}</div><p class="concl-txt">{{BOTTOM_T1}}</p></div>
+        <div class="concl-row"><div class="concl-lbl">{{BOTTOM_T2_LABEL}}</div><p class="concl-txt">{{BOTTOM_T2}}</p></div>
+        <div class="concl-row"><div class="concl-lbl">{{BOTTOM_T3_LABEL}}</div><p class="concl-txt">{{BOTTOM_T3}}</p></div>
+      </div>
       {{STORY_SHARE_ROW}}
     </div>
   </section>

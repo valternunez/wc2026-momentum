@@ -882,6 +882,7 @@ def build() -> str:
             **data_tokens,
             "GAP_CLAUSE": S[gap_clause_key],
             "TWFE_CLAUSE": S[twfe_clause_key],
+            "BOTTOM_LEAD": S["BOTTOM_LEAD_SIG" if gap_excl0 else "BOTTOM_LEAD_OPEN"],
             "UPDATED_DATE": updated.upper(),
             "N_MATCHES": str(df["match_id"].n_unique()),
             "N_STOPPAGES": str(df["stoppage_id"].n_unique()),
