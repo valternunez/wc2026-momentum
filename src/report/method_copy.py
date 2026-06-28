@@ -22,7 +22,7 @@ TEMPLATE = """<!DOCTYPE html>
 <meta name="color-scheme" content="light">
 <meta name="darkreader-lock">  <!-- light-only editorial design: tell Dark Reader to defer to our styling -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%231A1813'/><circle cx='16' cy='16' r='6' fill='%23E5482E'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><style>.bg{fill:%231A1813}@media (prefers-color-scheme:dark){.bg{fill:%23EFEBDF}}</style><circle class='bg' cx='16' cy='16' r='15'/><circle cx='16' cy='16' r='6' fill='%23E5482E'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
