@@ -406,7 +406,7 @@ def _compare_sentence(effects: list[dict], F: dict) -> str:
         return F["compare_not_enough"]
     bits = []
     if var:
-        bits.append(F["compare_pct"].format(pct=round((hyd / var - 1) * 100)))
+        bits.append(F["compare_var_ratio"].format(ratio=f"{hyd / var:.1f}"))
     if inh:
         bits.append(F["compare_ratio"].format(ratio=f"{hyd / inh:.1f}"))
     comp = F["compare_and"].join(bits) if bits else F["compare_default"]
