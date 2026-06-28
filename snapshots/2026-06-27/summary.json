@@ -1,31 +1,31 @@
 {
-  "n_matches": 66,
-  "n_stoppage_rows": 616,
-  "n_stoppages": 308,
+  "n_matches": 70,
+  "n_stoppage_rows": 654,
+  "n_stoppages": 327,
   "by_type": {
     "hydration": {
-      "n_rows": 262,
-      "n_on_top": 130,
-      "on_top_mean_delta": -24.1231,
-      "on_top_std_delta": 25.1613
+      "n_rows": 278,
+      "n_on_top": 138,
+      "on_top_mean_delta": -23.8406,
+      "on_top_std_delta": 25.09
     },
     "injury_huddle": {
-      "n_rows": 116,
-      "n_on_top": 58,
-      "on_top_mean_delta": -20.5414,
-      "on_top_std_delta": 35.1659
+      "n_rows": 118,
+      "n_on_top": 59,
+      "on_top_mean_delta": -20.1695,
+      "on_top_std_delta": 35.0525
     },
     "injury_no_huddle": {
-      "n_rows": 130,
-      "n_on_top": 63,
-      "on_top_mean_delta": -14.8728,
-      "on_top_std_delta": 25.5099
+      "n_rows": 142,
+      "n_on_top": 69,
+      "on_top_mean_delta": -12.7814,
+      "on_top_std_delta": 25.8499
     },
     "var": {
-      "n_rows": 74,
-      "n_on_top": 37,
-      "on_top_mean_delta": -16.2802,
-      "on_top_std_delta": 26.4296
+      "n_rows": 82,
+      "n_on_top": 41,
+      "on_top_mean_delta": -14.9748,
+      "on_top_std_delta": 26.8155
     }
   },
   "date": "2026-06-27"
