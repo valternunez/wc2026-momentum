@@ -519,6 +519,7 @@ def main() -> None:
     ap.add_argument("--acclimatization", action="store_true", help="build the acclimatization table (home-vs-venue heat gap) and exit")
     ap.add_argument("--twfe", action="store_true", help="fit the signed-off TWFE model and persist twfe.json (needs the dev/events extra) and exit")
     ap.add_argument("--og-card", action="store_true", help="render the 1200x630 social share card and exit")
+    ap.add_argument("--graph-cards", action="store_true", help="render the two square 1200x1200 LinkedIn chart cards and exit")
     ap.add_argument("--story-cards", action="store_true", help="render the 1080x1920 story-slide still PNGs (needs a built site/story.html) and exit")
     ap.add_argument("--story-video", action="store_true", help="render the 1080x1920 story MP4 per language (needs a built site/story.html + ffmpeg) and exit")
     ap.add_argument("--reel-video", action="store_true", help="render the ~15s 1080x1920 kinetic reel MP4 per language (needs a built site/reel.html + ffmpeg) and exit")
@@ -555,6 +556,12 @@ def main() -> None:
         from src.viz.social import build_share_card
 
         print("[og-card]", build_share_card())
+        return
+    if args.graph_cards:
+        from src.viz.social import build_graph_cards
+
+        for p in build_graph_cards():
+            print("[graph-cards]", p)
         return
     if args.story_cards:
         from src.viz.social import build_story_cards

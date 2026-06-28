@@ -508,44 +508,54 @@ def _info(tip: str, aria: str) -> str:
     return f'<button type="button" class="info" aria-label="{aria}" data-tip="{tip}">i</button>'
 
 
-def _compare_chart(effects: list[dict], F: dict) -> str:
-    """Dot-and-whisker comparison: the 2026 break drop vs no-break baselines, same FotMob scale."""
-    aria = F["info_aria"]
+CC_NT = "#5A5547"      # national-team no-break baselines (grey)
+CC_CLUBS = "#9A6A3A"   # club football, the contrast (brown)
+
+
+def comparison_rows(effects: list[dict], F: dict) -> list[tuple]:
+    """Break-vs-no-break comparison rows, the SINGLE source for both the site chart (`_compare_chart`)
+    and the social graph card (`viz.social`). Each tuple is
+    (label, sub, mean, lo, hi, n, matches, color, solid, tip). Hydration is the only filled dot; the
+    no-break baselines are hollow. Colour carries the group: accent = same 2026 teams, grey = other
+    national teams, brown = club football.
+    """
     rows_data = []
     hyd = {e["stoppage_type"]: e for e in effects}.get("hydration")
     if hyd and hyd.get("n"):
         rows_data.append((F["cc_hyd_label"], F["cc_hyd_sub"],
                           hyd["mean_delta"], hyd["ci_lo"], hyd["ci_hi"], hyd["n"], hyd.get("n_matches"), ACCENT, True, F["tip_read"]))
-    NT = "#5A5547"      # national-team no-break baselines
-    CLUBS = "#9A6A3A"   # club football, the contrast
     p26 = _placebo_meanci("placebo2026.parquet")
     if p26:  # the same WC2026 teams at quiet minutes — the gold-standard control
         rows_data.append((F["cc_p26_label"], F["cc_p26_sub"],
                           p26[0], p26[1], p26[2], p26[3], p26[4], ACCENT, False, F["tip_placebo"]))
-    # All baselines below are NO-BREAK controls -> hollow dot (solid=False), so the encoding is
-    # consistent: only the mandated break (hydration, above) gets a filled dot. Colour carries the
-    # group: accent = same 2026 teams, grey = other national teams, brown = club football.
     euro = _placebo_meanci("euro2024_placebo.parquet")
     if euro:
         rows_data.append((F["cc_euro_label"], F["cc_euro_sub"],
-                          euro[0], euro[1], euro[2], euro[3], euro[4], NT, False, None))
+                          euro[0], euro[1], euro[2], euro[3], euro[4], CC_NT, False, None))
     copa = _placebo_meanci("copa2024_placebo.parquet")
     if copa:
         rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
-                          copa[0], copa[1], copa[2], copa[3], copa[4], NT, False, F["tip_copa"]))
+                          copa[0], copa[1], copa[2], copa[3], copa[4], CC_NT, False, F["tip_copa"]))
     gold = _placebo_meanci("goldcup_placebo.parquet")
     if gold:  # CONCACAF national teams, same US/Canada host region + summer as WC2026
         rows_data.append((F["cc_gold_label"], F["cc_gold_sub"],
-                          gold[0], gold[1], gold[2], gold[3], gold[4], NT, False, F["tip_gold"]))
+                          gold[0], gold[1], gold[2], gold[3], gold[4], CC_NT, False, F["tip_gold"]))
     w22 = _placebo_meanci("wc2022_placebo.parquet")
     if w22:
         rows_data.append((F["cc_wc22_label"], F["cc_wc22_sub"],
-                          w22[0], w22[1], w22[2], w22[3], w22[4], NT, False, None))
+                          w22[0], w22[1], w22[2], w22[3], w22[4], CC_NT, False, None))
     cwc = _placebo_meanci("cwc2025_placebo.parquet")
     if cwc:  # clubs regress more — the contrast that used to flatter the "same drop" story
         rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
-                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CLUBS, False, None))
+                          cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CC_CLUBS, False, None))
+    return rows_data
 
+
+def _compare_chart(effects: list[dict], F: dict) -> str:
+    """Dot-and-whisker comparison: the 2026 break drop vs no-break baselines, same FotMob scale."""
+    aria = F["info_aria"]
+    rows_data = comparison_rows(effects, F)
+    NT, CLUBS = CC_NT, CC_CLUBS  # legend swatches below
     out = []
     for label, sub, mean, lo, hi, n, matches, color, solid, tip in rows_data:
         a, b = abs(lo), abs(hi)

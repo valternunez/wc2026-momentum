@@ -135,6 +135,161 @@ def build_share_card(out_path: str | Path | None = None) -> str:
     return str(out)
 
 
+# --- LinkedIn graph cards (square 1200x1200 forest plots) -------------------
+CARD_BASELINES = REPORTS / "figures" / "card-baselines.png"
+CARD_BYTYPE = REPORTS / "figures" / "card-bytype.png"
+_CARD_URL = "valternunez.github.io/wc2026-momentum"
+
+_GRAPH_CARD = """<!doctype html><html><head><meta charset='utf-8'>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>
+ *{margin:0;padding:0;box-sizing:border-box}
+ body{width:1200px;height:1200px;background:#EFEBDF;color:#1A1813;font-family:'IBM Plex Sans',sans-serif}
+ .card{padding:70px 76px;height:100%;display:flex;flex-direction:column}
+ .kick{font-family:'IBM Plex Mono',monospace;font-size:19px;letter-spacing:.22em;text-transform:uppercase;color:#E5482E;font-weight:600}
+ h1{font-family:'Newsreader',serif;font-weight:500;font-size:58px;line-height:1.04;letter-spacing:-.015em;margin-top:10px}
+ .sub{font-family:'IBM Plex Mono',monospace;font-size:18px;color:#5A5547;margin-top:14px;max-width:46ch;line-height:1.45}
+ .chart{position:relative;margin-top:40px;flex:1;display:flex;flex-direction:column}
+ .grid{position:absolute;top:0;bottom:40px;left:0;right:0;pointer-events:none}
+ .gl{position:absolute;top:0;bottom:0;width:1px;background:rgba(26,24,19,.12)}
+ .gl.z{width:2px;background:#1A1813}
+ .rows{flex:1;display:flex;flex-direction:column;justify-content:space-between}
+ .row{position:relative}
+ .rh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+ .lab{font-weight:600;font-size:25px}
+ .rv b{font-family:'Newsreader',serif;font-weight:600;font-size:30px}
+ .rv i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:15px;color:#6B6557;margin-left:8px}
+ .track{position:relative;height:26px}
+ .band{position:absolute;top:5px;height:16px;opacity:.16;border-radius:3px}
+ .bar{position:absolute;top:11px;height:5px;right:0}
+ .dot{position:absolute;top:3px;width:22px;height:22px;border-radius:50%;border:3px solid;box-shadow:0 0 0 4px #EFEBDF}
+ .axis{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#5A5547;margin-top:8px}
+ .legend{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#5A5547;margin-top:10px}
+ .legend span{display:inline-flex;align-items:center;gap:8px}
+ .sw{display:inline-block}
+ .take{font-family:'Newsreader',serif;font-style:italic;font-size:26px;line-height:1.3;color:#1A1813;margin-top:22px;border-left:4px solid #E5482E;padding-left:18px}
+ .foot{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #1A1813;padding-top:20px;margin-top:26px;font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.05em;color:#6B6557}
+ .foot b{color:#1A1813}
+</style></head><body><div class="card">
+ <div class="kick">WC2026 · STOPPAGE MOMENTUM STUDY</div>
+ <h1>{TITLE}</h1>
+ <div class="sub">{SUBTITLE}</div>
+ <div class="chart"><div class="grid">{GRID}</div>
+   <div class="rows">{ROWS}</div>
+   <div class="axis"><span>&minus;30</span><span>&minus;20</span><span>&minus;10</span><span>0</span></div>
+ </div>
+ {LEGEND}
+ <div class="take">{TAKE}</div>
+ <div class="foot"><span><b>A living, data-driven analysis</b> &middot; FotMob + ESPN</span><span>{URL}</span></div>
+</div></body></html>"""
+
+
+def _graph_geom():
+    """(SCALE, ACCENT, NT, CLUBS) from build_site so the card matches the site exactly."""
+    from src.report.build_site import ACCENT, CC_CLUBS, CC_NT, SCALE
+    return SCALE, ACCENT, CC_NT, CC_CLUBS
+
+
+def _forest_row(label, mean, lo, hi, n, matches, color, solid, scale) -> str:
+    a, b = abs(lo), abs(hi)
+    losp, hisp = min(min(a, b) / scale * 100, 100), min(max(a, b) / scale * 100, 100)
+    mp = min(abs(mean) / scale * 100, 100)
+    dot_fill = color if solid else "#EFEBDF"
+    barop = "0.9" if solid else "0.35"
+    return f"""
+    <div class="row">
+      <div class="rh"><span class="lab" style="color:{color}">{label}</span>
+        <span class="rv"><b style="color:{color}">&minus;{abs(mean):.0f}</b><i>n={n}</i></span></div>
+      <div class="track">
+        <div class="band" style="right:{losp:.2f}%;width:{hisp - losp:.2f}%;background:{color}"></div>
+        <div class="bar" style="width:{mp:.2f}%;background:{color};opacity:{barop}"></div>
+        <div class="dot" style="right:calc({mp:.2f}% - 11px);background:{dot_fill};border-color:{color}"></div>
+      </div>
+    </div>"""
+
+
+def _grid_lines(scale) -> str:
+    # vertical gridlines at 0 / -10 / -20 / -30 (right-anchored, 0 at the right edge)
+    out = ['<div class="gl z" style="right:0"></div>']
+    for v in (10, 20, 30):
+        out.append(f'<div class="gl" style="right:{v / scale * 100:.2f}%"></div>')
+    return "".join(out)
+
+
+def _card_html(title, subtitle, rows, legend, take) -> str:
+    scale, *_ = _graph_geom()
+    rows_html = "".join(_forest_row(*r, scale) for r in rows)
+    return (_GRAPH_CARD.replace("{TITLE}", title).replace("{SUBTITLE}", subtitle)
+            .replace("{GRID}", _grid_lines(scale)).replace("{ROWS}", rows_html)
+            .replace("{LEGEND}", legend).replace("{TAKE}", take).replace("{URL}", _CARD_URL))
+
+
+def build_graph_cards() -> list[str]:
+    """Render two square 1200x1200 forest-plot cards for a LinkedIn carousel (needs Playwright):
+    card-baselines.png (break vs no-break controls) and card-bytype.png (hydration vs other stoppages).
+    Numbers come from the same source as the site (comparison_rows / effect_by_type), so they can't drift.
+    """
+    import polars as pl  # noqa: F401
+
+    from src.report.build_site import comparison_rows
+    from src.report.i18n import FRAG
+    from src.analysis.descriptive import effect_by_type, load_processed
+
+    scale, accent, nt, clubs = _graph_geom()
+    df = load_processed()
+    eff = effect_by_type(df)
+
+    # Card 1 — break vs no-break baselines (drop the long sub + tip; keep label/stats/color/solid).
+    base_rows = [(label, mean, lo, hi, n, matches, color, solid)
+                 for (label, _sub, mean, lo, hi, n, matches, color, solid, _tip) in comparison_rows(eff, FRAG["en"])]
+    hyd_v = base_rows[0][1] if base_rows else None  # hydration is always the first comparison row
+    p26_v = next((m for (lab, m, *_2) in base_rows if "same 2026" in lab), None)
+    hh = f"&minus;{abs(hyd_v):.0f}" if hyd_v is not None else "&minus;23"
+    pp = f"&minus;{abs(p26_v):.0f}" if p26_v is not None else "&minus;19"
+    base_legend = (
+        '<div class="legend">'
+        f'<span><span class="sw" style="width:15px;height:15px;border-radius:50%;background:{accent};border:3px solid {accent}"></span>mandated break</span>'
+        '<span><span class="sw" style="width:15px;height:15px;border-radius:50%;background:#EFEBDF;border:3px solid #5A5547"></span>no break (control)</span>'
+        f'<span><span class="sw" style="width:16px;height:5px;background:{accent}"></span>same 2026 teams</span>'
+        f'<span><span class="sw" style="width:16px;height:5px;background:{nt}"></span>other national teams</span>'
+        f'<span><span class="sw" style="width:16px;height:5px;background:{clubs}"></span>club football</span>'
+        '</div>')
+    base_html = _card_html(
+        "A hydration break vs no break at all",
+        "Momentum the dominant team loses in the 5 min after each stoppage, with its 95% interval.",
+        base_rows, base_legend,
+        f"{hh} with a break, but {pp} for the same teams at quiet minutes &rarr; mostly regression to the mean.")
+
+    # Card 2 — hydration vs other stoppage types (same dot+band style; hydration is the filled accent dot).
+    type_lbl = {"hydration": "Hydration break", "injury_huddle": "Injury (sub made)",
+                "injury_no_huddle": "Injury (no sub)", "var": "VAR review"}
+    bt = sorted((e for e in eff if e["n"]), key=lambda e: -abs(e["mean_delta"]))
+    type_rows = [(type_lbl.get(e["stoppage_type"], e["stoppage_type"]), e["mean_delta"], e["ci_lo"], e["ci_hi"],
+                  e["n"], e["n_matches"], (accent if e["stoppage_type"] == "hydration" else nt),
+                  e["stoppage_type"] == "hydration") for e in bt]
+    type_html = _card_html(
+        "A hydration break vs other stoppages",
+        "Momentum the dominant team loses after each stoppage type, with its 95% interval.",
+        type_rows, "",
+        "Every stoppage cools the leader. The hydration break is the deepest &rarr; but the gaps still overlap.")
+
+    from playwright.sync_api import sync_playwright
+
+    out: list[str] = []
+    CARD_BASELINES.parent.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(headless=True)
+        for html, dest in ((base_html, CARD_BASELINES), (type_html, CARD_BYTYPE)):
+            pg = b.new_page(viewport={"width": 1200, "height": 1200})
+            pg.set_content(html, wait_until="networkidle")
+            pg.wait_for_timeout(1200)  # let webfonts swap in
+            pg.screenshot(path=str(dest), clip={"x": 0, "y": 0, "width": 1200, "height": 1200})
+            pg.close()
+            out.append(str(dest))
+        b.close()
+    return out
+
+
 def build_story_cards() -> str:
     """Render each story slide as a 1080x1920 (Instagram-Story native) still PNG (needs Playwright).
 
@@ -296,6 +451,7 @@ def refresh_social(force: bool = False) -> str:
 
     done, failed = [], []
     for name, fn in (("og-card", build_share_card),
+                     ("graph-cards", build_graph_cards),
                      ("story-cards", build_story_cards),
                      ("story-video", build_story_video),
                      ("reel-video", build_reel_video)):
