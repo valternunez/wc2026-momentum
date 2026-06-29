@@ -247,7 +247,7 @@ def _money_rows(effects: list[dict], labels: dict) -> str:
         <div style="position:relative;margin-bottom:18px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
             <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:16px;color:{color}">{labels[stype]}</span>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557">n = {e['n']}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B6557;margin-right:14px">n = {e['n']}</span>
           </div>
           <div style="position:relative;height:30px">
             <div style="position:absolute;top:13px;height:4px;right:0;width:{mean_pct:.2f}%;background:{color};opacity:{1 if is_hl else .85}"></div>
