@@ -539,10 +539,6 @@ def comparison_rows(effects: list[dict], F: dict) -> list[tuple]:
     if euro:
         rows_data.append((F["cc_euro_label"], F["cc_euro_sub"],
                           euro[0], euro[1], euro[2], euro[3], euro[4], CC_NT, False, None))
-    copa = _placebo_meanci("copa2024_placebo.parquet")
-    if copa:
-        rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
-                          copa[0], copa[1], copa[2], copa[3], copa[4], CC_NT, False, F["tip_copa"]))
     gold = _placebo_meanci("goldcup_placebo.parquet")
     if gold:  # CONCACAF national teams, same US/Canada host region + summer as WC2026
         rows_data.append((F["cc_gold_label"], F["cc_gold_sub"],
@@ -555,6 +551,12 @@ def comparison_rows(effects: list[dict], F: dict) -> list[tuple]:
     if cwc:  # clubs regress more — the contrast that used to flatter the "same drop" story
         rows_data.append((F["cc_cwc_label"], F["cc_cwc_sub"],
                           cwc[0], cwc[1], cwc[2], cwc[3], cwc[4], CC_CLUBS, False, None))
+    # Copa América is shown last and de-anchored: a valid no-break placebo, but its interval is too
+    # wide (nearly touches zero) to anchor the §05 range, so it sits at the bottom as the noisy read.
+    copa = _placebo_meanci("copa2024_placebo.parquet")
+    if copa:
+        rows_data.append((F["cc_copa_label"], F["cc_copa_sub"],
+                          copa[0], copa[1], copa[2], copa[3], copa[4], CC_NT, False, F["tip_copa"]))
     return rows_data
 
 
@@ -822,8 +824,9 @@ def build() -> str:
     copa = _placebo_meanci("copa2024_placebo.parquet")
     euro = _placebo_meanci("euro2024_placebo.parquet")
     gold = _placebo_meanci("goldcup_placebo.parquet")
-    # National-team no-break baselines (NOT clubs) for the range cited in §05.
-    nt = sorted(round(abs(x[0])) for x in (p26, euro, copa, w22, gold) if x)
+    # National-team no-break baselines for the §05 range — the precise controls only. Copa América is
+    # shown in the chart but excluded here: its interval is too wide (nearly touches zero) to anchor a bound.
+    nt = sorted(round(abs(x[0])) for x in (p26, euro, w22, gold) if x)
     hero = round(abs(hyd["mean_delta"])) if hyd and hyd.get("n") else None
     p26r = round(abs(p26[0])) if p26 else None
     # Level-adjusted break-vs-no-break gap (nets out regression to the mean) with a match-clustered
