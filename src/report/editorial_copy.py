@@ -121,6 +121,7 @@ TEMPLATE = """<!DOCTYPE html>
         {{LIVE_UPDATED}} {{UPDATED_DATE}}
       </div>
       {{SHARE_BTN}}
+      {{LANG_TOGGLE}}
     </div>
   </header>
   <div id="freshness" role="status" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E"><span aria-hidden="true">⚠</span> {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>
@@ -148,7 +149,6 @@ TEMPLATE = """<!DOCTYPE html>
         <p style="font-family:'Newsreader',serif;font-size:clamp(21px,2.3vw,29px);line-height:1.4;color:#EFEBDF;max-width:34ch">{{BAND_CAPTION}}</p>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.07em;color:#A9A290;margin-top:18px;line-height:1.75">
           <div>{{BAND_SUB1}}</div>
-          <div>{{BAND_SUB2}}</div>
         </div>
       </div>
     </div>
@@ -173,9 +173,8 @@ TEMPLATE = """<!DOCTYPE html>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.58;color:#2B2820;margin-bottom:40px">{{S02_LEAD}}</p>
 
     <div style="border-top:2px solid #1A1813;padding-top:30px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:26px;gap:16px;flex-wrap:wrap">
+      <div style="margin-bottom:26px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;color:#6B6557">{{S02_CHARTLABEL}}</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.1em;color:#6B6557">{{CI_CAPTION}}{{CI_INFO}}</span>
       </div>
       <div style="position:relative">
         <div style="position:absolute;inset:0;pointer-events:none">
@@ -193,6 +192,7 @@ TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
       <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;color:#5A5547;margin-top:14px;line-height:1.6">{{INTERVAL_NOTE}}</p>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:#6B6557;margin-top:8px">{{CI_CAPTION}}{{CI_INFO}}</p>
     </div>
     <p style="font-family:'Newsreader',serif;font-size:21px;line-height:1.62;color:#2B2820;margin-top:34px">{{COMPARE_SENTENCE}}</p>
   </section>
@@ -276,7 +276,7 @@ TEMPLATE = """<!DOCTYPE html>
     </div>
   </section>
 
-  <!-- LIVING / TREND -->
+  <!-- LIVE / TREND -->
   {{TREND}}
 
   <!-- BOTTOM LINE -->
@@ -317,7 +317,6 @@ TEMPLATE = """<!DOCTYPE html>
       </div>
       <div style="height:1px;background:rgba(255,255,255,.14);margin:40px 0 24px"></div>
       <div style="margin:0 0 16px"><a href="{{METHOD_HREF}}" class="src" style="font-size:13px">{{NAV_METHOD_FOOT}} &#8599;</a></div>
-      {{LANG_TOGGLE}}
       <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#7E776A">
         <span>{{FOOT_STAMP1}}</span>
         <span>{{FOOT_STAMP2}}</span>

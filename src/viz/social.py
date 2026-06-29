@@ -41,7 +41,7 @@ _CARD = """<!doctype html><html><head><meta charset='utf-8'>
    <div><div class="n alt">{CWC}</div><div class="lbl">with no break (same teams)</div></div>
    <div class="arrow">&rarr; mostly regression to the mean &mdash; but not all</div>
  </div>
- <div class="foot"><span><b>A living, data-driven analysis</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
+ <div class="foot"><span><b>A live, data-driven analysis</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
 </div></body></html>"""
 
 # Spanish share card — same layout, translated copy. Rendered to og.es.png; the ES page
@@ -71,7 +71,7 @@ _CARD_ES = """<!doctype html><html><head><meta charset='utf-8'>
    <div><div class="n alt">{CWC}</div><div class="lbl">sin pausa (mismos equipos)</div></div>
    <div class="arrow">&rarr; sobre todo regresión a la media &mdash; pero no todo</div>
  </div>
- <div class="foot"><span><b>Un análisis vivo, basado en datos</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
+ <div class="foot"><span><b>Un análisis en vivo, basado en datos</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
 </div></body></html>"""
 
 _ICON = """<!doctype html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0}
@@ -150,20 +150,21 @@ _GRAPH_CARD = """<!doctype html><html><head><meta charset='utf-8'>
  h1{font-family:'Newsreader',serif;font-weight:500;font-size:58px;line-height:1.04;letter-spacing:-.015em;margin-top:10px}
  .sub{font-family:'IBM Plex Mono',monospace;font-size:18px;color:#5A5547;margin-top:14px;max-width:46ch;line-height:1.45}
  .chart{position:relative;margin-top:40px;flex:1;display:flex;flex-direction:column}
- .grid{position:absolute;top:0;bottom:40px;left:0;right:0;pointer-events:none}
+ .grid{position:absolute;top:0;bottom:40px;left:0;right:84px;pointer-events:none}
  .gl{position:absolute;top:0;bottom:0;width:1px;background:rgba(26,24,19,.12)}
  .gl.z{width:2px;background:#1A1813}
  .rows{flex:1;display:flex;flex-direction:column;justify-content:space-between}
  .row{position:relative}
  .rh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
  .lab{font-weight:600;font-size:25px}
+ .rv{display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.05}
  .rv b{font-family:'Newsreader',serif;font-weight:600;font-size:30px}
- .rv i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:15px;color:#6B6557;margin-left:8px}
- .track{position:relative;height:26px}
+ .rv i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:15px;color:#6B6557;margin-top:4px}
+ .track{position:relative;height:26px;margin-right:84px}
  .band{position:absolute;top:5px;height:16px;opacity:.16;border-radius:3px}
  .bar{position:absolute;top:11px;height:5px;right:0}
  .dot{position:absolute;top:3px;width:22px;height:22px;border-radius:50%;border:3px solid;box-shadow:0 0 0 4px #EFEBDF}
- .axis{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#5A5547;margin-top:8px}
+ .axis{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#5A5547;margin-top:8px;margin-right:84px}
  .legend{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#5A5547;margin-top:10px}
  .legend span{display:inline-flex;align-items:center;gap:8px}
  .sw{display:inline-block}
@@ -180,7 +181,7 @@ _GRAPH_CARD = """<!doctype html><html><head><meta charset='utf-8'>
  </div>
  {LEGEND}
  <div class="take">{TAKE}</div>
- <div class="foot"><span><b>A living, data-driven analysis</b> &middot; FotMob + ESPN</span><span>{URL}</span></div>
+ <div class="foot"><span><b>A live, data-driven analysis</b> &middot; FotMob + ESPN</span><span>{URL}</span></div>
 </div></body></html>"""
 
 

@@ -81,18 +81,25 @@ def _page_link(target: str, lang: str) -> str:
     return f"{target}.html" if lang == "en" else f"{target}.es.html"
 
 
-def _lang_toggle(lang: str, page: str = "index") -> str:
-    """Footer English ⇄ Español switch within the current page family (index/method).
-    The current language is inert, the other links to its sibling file."""
+def _lang_toggle(lang: str, page: str = "index", where: str = "footer") -> str:
+    """English ⇄ Español switch within the current page family (index/method).
+    The current language is inert, the other links to its sibling file.
+    where="footer" → cream-on-dark footer palette; where="header" → ink-on-light masthead palette."""
     base = "font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em"
-    on = f"{base};color:#E5C9A0;font-weight:600"
-    off = f"{base};color:#7E776A;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
+    if where == "header":
+        on = f"{base};color:#1A1813;font-weight:600"
+        off = f"{base};color:#6B6557;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
+        sep_col, wrap_style = "#C8C0AD", ""
+    else:
+        on = f"{base};color:#E5C9A0;font-weight:600"
+        off = f"{base};color:#7E776A;text-decoration:none;border-bottom:1px solid rgba(229,72,46,.35)"
+        sep_col, wrap_style = "#5A5547", "margin:0 0 18px"
     en = (f'<span style="{on}">English</span>' if lang == "en"
           else f'<a class="same-tab" href="{page}.html" style="{off}">English</a>')
     es = (f'<span style="{on}">Español</span>' if lang == "es"
           else f'<a class="same-tab" href="{page}.es.html" style="{off}">Español</a>')
-    sep = f'<span style="{base};color:#5A5547;padding:0 8px">·</span>'
-    return f'<div style="margin:0 0 18px">{en}{sep}{es}</div>'
+    sep = f'<span style="{base};color:{sep_col};padding:0 8px">·</span>'
+    return f'<div style="{wrap_style}">{en}{sep}{es}</div>'
 
 
 def _share_intents(S: dict, url: str) -> dict:
@@ -905,7 +912,7 @@ def build() -> str:
             "MAST_STORY": _mast_story_link(S, lang) if STORY_SHARE_ENABLED else "",
             "STORY_SHARE_ROW": _story_share_row(S, lang) if STORY_SHARE_ENABLED else "",
             "SHARE_BTN": _share_button(S, _LANG_META[lang]["OG_URL"]) if STORY_SHARE_ENABLED else "",
-            "LANG_TOGGLE": _lang_toggle(lang),
+            "LANG_TOGGLE": _lang_toggle(lang, where="header"),
             "SNAPSHOT_DATE": snap_date or updated,
             "SNAPSHOT_ISO": snap_date or "",
             # escape "</" so a stray "</script>" inside any team name / string can't close the
