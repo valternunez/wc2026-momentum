@@ -1,0 +1,32 @@
+{
+  "n_matches": 100,
+  "n_stoppage_rows": 984,
+  "n_stoppages": 492,
+  "by_type": {
+    "hydration": {
+      "n_rows": 398,
+      "n_on_top": 198,
+      "on_top_mean_delta": -22.0414,
+      "on_top_std_delta": 23.9924
+    },
+    "injury_huddle": {
+      "n_rows": 192,
+      "n_on_top": 96,
+      "on_top_mean_delta": -17.9033,
+      "on_top_std_delta": 34.0759
+    },
+    "injury_no_huddle": {
+      "n_rows": 224,
+      "n_on_top": 108,
+      "on_top_mean_delta": -17.1298,
+      "on_top_std_delta": 29.3974
+    },
+    "var": {
+      "n_rows": 122,
+      "n_on_top": 60,
+      "on_top_mean_delta": -17.4194,
+      "on_top_std_delta": 27.0122
+    }
+  },
+  "date": "2026-07-13"
+}
