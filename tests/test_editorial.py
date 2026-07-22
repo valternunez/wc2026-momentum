@@ -81,8 +81,10 @@ def test_build_editorial_page():
     assert "⚽" not in html  # emoji replaced by the editorial disc marker
     # VAR marker distinct from hydration: violet + dotted, old green gone
     assert "dotted #7A5CC0" in html and "#2E8B57" not in html
-    # data-freshness banner wired (hidden by default; JS reveals if snapshot is stale)
-    assert 'id="freshness"' in html and 'var iso=' in html
+    # tournament complete: the live freshness banner + its reveal JS were removed, and the
+    # masthead shows a static FINAL status instead of a pulsing LIVE indicator
+    assert 'id="freshness"' not in html and 'var iso=' not in html
+    assert "FINAL · DATA THROUGH" in html and 'class="lp"' not in html
     # modal a11y: focus trap, restore-focus, and SVG screen-reader labelling
     assert "trapTab" in html and "lastFocus" in html
     assert "aria-label" in html and "el('title'" in html  # svg/goal titles for screen readers
