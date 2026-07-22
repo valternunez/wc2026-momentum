@@ -41,7 +41,7 @@ _CARD = """<!doctype html><html><head><meta charset='utf-8'>
    <div><div class="n alt">{CWC}</div><div class="lbl">with no break (same teams)</div></div>
    <div class="arrow">&rarr; mostly regression to the mean &mdash; but not all</div>
  </div>
- <div class="foot"><span><b>A live, data-driven analysis</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
+ <div class="foot"><span><b>A completed, data-driven analysis</b> &middot; FotMob + ESPN</span><span>valternunez.github.io/wc2026-momentum</span></div>
 </div></body></html>"""
 
 # Spanish share card — same layout, translated copy. Rendered to og.es.png; the ES page
@@ -181,7 +181,7 @@ _GRAPH_CARD = """<!doctype html><html><head><meta charset='utf-8'>
  </div>
  {LEGEND}
  <div class="take">{TAKE}</div>
- <div class="foot"><span><b>A live, data-driven analysis</b> &middot; FotMob + ESPN</span><span>{URL}</span></div>
+ <div class="foot"><span><b>A completed, data-driven analysis</b> &middot; FotMob + ESPN</span><span>{URL}</span></div>
 </div></body></html>"""
 
 

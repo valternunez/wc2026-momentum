@@ -1,8 +1,8 @@
 # LinkedIn post — draft
 
-> Fill the bracketed numbers from the live report once N is large enough (aim for ≥ ~40 hydration
-> breaks before leading with a strong claim; until then, frame as "early signal"). Lead with the
-> finding — including a null. ~600–900 words, 3–4 charts pulled from the report site.
+> Fill the bracketed numbers from the final report (all 104 matches, ~205 on-top hydration breaks).
+> The tournament is complete and the gap never cleared chance, so lead with the null finding plainly.
+> ~600–900 words, 3–4 charts pulled from the report site.
 
 ---
 
@@ -36,8 +36,8 @@ from cool/domed ones, physical recovery probably isn't the driver. Report whiche
 **What I'm taking away.** [1–2 sentences. If null: "The 'momentum killer' is mostly a story we tell
 ourselves." If real: state the size in plain terms and the most likely mechanism.]
 
-Everything is reproducible: the code, the daily-updating dataset, and a live report that refreshes
-as the tournament goes on. Link in the comments. 👇
+Everything is reproducible: the code, the final dataset, and a report covering all 104 matches from
+the group stage through the final. Link in the comments. 👇
 
 *Method notes: momentum from SofaScore (FotMob cross-check), stoppages detected from commentary +
 incident feeds, effects conditioned on pre-break momentum, confidence intervals clustered by match,
@@ -48,5 +48,5 @@ placebo and historical-baseline checks for regression to the mean.*
 **Charts to attach (export from the report site):**
 1. Effect by stoppage type with 95% CIs (the money chart).
 2. Distribution of momentum delta for hydration vs comparisons.
-3. Estimate-over-the-tournament (shows the CI tightening as N grows — great for credibility).
+3. Estimate-over-the-tournament (shows how the CI settled across all 104 matches — great for credibility).
 4. (Optional) placebo vs real side-by-side.

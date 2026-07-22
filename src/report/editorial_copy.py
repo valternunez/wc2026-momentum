@@ -57,8 +57,7 @@ TEMPLATE = """<!DOCTYPE html>
   [hidden]{display:none!important}
   ::selection{background:#E5482E;color:#FCFAF3}
   :focus-visible{outline:2px solid #E5482E;outline-offset:2px;border-radius:2px}
-  @keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
-  .lp{animation:livepulse 1.8s ease-in-out infinite}
+  /* tournament complete: masthead status dot is static, not a live pulse */
   .mb-card{transition:transform .14s ease, box-shadow .14s ease}
   .mb-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,24,19,.10)}
   .ev-min{font-family:'IBM Plex Mono',monospace;font-weight:500;color:#1A1813}
@@ -117,14 +116,13 @@ TEMPLATE = """<!DOCTYPE html>
     <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
       {{MAST_STORY}}
       <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6B6557">
-        <span class="lp" style="width:8px;height:8px;border-radius:50%;background:#E5482E;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#6B6557;display:inline-block"></span>
         {{LIVE_UPDATED}} {{UPDATED_DATE}}
       </div>
       {{SHARE_BTN}}
       {{LANG_TOGGLE}}
     </div>
   </header>
-  <div id="freshness" role="status" hidden style="max-width:840px;margin:10px auto 0;padding:9px 16px;background:#F4ECD8;border:1px solid #E0C98F;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.03em;color:#6B5A2E"><span aria-hidden="true">⚠</span> {{FRESH_NOTE}} <b>{{UPDATED_DATE}}</b>.</div>
   <div style="max-width:840px;margin:14px auto 0;padding:0 40px"><div style="height:2px;background:#1A1813"></div></div>
 
   <!-- HERO -->
@@ -362,11 +360,6 @@ TEMPLATE = """<!DOCTYPE html>
 </div>
 
 <script>
-(function(){  // data-freshness: reveal the banner if the committed snapshot is > ~36h old at view time
-  var iso="{{SNAPSHOT_ISO}}"; if(!iso) return;
-  var ageH=(Date.now() - new Date(iso+"T12:00:00Z").getTime())/3.6e6;
-  if(ageH>36){ var b=document.getElementById('freshness'); if(b) b.hidden=false; }
-})();
 (function(){  // match-grid stage tabs (All / Group / Knockout) + mobile short-scroll
   var tabs=document.querySelectorAll('.mb-tab');
   var mq=window.matchMedia('(max-width:700px)');

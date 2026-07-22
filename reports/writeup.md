@@ -1,7 +1,7 @@
 # Do hydration breaks kill momentum at the 2026 World Cup?
 
-*Auto-generated from the live dataset — updates daily through the final. Numbers below are
-computed from the committed parquet, not hand-edited.*
+*Generated from the final committed dataset — all 104 matches through the July 19 final. Numbers
+below are computed from the committed parquet, not hand-edited.*
 
 **Headline.** {{HEADLINE}}
 
@@ -11,7 +11,7 @@ that claim using **per-minute momentum** as the outcome and other stoppages (VAR
 similar length as comparisons, to separate the *pause* from the *coaching window* from *physical
 recovery*.
 
-## What the data says so far
+## What the data says
 
 For the team that was **on top** of momentum in the 5 minutes before a break, the average change in
 the next 5 minutes was **{{HYD_MEAN}}** (95% CI {{HYD_CI}}), across **{{HYD_N}}** hydration breaks.
@@ -19,15 +19,16 @@ A negative number means the break pushed momentum *away* from the team that had 
 "momentum killer" pattern. The chart and table below compare hydration breaks against VAR reviews
 and injury stoppages.
 
-> This is a living analysis. Early in the tournament N is small and the confidence interval is wide;
-> watch the "estimate over the tournament" chart for whether the effect stabilizes or vanishes as
-> data accumulates. A null result is a real, reportable finding.
+> This is the finished analysis. Even across all 104 matches the confidence interval stays wide; the
+> "estimate over the tournament" chart shows how the effect settled as data accumulated. Here it
+> lands as a null — a real, reportable finding.
 
 ## How to read these charts
 - **Effect by type:** point estimate ± 95% CI (cluster-bootstrapped by match). Bars whose CI crosses
   zero are not distinguishable from "no effect."
 - **Distribution:** the spread matters, not just the mean — a few extreme matches can move an average.
-- **Estimate over the tournament:** the hydration estimate recomputed at each daily snapshot.
+- **Estimate over the tournament:** the hydration estimate recomputed at each daily snapshot, from
+  the group stage through the final.
 
 ## Method (short)
 - **Outcome:** SofaScore per-minute momentum (home-positive), reframed per team, aggregated to
@@ -46,5 +47,6 @@ and injury stoppages.
   clustered SEs, VAR reference). The momentum-killer test is the `hydration × pre_momentum`
   interaction; pre-momentum is a continuous regression-to-the-mean control reported with and without.
 
-*Causal estimates are gated: no causal claim is published until the live sample is large enough.
+*Causal estimates are gated: across the full 104-match sample the hydration × pre-momentum
+interaction is indistinguishable from zero, so no causal claim is made.
 See the [repository](https://github.com/) and `PROJECT_BRIEF.md` for the full design and hypotheses.*

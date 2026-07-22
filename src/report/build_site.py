@@ -38,10 +38,10 @@ SCALE = 32.0  # momentum axis: 0 .. -32
 PAGES_URL = "https://github.com/valternunez/wc2026-momentum"
 SITE_BASE = "https://valternunez.github.io/wc2026-momentum/"
 
-# Temporarily hide the Story-mode + Share entry points on the MAIN page (masthead Story link +
-# share icon, bottom "Open story" button + share bar). The story/reel pages and all the code stay
-# built and intact — flip this back to True to restore the entry points. See the project memory note.
-STORY_SHARE_ENABLED = False
+# Story-mode + Share entry points on the MAIN page (masthead Story link + share icon, bottom
+# "Open story" button + share bar). Surfaced now that the tournament is complete and the shareable
+# Story/Reel content is final. Set back to False to hide the entry points (pages/code stay intact).
+STORY_SHARE_ENABLED = True
 
 _ORDER = ["hydration", "var", "injury_huddle", "injury_no_huddle"]
 _KO_ORDER = {"1/16": 1, "1/8": 2, "1/4": 3, "1/2": 4, "bronze": 5, "final": 6}
@@ -793,11 +793,13 @@ def build() -> str:
             other = _OUTFILE["es" if lang == "en" else "en"]
             other_label = "Español" if lang == "en" else "English"
             out = SITE / _OUTFILE[lang]
+            body = ("<p>El conjunto de datos versionado no está disponible.</p>" if lang == "es"
+                    else "<p>The committed dataset is unavailable.</p>")
             out.write_text(f"<!doctype html><html lang='{lang}'><meta charset=utf-8>"
                            "<title>WC2026 Momentum</title>"
                            "<body style='font-family:sans-serif;max-width:640px;margin:60px auto'>"
                            "<h1>WC2026 — Stoppage Momentum</h1>"
-                           "<p>No data yet. Check back after the next match.</p>"
+                           f"{body}"
                            f"<p><a href='{other}'>{other_label}</a></p>", encoding="utf-8")
             first_out = first_out or str(out)
         return first_out

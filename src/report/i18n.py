@@ -155,7 +155,7 @@ FRAG = {
         "compare_ratio": "roughly {ratio}× an injury stoppage with no sub",
         "compare_default": "the largest swing of any stoppage type",
         "compare_and": " and ",
-        "compare_sentence": "A hydration break costs the leading side {comp}. Based on {n} breaks logged so far.",
+        "compare_sentence": "A hydration break costs the leading side {comp}. Based on {n} breaks across the tournament.",
         "cc_hyd_label": "Hydration break",
         "cc_hyd_sub": "World Cup 2026 · the headline",
         "cc_p26_label": "No break: same 2026 matches",
@@ -179,11 +179,11 @@ FRAG = {
         "cc_axis_dir": "← further left = the leader sheds more momentum after the break",
         "tip_copa": "Copa América 2024: national teams in the same US summer, a similar size to the Gold Cup baseline ({{COPA_N}} windows, one per break, counting only the side that was ahead, so an odd number is normal). Its −{{COPA_DELTA}} is the shallowest and least stable of the no-break baselines: the interval nearly touches zero. Too wide to anchor the −{{NOBREAK_LO}} to −{{NOBREAK_HI}} range, so it's shown alongside but not folded into that bound.",
         "tip_gold": "CONCACAF Gold Cup 2025: the closest match to WC2026. National teams in the same US/Canada host region and June heat, many of them 2026 sides too, measured at quiet minutes ({{GOLD_N}} windows). It lands at −{{GOLD_DELTA}}, right with the other no-break baselines. (2023 is left out: FotMob has no minute-by-minute momentum for it.)",
-        "tip_read": "How to read this: the dot is the average momentum drop for the team that was on top; the faint bar around it is the 95% range, where the true value very likely sits given how few matches there are so far. When two bars overlap a lot, those numbers aren't meaningfully different yet.",
+        "tip_read": "How to read this: the dot is the average momentum drop for the team that was on top; the faint bar around it is the 95% range, where the true value very likely sits given the full-tournament sample. When two bars overlap a lot, those numbers aren't meaningfully different.",
         "tip_placebo": "A stand-in for 'what if there had been no break?' Take the very same 2026 matches and, instead of a real hydration break, drop in a pretend one at ordinary calm minutes when nothing stopped play (around 10', 35', 55' and 80'), then measure the leading team exactly the same way. It still cools off — by about this much — with no whistle at all. That self-driven fade is regression to the mean, and it's the cleanest yardstick because it's the same teams in the same tournament; the only thing missing is the break.",
         "tip_bootstrap": "The 95% interval is the margin of error. We build it by rebuilding the dataset thousands of times, each time drawing whole matches at random (with replacement) and re-taking the average, then keeping the middle 95% of those averages. We resample whole matches, not single breaks, because two breaks in the same game aren't independent evidence. Counting matches as the unit keeps the band honestly wide instead of falsely narrow.",
-        "trend_label": "Live analysis",
-        "trend_sentence": '''Recomputed every matchday from the committed dataset. As of {updated}, the hydration swing sits at <strong style="font-weight:600">{est}</strong> across {n} on-top breaks. Watch it as the knockouts arrive: more matches should tighten the interval.''',
+        "trend_label": "Final analysis",
+        "trend_sentence": '''Recomputed at each daily snapshot through the tournament. As of the final data ({updated}), the hydration swing sits at <strong style="font-weight:600">{est}</strong> across {n} on-top breaks. The line shows how it settled as the full tournament came in.''',
         "exp_no_df": "Per-minute momentum for {home} (home, blue) vs {away} (away, orange).",
         "exp_no_stop": "Per-minute momentum for {home} vs {away}. No stoppages detected.",
         "exp_lead_marginal": "play was roughly even, with {leader} a shade ahead",
@@ -213,7 +213,7 @@ FRAG = {
         "compare_ratio": "aproximadamente {ratio}× una pausa por lesión sin cambio",
         "compare_default": "la mayor variación de cualquier tipo de interrupción",
         "compare_and": " y ",
-        "compare_sentence": "Una pausa de hidratación le cuesta al equipo que domina {comp}. Con base en {n} pausas registradas hasta ahora.",
+        "compare_sentence": "Una pausa de hidratación le cuesta al equipo que domina {comp}. Con base en {n} pausas del torneo.",
         "cc_hyd_label": "Pausa de hidratación",
         "cc_hyd_sub": "Mundial 2026 · el titular",
         "cc_p26_label": "Sin pausa: mismos partidos de 2026",
@@ -237,11 +237,11 @@ FRAG = {
         "cc_axis_dir": "← más a la izquierda = el líder pierde más momentum tras la pausa",
         "tip_copa": "Copa América 2024: selecciones en el mismo verano de EE. UU., de un tamaño parecido a la línea base de la Copa Oro ({{COPA_N}} ventanas, una por pausa, contando solo al equipo que iba arriba, así que un número impar es normal). Su −{{COPA_DELTA}} es la caída más leve y menos estable de las líneas base sin pausa: su intervalo casi toca el cero. Demasiado ancho para fijar el rango de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}, así que se muestra al lado pero no se incluye en él.",
         "tip_gold": "Copa Oro 2025 de CONCACAF: lo más parecido al Mundial 2026. Selecciones en la misma región sede de EE. UU./Canadá y el calor de junio, varias también equipos de 2026, medidas en minutos tranquilos ({{GOLD_N}} ventanas). Queda en −{{GOLD_DELTA}}, justo con las demás líneas base sin pausa. (2023 se excluye: FotMob no tiene su momentum minuto a minuto.)",
-        "tip_read": "Cómo leer esto: el punto es la caída media de momentum para el equipo que dominaba; la barra tenue a su alrededor es el rango del 95%, donde muy probablemente está el valor real dado los pocos partidos que hay hasta ahora. Cuando dos barras se solapan mucho, esos números todavía no son significativamente distintos.",
+        "tip_read": "Cómo leer esto: el punto es la caída media de momentum para el equipo que dominaba; la barra tenue a su alrededor es el rango del 95%, donde muy probablemente está el valor real dada la muestra completa del torneo. Cuando dos barras se solapan mucho, esos números no son significativamente distintos.",
         "tip_placebo": "Un sustituto de '¿y si no hubiera habido pausa?'. Tomamos exactamente los mismos partidos de 2026 y, en lugar de una pausa de hidratación real, metemos una ficticia en minutos tranquilos cualesquiera, cuando nada detuvo el juego (alrededor de los 10', 35', 55' y 80'), y medimos al equipo que domina igual que antes. Aun así se enfría —más o menos esto— sin ningún silbatazo. Ese enfriamiento por sí solo es la regresión a la media, y es la vara más limpia porque son los mismos equipos en el mismo torneo; lo único que falta es la pausa.",
         "tip_bootstrap": "El intervalo del 95% es el margen de error. Lo construimos reconstruyendo los datos miles de veces: cada vez tomamos partidos enteros al azar (con reemplazo), volvemos a promediar, y nos quedamos con el 95% central de esos promedios. Remuestreamos partidos enteros, no pausas sueltas, porque dos pausas del mismo partido no son evidencia independiente. Tomar el partido como unidad mantiene la banda honestamente ancha en vez de falsamente estrecha.",
-        "trend_label": "Análisis en vivo",
-        "trend_sentence": '''Se recalcula cada jornada a partir del conjunto de datos versionado. Al {updated}, la variación por hidratación se sitúa en <strong style="font-weight:600">{est}</strong> a lo largo de {n} pausas con un equipo dominando. Síguela a medida que llegan las eliminatorias: más partidos deberían ajustar el intervalo.''',
+        "trend_label": "Análisis final",
+        "trend_sentence": '''Se recalculó en cada instantánea diaria a lo largo del torneo. Con los datos finales ({updated}), la variación por hidratación se sitúa en <strong style="font-weight:600">{est}</strong> a lo largo de {n} pausas con un equipo dominando. La línea muestra cómo se asentó conforme entró todo el torneo.''',
         "exp_no_df": "Momentum por minuto de {home} (local, azul) vs {away} (visitante, naranja).",
         "exp_no_stop": "Momentum por minuto de {home} vs {away}. No se detectaron pausas.",
         "exp_lead_marginal": "el juego estaba parejo, con {leader} apenas al frente",
@@ -259,20 +259,20 @@ FRAG = {
 STRINGS = {
     "en": {
         "META_TITLE": "Do hydration breaks really kill momentum? · WC2026",
-        "META_DESC": "Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A live, data-driven analysis, updated every matchday.",
+        "META_DESC": "Do FIFA's mandatory hydration breaks shift in-match momentum at the 2026 World Cup? A completed, data-driven analysis of all 104 matches.",
         "OG_SITENAME": "WC2026 Stoppage Momentum",
         "OG_TITLE": "Do hydration breaks really kill momentum?",
-        "OG_DESC": "FIFA made hydration breaks mandatory at the 2026 World Cup. The team on top drops ~{{HERO_DELTA}} momentum points after one, but the same teams drop ~{{P26_DELTA}} with no break. Mostly regression to the mean, with an ~{{GAP}}-point gap left to explain. A live, data-driven analysis.",
+        "OG_DESC": "FIFA made hydration breaks mandatory at the 2026 World Cup. The team on top drops ~{{HERO_DELTA}} momentum points after one, but the same teams drop ~{{P26_DELTA}} with no break. Mostly regression to the mean, with an ~{{GAP}}-point gap left to explain. A completed, data-driven analysis of all 104 matches.",
         "OG_ALT": "Do hydration breaks really kill momentum? -{{HERO_DELTA}} after a break vs about -{{P26_DELTA}} for the same teams with no break.",
         "TW_DESC": "The team on top drops ~{{HERO_DELTA}} momentum points after a hydration break, but the same teams drop ~{{P26_DELTA}} with no break. Mostly regression to the mean, with a gap left over.",
         "MAST_TITLE": "WC2026",
         "NAV_METHOD": "Methodology",
         "NAV_METHOD_FOOT": "Methodology &amp; the full report",
-        "LIVE_UPDATED": "LIVE · UPDATED",
-        "FRESH_NOTE": "The live scraper hasn't refreshed in a while; this data was last updated",
+        "LIVE_UPDATED": "FINAL · DATA THROUGH",
+        "FRESH_NOTE": "Final dataset — all 104 matches through the July 19 final. Last updated",
         "HERO_KICKER": "The Hydration-Break Momentum Study",
         "HERO_H1": "Do hydration breaks really kill momentum?",
-        "HERO_LEDE": "FIFA made in-match hydration breaks mandatory at the 2026 World Cup. Coaches and pundits call them momentum killers. Through {{N_MATCHES}} matches the team on top really does sag after a break, but it sags nearly as much with no break at all.",
+        "HERO_LEDE": "FIFA made in-match hydration breaks mandatory at the 2026 World Cup. Coaches and pundits call them momentum killers. Across all {{N_MATCHES}} matches the team on top really does sag after a break, but it sags nearly as much with no break at all.",
         "HERO_BYLINE": "BY VALTER NUNEZ",
         "HERO_META": "{{N_MATCHES}} MATCHES · {{N_STOPPAGES}} STOPPAGES",
         "BAND_CAPTION": '''momentum points: the average swing <em style="font-style:italic;color:#E5C9A0">away</em> from the team on top in the five minutes after a hydration break, though the same teams sag about {{P26_DELTA}} with no break at all.''',
@@ -308,19 +308,19 @@ STRINGS = {
         "MECH_INH_LABEL": "Injury · no sub",
         "MECH_INH_DESC": "Quick stoppage, play resumes before anyone regroups.",
         "S04_DURATION": '''ESPN times every break from the whistle to the resume: a median of <strong style="font-weight:600;color:#EFEBDF">{{DUR_MEDIAN}}</strong> minutes (from {{DUR_MIN}} to {{DUR_MAX}}), two to three times longer than a typical injury stoppage, and remarkably consistent. Does a <em style="font-style:italic">longer</em> break hit the leader harder? Here the data can't say: the long breaks dip a little deeper (about −{{DUR_LONG}} vs −{{DUR_SHORT}} for the short ones), but that gap is too small to separate from noise. So what seems to matter is <strong style="font-weight:600;color:#EFEBDF">that there's a long break at all</strong>, not small differences in how long it runs.''',
-        "S04_CONCL": '''If a hydration break were only about <em style="font-style:italic">rest</em>, a long VAR pause should match it. So far it doesn't quite, which hints at the <strong style="font-weight:600;color:#EFEBDF">coaching window</strong> a break creates. Belgium's Rudi Garcia put it plainly: <span style="color:#EFEBDF">"for me, it's a coaching break more than a cooling break."</span> <a class="src" href="https://www.aljazeera.com/sports/2026/6/20/hydration-break-boos-how-fifa-united-players-fans-coaches-at-world-cup">[Al Jazeera]</a> The comparison is by stoppage type rather than perfectly duration-matched (the breaks themselves are timed, but VAR and injury timings are patchier), and the "with sub" injury split is confounded by the substitution itself. Once pre-break momentum is controlled for, the hydration and VAR intervals <strong style="font-weight:600;color:#EFEBDF">overlap</strong>. Not a verdict, but suggestive. And a VAR pause still lets a coach shout instructions from the touchline, so at most this comparison understates the coaching window rather than inventing it.''',
+        "S04_CONCL": '''If a hydration break were only about <em style="font-style:italic">rest</em>, a long VAR pause should match it. It doesn't quite, which hints at the <strong style="font-weight:600;color:#EFEBDF">coaching window</strong> a break creates. Belgium's Rudi Garcia put it plainly: <span style="color:#EFEBDF">"for me, it's a coaching break more than a cooling break."</span> <a class="src" href="https://www.aljazeera.com/sports/2026/6/20/hydration-break-boos-how-fifa-united-players-fans-coaches-at-world-cup">[Al Jazeera]</a> The comparison is by stoppage type rather than perfectly duration-matched (the breaks themselves are timed, but VAR and injury timings are patchier), and the "with sub" injury split is confounded by the substitution itself. Once pre-break momentum is controlled for, the hydration and VAR intervals <strong style="font-weight:600;color:#EFEBDF">overlap</strong>. Not a verdict, but suggestive. And a VAR pause still lets a coach shout instructions from the touchline, so at most this comparison understates the coaching window rather than inventing it.''',
         "S05_HEAD": "05 — The catch",
         "S05_LEAD1": '''A team that just had a blazing five minutes tends to cool off <em style="font-style:italic">anyway</em>, break or no break. This is called regression to the mean<button type="button" class="info" aria-label="What does this mean?" data-tip="Regression to the mean: a team that just had a hot five minutes tends to cool off in the next five anyway, break or no break. It's a natural pull back toward average, not something the break caused.">i</button>, and it's the single biggest threat to reading too much into the results above.''',
         "S05_LEAD2": "So run the <em style=\"font-style:italic\">exact same measurement</em> where no break was mandated (on the same FotMob scale) and put the −{{HERO_DELTA}} next to it. The cleanest control is the very same 2026 matches measured at ordinary calm minutes instead of at a break — a stand-in for no break at all. The leading team fades there too: −{{P26_DELTA}}. Add national-team football with no breaks at all (World Cup 2022 at −{{WC22_DELTA}}, Euro 2024 at −{{EURO_DELTA}}, the same-host Gold Cup 2025 at −{{GOLD_DELTA}}), and the no-break baseline lands around −{{NOBREAK_LO}} to −{{NOBREAK_HI}}. Copa América 2024 lands shallower at −{{COPA_DELTA}}, but its interval is too wide to anchor a bound, so it's shown alongside rather than folded into that range. So most of the −{{HERO_DELTA}} is the team cooling off anyway. But not all of it: the break still sits about {{GAP}} {{GAP_PTS}} below the same teams with no whistle, {{GAP_CLAUSE}}.",
-        "S05_CAVEAT_BOX": '''Same statistic, same scale. The gold-standard control is the same 2026 teams at quiet minutes (−{{P26_DELTA}}), and Euro 2024, World Cup 2022 and the same-host Gold Cup 2025 land right with it (−{{EURO_DELTA}}, −{{WC22_DELTA}}, −{{GOLD_DELTA}}): national-team football regresses about −{{NOBREAK_LO}} to −{{NOBREAK_HI}} on its own. Clubs swing more (the Club World Cup drops −{{CWC_DELTA}}), which is why an earlier club-only comparison flattered the "same drop" read. The break (−{{HERO_DELTA}}) sits about {{GAP}} {{GAP_PTS}} below the same-teams control once their pre-break level is matched, {{GAP_CLAUSE}}. The sample is small, so it's suggestive, not proven. <span style="color:#5A5547">(An event-xT cross-check on 2022 agrees the slide is real.)</span>''',
-        "S05_CONCL": '''That caution is why there's no headline claim yet. Two things hold it back: there still aren't many matches, and a stricter test — one that accounts for how far ahead a team already was — finds no clear difference between a hydration break and any other stoppage so far. What's left is the ~{{GAP}}-point gap between a break and no break: too small, for now, to tell apart from chance. That's the number the project keeps watching as more matches come in. The full model is in the <a class="src" href="method.html#findings">methodology</a>.''',
-        "GAP_CLAUSE_OPEN": "but with the matches logged so far, that gap's 95% interval ({{GAP_LO}} to {{GAP_HI}} points) still includes zero, not yet distinguishable from no effect",
-        "GAP_CLAUSE_SIG": "and that gap's 95% interval ({{GAP_LO}} to {{GAP_HI}} points) now sits clear of zero",
+        "S05_CAVEAT_BOX": '''Same statistic, same scale. The gold-standard control is the same 2026 teams at quiet minutes (−{{P26_DELTA}}), and Euro 2024, World Cup 2022 and the same-host Gold Cup 2025 land right with it (−{{EURO_DELTA}}, −{{WC22_DELTA}}, −{{GOLD_DELTA}}): national-team football regresses about −{{NOBREAK_LO}} to −{{NOBREAK_HI}} on its own. Clubs swing more (the Club World Cup drops −{{CWC_DELTA}}), which is why an earlier club-only comparison flattered the "same drop" read. The break (−{{HERO_DELTA}}) sits about {{GAP}} {{GAP_PTS}} below the same-teams control once their pre-break level is matched, {{GAP_CLAUSE}}. Even with the full tournament in, that gap stays within the noise — suggestive, not proven. <span style="color:#5A5547">(An event-xT cross-check on 2022 agrees the slide is real.)</span>''',
+        "S05_CONCL": '''That caution is why there's no headline causal claim. Two things hold it back: even the full-tournament sample leaves wide intervals, and a stricter test — one that accounts for how far ahead a team already was — finds no clear difference between a hydration break and any other stoppage. What's left is the ~{{GAP}}-point gap between a break and no break: too small to tell apart from chance, even across all 104 matches. That's where the finished data leaves it. The full model is in the <a class="src" href="method.html#findings">methodology</a>.''',
+        "GAP_CLAUSE_OPEN": "but even across the full tournament, that gap's 95% interval ({{GAP_LO}} to {{GAP_HI}} points) still includes zero, not distinguishable from no effect",
+        "GAP_CLAUSE_SIG": "and that gap's 95% interval ({{GAP_LO}} to {{GAP_HI}} points) sits clear of zero",
         "GAP_PTS_ONE": "point",
         "GAP_PTS_MANY": "points",
-        "TWFE_CLAUSE_NULL": '''The signed-off fixed-effects model agrees there is nothing to call yet: the hydration&#215;pre-momentum interaction (the "momentum killer" term) is <strong>{{TWFE_COEF}}</strong> (95% CI {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}), indistinguishable from zero. That is the honest current state, not a held-back result.''',
-        "TWFE_CLAUSE_SIG": '''The signed-off fixed-effects model now estimates the hydration&#215;pre-momentum interaction (the "momentum killer" term) at <strong>{{TWFE_COEF}}</strong> (95% CI {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}).''',
-        "TWFE_CLAUSE_HELD": "The signed-off fixed-effects model is held until the live sample is large enough for a stable estimate.",
+        "TWFE_CLAUSE_NULL": '''The signed-off fixed-effects model agrees there is nothing to call: across the full tournament the hydration&#215;pre-momentum interaction (the "momentum killer" term) is <strong>{{TWFE_COEF}}</strong> (95% CI {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}), indistinguishable from zero. That is the honest final result, not a held-back one.''',
+        "TWFE_CLAUSE_SIG": '''The signed-off fixed-effects model estimates the hydration&#215;pre-momentum interaction (the "momentum killer" term) at <strong>{{TWFE_COEF}}</strong> (95% CI {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}).''',
+        "TWFE_CLAUSE_HELD": "The signed-off fixed-effects model runs on the full 104-match sample.",
         "S06_HEAD": "06 — Did they even need them?",
         "S06_LEAD": '''If the momentum case against the breaks is thin, the heat case <em style="font-style:italic">for</em> them is barely there. FIFA mandates a break in every match. But cooling breaks were built for genuine heat stress, and most of these games never came close.''',
         "HEAT_DESC32": 'matches reached <strong style="font-weight:600">WBGT 32°C</strong>, the level that traditionally triggers a cooling break',
@@ -330,15 +330,15 @@ STRINGS = {
         "S06_ALT": '''And altitude is a different argument: {{HEAT_ALT}} matches sat above 1,500 m (Mexico City, Guadalajara), where thinner air is its own fatigue load. That might justify a breather, but it's a separate stressor this momentum analysis doesn't measure, and it isn't what a <em style="font-style:italic">cooling</em> break is for.''',
         "S06_ACCL": '''A different objection is the heat itself: maybe momentum swings more because players from cool leagues wilt in the US summer, not because of any whistle. So the project checked, mapping every player to his club's home city and comparing that heat to match day. Teams furthest from their home climate didn't drop harder; across clubs and across national teams alike, the link came out flat or slightly backwards. The big drops aren't acclimatization. They're regression to the mean. <a class="src" href="method.html#heat">How it was tested →</a>''',
         "S06_FOOTNOTE": "WBGT (wet-bulb globe temperature) approximated from Open-Meteo temperature + humidity at each venue and kickoff. Altitude (Mexico City and Guadalajara sit above 1,500 m) shapes fatigue, not hydration need; the signal for a cooling break is heat and humidity.",
-        "BOTTOM_HEAD": "The bottom line, so far",
-        "BOTTOM_LEAD_OPEN": "On the surface it's a momentum killer. But the team on top fades almost as much with no break at all — so the break's extra bite isn't proven yet.",
-        "BOTTOM_LEAD_SIG": "The team on top fades almost as much with no break at all, but the break's extra bite is now real, not just noise.",
+        "BOTTOM_HEAD": "The bottom line",
+        "BOTTOM_LEAD_OPEN": "On the surface it's a momentum killer. But the team on top fades almost as much with no break at all — and even across the full tournament, the break's extra bite never separated from noise.",
+        "BOTTOM_LEAD_SIG": "The team on top fades almost as much with no break at all, but the break's extra bite is real, not just noise.",
         "BOTTOM_T1_LABEL": "Momentum",
         "BOTTOM_T1": "The leader sags about −{{HERO_DELTA}} after a break, yet the same teams sag −{{P26_DELTA}} at quiet minutes with no whistle. That leaves a gap of about {{GAP}} (95% CI {{GAP_LO}} to {{GAP_HI}}).",
         "BOTTOM_T2_LABEL": "Heat",
         "BOTTOM_T2": "Most matches never reached the heat a cooling break is built for, so a mandatory break in every game is hard to justify on heat alone.",
-        "BOTTOM_T3_LABEL": "What's next",
-        "BOTTOM_T3": "The knockouts decide whether that gap firms up or fades. The verdict stays open until the July 19 final.",
+        "BOTTOM_T3_LABEL": "The verdict",
+        "BOTTOM_T3": "The tournament is complete. Across all 104 matches the gap never firmed up — it stayed within the noise, so the extra momentum bite from a break goes unproven.",
         "FOOT_OUTCOME_H": "OUTCOME",
         "FOOT_OUTCOME_T": "FotMob's per-minute momentum index: their model of which side is on top, from the flow of attacks and chances. Read here, not computed. Reframed per team, windowed 5 minutes either side of each stoppage.",
         "FOOT_ID_H": "IDENTIFICATION",
@@ -346,12 +346,12 @@ STRINGS = {
         "FOOT_CAV_H": "CAVEATS HANDLED",
         "FOOT_CAV_T": "Regression to the mean (2022 historical placebo), score-state asymmetry, substitutions at the break, match-clustered confidence intervals.",
         "FOOT_REPRO_H": "REPRODUCE",
-        "FOOT_REPRO_T": "Daily-updating dataset and live report regenerate from the committed parquet through the July 19 final.",
+        "FOOT_REPRO_T": "The final dataset and report regenerate from the committed parquet — all 104 matches through the July 19 final.",
         "FOOT_REPRO_LINK": "github.com/valternunez/wc2026-momentum ↗",
         "FOOT_STAMP1": "WC2026 STOPPAGE MOMENTUM STUDY · SNAPSHOT {{SNAPSHOT_DATE}}",
-        "FOOT_STAMP2": "LIVE ANALYSIS · NUMBERS COMPUTED FROM THE COMMITTED DATASET",
+        "FOOT_STAMP2": "FINAL ANALYSIS · NUMBERS COMPUTED FROM THE COMMITTED DATASET",
         "CI_CAPTION": "95% INTERVAL (CLUSTER BOOTSTRAP)",
-        "INTERVAL_NOTE": "The bars show the 95% margin of error, computed match by match; all of them fall on the negative side. The effect doesn't hinge on the window we picked (it shows up the same at 4, 5, or 6 minutes), but with few matches so far, read it as a signal, not proof. And looking only at the team that was on top doesn't rule out that team simply drifting back to its normal level on its own; that's what the no-break comparison below controls for. The causal claim waits for more matches.",
+        "INTERVAL_NOTE": "The bars show the 95% margin of error, computed match by match; all of them fall on the negative side. The effect doesn't hinge on the window we picked (it shows up the same at 4, 5, or 6 minutes), but even across the full tournament the interval stays wide, so read it as a signal, not proof. And looking only at the team that was on top doesn't rule out that team simply drifting back to its normal level on its own; that's what the no-break comparison below controls for. The causal claim goes unmade: the gap never cleared chance.",
         "MODAL_KICKER": "Match momentum",
         "MODAL_CLOSE": "CLOSE ✕",
         "MODAL_CLOSE_ARIA": "Close",
@@ -382,7 +382,7 @@ STRINGS = {
         "STORY_OF": "of",
         # slide 1 — hook
         "STORY_HOOK_H": "Do hydration breaks really kill momentum?",
-        "STORY_HOOK_SUB": "FIFA made them mandatory at the 2026 World Cup. Coaches call them momentum killers. Here's what {{N_MATCHES}} matches of data actually say.",
+        "STORY_HOOK_SUB": "FIFA made them mandatory at the 2026 World Cup. Coaches call them momentum killers. Here's what all {{N_MATCHES}} matches of data actually say.",
         # slide 2 — the claim
         "STORY_CLAIM_LABEL": "THE CLAIM",
         "STORY_CLAIM_H": "Stop a team that's flying, and the spell breaks.",
@@ -398,10 +398,10 @@ STRINGS = {
         # slide 5 — the verdict
         "STORY_VERDICT_LABEL": "WHAT'S LEFT OVER",
         "STORY_VERDICT_UNIT": "points below no break",
-        "STORY_VERDICT_SUB": "The break still sits about {{GAP}} {{GAP_PTS}} below the same teams with no whistle, {{GAP_CLAUSE}}.",
+        "STORY_VERDICT_SUB": "The break sits about {{GAP}} {{GAP_PTS}} below the same teams with no whistle, {{GAP_CLAUSE}}.",
         # slide 6 — CTA
-        "STORY_CTA_H": "A live analysis.",
-        "STORY_CTA_SUB": "Updated daily through the July 19 final. Every number traces to the committed dataset.",
+        "STORY_CTA_H": "The finished analysis.",
+        "STORY_CTA_SUB": "All 104 matches, June 11 to the July 19 final. Every number traces to the committed dataset.",
         "STORY_CTA_URL": "valternunez.github.io/wc2026-momentum",
         # --- Share bar ---
         "SHARE_LABEL": "Share",
@@ -412,7 +412,7 @@ STRINGS = {
         "SHARE_COPIED": "Copied!",
         "SHARE_NATIVE": "Share…",
         "SHARE_TITLE": "WC2026 · Stoppage Momentum",
-        "SHARE_TEXT": "Do hydration breaks really kill momentum? A live, data-driven look at the 2026 World Cup:",
+        "SHARE_TEXT": "Do hydration breaks really kill momentum? A data-driven look at the finished 2026 World Cup:",
         # --- Reel / TikTok (~15s kinetic myth-buster video) ---
         "REEL_META_TITLE": "Reel · WC2026 Stoppage Momentum",
         "REEL_KICKER": "WC2026 · STOPPAGE MOMENTUM",
@@ -426,9 +426,9 @@ STRINGS = {
         "REEL_TWIST_LABEL": "with NO break",
         "REEL_TWIST_LINE": "it's mostly regression to the mean.",
         "REEL_VERDICT_KICKER": "the real gap",
-        "REEL_VERDICT_OPEN": "still includes zero, not proven yet.",
+        "REEL_VERDICT_OPEN": "still includes zero: not proven.",
         "REEL_VERDICT_SIG": "now clear of zero: the break really bites.",
-        "REEL_CTA": "{{N_MATCHES}} matches · updated daily",
+        "REEL_CTA": "{{N_MATCHES}} matches · final",
         "REEL_CTA_URL": "valternunez.github.io/wc2026-momentum",
         "REEL_LINK": "Reel",
         # --- Methodology / full-report page ---
@@ -442,10 +442,10 @@ STRINGS = {
         "METHOD_FOOT": "WC2026 STOPPAGE MOMENTUM STUDY · METHODOLOGY · EVERY FIGURE COMPUTED FROM THE COMMITTED DATASET",
         "METHOD_FINDINGS": '''<h2>00 — Findings in brief</h2>
 <p>The team on top of momentum loses about <strong>−{{HERO_DELTA}}</strong> momentum points in the five minutes after a mandatory hydration break. But the <em style="font-style:italic">same</em> teams lose about <strong>−{{P26_DELTA}}</strong> at quiet, break-free minutes, so most of the drop is regression to the mean, the natural cool-off after a hot spell, not the whistle.</p>
-<p>What is left is a gap of about <strong>{{GAP}}</strong> {{GAP_PTS}} between a break and no break for the same teams; {{GAP_CLAUSE}}, and the sample is still small, so it is suggestive, not proven. A separate look at the weather suggests most matches never reached the heat a cooling break is designed for. None of this is a causal verdict yet. The knockouts will sharpen it.</p>''',
+<p>What is left is a gap of about <strong>{{GAP}}</strong> {{GAP_PTS}} between a break and no break for the same teams; {{GAP_CLAUSE}}, and even the full-tournament sample leaves it suggestive, not proven. A separate look at the weather suggests most matches never reached the heat a cooling break is designed for. None of this is a causal verdict: across all 104 matches the gap never cleared chance.</p>''',
         "METHOD_WHAT": '''<h2>01 — What this measures</h2>
 <p>The question is narrow and testable: do FIFA's mandatory in-match hydration breaks shift momentum away from the team that was on top? The outcome is <strong>FotMob's</strong> per-minute momentum index, their model of which side is on top, built from the flow of attacks and chances, not the scoreline. The project <em style="font-style:italic">reads</em> that number; it does not compute one. Positive means the home side is pressing, negative the away side.</p>
-<p>It is a live analysis: the page rebuilds from the committed dataset every matchday through the July 19 final, so the figures move as data accrues.</p>''',
+<p>It ran as a live analysis through the tournament; the page now reflects the final dataset — all 104 matches through the July 19 final.</p>''',
         "METHOD_DATA": '''<h2>02 — Where the data comes from</h2>
 <p>Three sources, each doing one job:</p>
 <ul>
@@ -468,7 +468,7 @@ STRINGS = {
 </ul>
 <p>National-team football regresses about −{{NOBREAK_LO}} to −{{NOBREAK_HI}} on its own. The break (−{{HERO_DELTA}}) sits about {{GAP}} {{GAP_PTS}} below the same-teams control once their pre-break level is matched, {{GAP_CLAUSE}}.</p>''',
         "METHOD_CI": '''<h2>05 — Confidence intervals</h2>
-<p>Several stoppages within one match are not independent, so intervals are bootstrapped by resampling <em style="font-style:italic">matches</em>, not rows (a cluster bootstrap). Early in the tournament there are few match-clusters, so the 95% interval is wide; read it as indicative, not a precise p-value. The effect holds whether the window is 4, 5 or 6 minutes long. The headline currently rests on {{HYD_N}} on-top hydration breaks, and the estimate-over-time chart on the main page shows whether it is stabilizing or fading.</p>
+<p>Several stoppages within one match are not independent, so intervals are bootstrapped by resampling <em style="font-style:italic">matches</em>, not rows (a cluster bootstrap). Even across all {{N_MATCHES}} match-clusters the 95% interval stays wide, so read it as indicative, not a precise p-value. The effect holds whether the window is 4, 5 or 6 minutes long. The headline rests on {{HYD_N}} on-top hydration breaks, and the estimate-over-time chart on the main page shows how it settled over the tournament.</p>
 <p>{{TWFE_CLAUSE}}</p>''',
         "METHOD_HEAT": '''<h2>06 — The heat &amp; acclimatization check</h2>
 <p>The intuitive objection is that the swings are about heat, not the whistle: players from cool leagues wilting in the US summer. The project tested it directly. For every team it built an <em style="font-style:italic">acclimatization gap</em>: the WBGT on match day minus the WBGT the squad is used to back home, mapping each player to his club's home city ({{ACCL_CLUBS}} clubs placed). If heat-displacement drove the drops, teams further from home should fall harder.</p>
@@ -485,11 +485,11 @@ STRINGS = {
 <p>Altitude is a different stressor from heat (thin air, not thermoregulation), and only two venues are high (Mexico City and Guadalajara, both above 1,500 m). That is too few to test, and a cooling break is not built for it, so it is noted and left alone.</p>''',
         "METHOD_LIMITS": '''<h2>08 — What this can and cannot say</h2>
 <ul>
-<li><strong>Small sample, for now.</strong> Early in the tournament the intervals are wide; the estimate-over-time chart shows whether the effect stabilizes or fades.</li>
-<li><strong>Break durations, now measured.</strong> ESPN's start/end-delay timestamps give an exact length for {{DUR_N}} of {{DUR_N_ALL}} on-top hydration breaks (median {{DUR_MEDIAN}}, {{DUR_MIN}}–{{DUR_MAX}}); VAR and injury coverage is thinner. Whether <em style="font-style:italic">longer</em> breaks bite harder is inconclusive on the current sample (the slope's interval includes zero), so the analysis doesn't lean on it.</li>
+<li><strong>Finite sample.</strong> Even across all 104 matches the intervals are wide; the estimate-over-time chart shows how the effect settled.</li>
+<li><strong>Break durations, now measured.</strong> ESPN's start/end-delay timestamps give an exact length for {{DUR_N}} of {{DUR_N_ALL}} on-top hydration breaks (median {{DUR_MEDIAN}}, {{DUR_MIN}}–{{DUR_MAX}}); VAR and injury coverage is thinner. Whether <em style="font-style:italic">longer</em> breaks bite harder is inconclusive on the full sample (the slope's interval includes zero), so the analysis doesn't lean on it.</li>
 <li><strong>WBGT is a shade estimate</strong> from temperature and humidity; true on-pitch heat under sun runs higher.</li>
 <li><strong>The acclimatization gap is collinear</strong> with continent, league and schedule, so it is suggestive, not a clean instrument.</li>
-<li><strong>No causal headline yet.</strong> The agreed causal model (a two-way fixed-effects regression with match-clustered errors and the hydration×pre-momentum interaction) is held until the live sample is large enough for stable estimates.</li>
+<li><strong>No causal headline.</strong> The agreed causal model (a two-way fixed-effects regression with match-clustered errors and the hydration×pre-momentum interaction) stays indistinguishable from zero across the full 104-match sample.</li>
 </ul>''',
         "METHOD_REPRO": '''<h2>09 — Reproducibility</h2>
 <p>Every figure here and on the main page is computed deterministically from one file (the committed processed dataset) by the code in the repository. Nothing is hand-entered. The full source, the dataset, and this report are public.</p>
@@ -497,20 +497,20 @@ STRINGS = {
     },
     "es": {
         "META_TITLE": "¿Las pausas de hidratación matan el momentum? · WC2026",
-        "META_DESC": "¿Las pausas de hidratación obligatorias de la FIFA cambian el momentum durante los partidos del Mundial 2026? Un análisis en vivo, basado en datos, actualizado cada jornada.",
+        "META_DESC": "¿Las pausas de hidratación obligatorias de la FIFA cambian el momentum durante los partidos del Mundial 2026? Un análisis terminado, basado en datos, de los 104 partidos.",
         "OG_SITENAME": "WC2026 Momentum en Pausas",
         "OG_TITLE": "¿Las pausas de hidratación matan el momentum?",
-        "OG_DESC": "La FIFA volvió obligatorias las pausas de hidratación en el Mundial 2026. El equipo dominante pierde ~{{HERO_DELTA}} puntos de momentum tras una, pero los mismos equipos pierden ~{{P26_DELTA}} sin pausa. Sobre todo regresión a la media, con una brecha de ~{{GAP}} {{GAP_PTS}} por explicar. Un análisis en vivo, basado en datos.",
+        "OG_DESC": "La FIFA volvió obligatorias las pausas de hidratación en el Mundial 2026. El equipo dominante pierde ~{{HERO_DELTA}} puntos de momentum tras una, pero los mismos equipos pierden ~{{P26_DELTA}} sin pausa. Sobre todo regresión a la media, con una brecha de ~{{GAP}} {{GAP_PTS}} por explicar. Un análisis terminado, basado en datos, de los 104 partidos.",
         "OG_ALT": "¿Las pausas de hidratación matan el momentum? -{{HERO_DELTA}} tras una pausa vs aproximadamente -{{P26_DELTA}} para los mismos equipos sin pausa.",
         "TW_DESC": "El equipo dominante pierde ~{{HERO_DELTA}} puntos de momentum tras una pausa de hidratación, pero los mismos equipos pierden ~{{P26_DELTA}} sin pausa. Sobre todo regresión a la media, con una brecha por explicar.",
         "MAST_TITLE": "WC2026",
         "NAV_METHOD": "Metodología",
         "NAV_METHOD_FOOT": "Metodología e informe completo",
-        "LIVE_UPDATED": "EN VIVO · ACTUALIZADO",
-        "FRESH_NOTE": "El recolector en vivo no se actualiza desde hace un tiempo; estos datos se actualizaron por última vez el",
+        "LIVE_UPDATED": "FINAL · DATOS AL",
+        "FRESH_NOTE": "Conjunto de datos final — los 104 partidos hasta la final del 19 de julio. Última actualización el",
         "HERO_KICKER": "Estudio de momentum en pausas de hidratación",
         "HERO_H1": "¿Las pausas de hidratación matan el momentum?",
-        "HERO_LEDE": "La FIFA volvió obligatorias las pausas de hidratación en el Mundial 2026. Técnicos y comentaristas las llaman asesinas del momentum. A lo largo de {{N_MATCHES}} partidos, el equipo que domina sí se desinfla tras una pausa, pero lo hace casi la misma cantidad sin pausa alguna.",
+        "HERO_LEDE": "La FIFA volvió obligatorias las pausas de hidratación en el Mundial 2026. Técnicos y comentaristas las llaman asesinas del momentum. A lo largo de los {{N_MATCHES}} partidos, el equipo que domina sí se desinfla tras una pausa, pero lo hace casi la misma cantidad sin pausa alguna.",
         "HERO_BYLINE": "POR VALTER NÚÑEZ",
         "HERO_META": "{{N_MATCHES}} PARTIDOS · {{N_STOPPAGES}} PAUSAS",
         "BAND_CAPTION": '''puntos de momentum: la caída media que <em style="font-style:italic;color:#E5C9A0">se aleja</em> del equipo dominante en los cinco minutos posteriores a una pausa de hidratación, aunque los mismos equipos caen unos {{P26_DELTA}} sin pausa alguna.''',
@@ -546,19 +546,19 @@ STRINGS = {
         "MECH_INH_LABEL": "Lesión · sin cambio",
         "MECH_INH_DESC": "Interrupción breve, el juego se reanuda antes de que nadie se reagrupe.",
         "S04_DURATION": '''ESPN cronometra cada pausa, del silbatazo a la reanudación: una mediana de <strong style="font-weight:600;color:#EFEBDF">{{DUR_MEDIAN}}</strong> minutos (de {{DUR_MIN}} a {{DUR_MAX}}), dos o tres veces más larga que una pausa por lesión típica, y notablemente constante. ¿Una pausa <em style="font-style:italic">más larga</em> golpea más fuerte al que va arriba? Aquí los datos no alcanzan a decirlo: las pausas largas lo enfrían un poco más que las cortas (cerca de −{{DUR_LONG}} frente a −{{DUR_SHORT}}), pero esa diferencia es demasiado chica para distinguirla del ruido. Así que lo que parece pesar es <strong style="font-weight:600;color:#EFEBDF">que haya una pausa larga</strong>, no las pequeñas diferencias en cuánto dura.''',
-        "S04_CONCL": '''Si una pausa de hidratación fuera solo cuestión de <em style="font-style:italic">descanso</em>, una pausa del VAR igual de larga debería igualarla. Por ahora no lo hace del todo, lo que apunta a la <strong style="font-weight:600;color:#EFEBDF">ventana de indicaciones técnicas</strong> que crea una pausa. El técnico de Bélgica, Rudi García, lo dijo: <span style="color:#EFEBDF">«para mí, es más una pausa de instrucción que una pausa de enfriamiento.»</span> <a class="src" href="https://www.aljazeera.com/sports/2026/6/20/hydration-break-boos-how-fifa-united-players-fans-coaches-at-world-cup">[Al Jazeera]</a> Se compara por tipo de interrupción más que de forma perfectamente emparejada por duración (se cronometran las pausas, pero los tiempos de VAR y lesión son más irregulares), y la división de lesión «con cambio» está confundida por el propio cambio. Al controlar por el momentum previo, los intervalos de la hidratación y del VAR <strong style="font-weight:600;color:#EFEBDF">se solapan</strong>. Esto no es un veredicto, aunque sí sugerente. Y en una pausa del VAR el técnico igual puede gritar indicaciones desde la banda, así que esta comparación, a lo mucho, subestima la ventana de indicaciones técnicas en lugar de inventarla.''',
+        "S04_CONCL": '''Si una pausa de hidratación fuera solo cuestión de <em style="font-style:italic">descanso</em>, una pausa del VAR igual de larga debería igualarla. No lo hace del todo, lo que apunta a la <strong style="font-weight:600;color:#EFEBDF">ventana de indicaciones técnicas</strong> que crea una pausa. El técnico de Bélgica, Rudi García, lo dijo: <span style="color:#EFEBDF">«para mí, es más una pausa de instrucción que una pausa de enfriamiento.»</span> <a class="src" href="https://www.aljazeera.com/sports/2026/6/20/hydration-break-boos-how-fifa-united-players-fans-coaches-at-world-cup">[Al Jazeera]</a> Se compara por tipo de interrupción más que de forma perfectamente emparejada por duración (se cronometran las pausas, pero los tiempos de VAR y lesión son más irregulares), y la división de lesión «con cambio» está confundida por el propio cambio. Al controlar por el momentum previo, los intervalos de la hidratación y del VAR <strong style="font-weight:600;color:#EFEBDF">se solapan</strong>. Esto no es un veredicto, aunque sí sugerente. Y en una pausa del VAR el técnico igual puede gritar indicaciones desde la banda, así que esta comparación, a lo mucho, subestima la ventana de indicaciones técnicas en lugar de inventarla.''',
         "S05_HEAD": "05 — La trampa",
         "S05_LEAD1": '''Un equipo que acaba de tener cinco minutos brillantes tiende a enfriarse <em style="font-style:italic">de todos modos</em>, con pausa o sin pausa. Esto se llama regresión a la media<button type="button" class="info" aria-label="¿Qué significa esto?" data-tip="Regresión a la media: un equipo que acaba de tener cinco minutos calientes tiende a enfriarse en los cinco siguientes de todos modos, con pausa o sin pausa. Es un retorno natural hacia el promedio, no algo que la pausa haya causado.">i</button>, y es la mayor amenaza para no leer de más en los resultados antes mostrados.''',
         "S05_LEAD2": "Así que se hace exactamente la misma medición donde no hubo pausa obligatoria (en la misma escala de FotMob) y se pone el −{{HERO_DELTA}} al lado. El control más limpio son los mismos partidos de 2026 medidos en minutos tranquilos en vez de en una pausa —un sustituto de no haber tenido pausa—. El equipo que domina también se enfría ahí: −{{P26_DELTA}}. Súmale futbol de selecciones sin pausa alguna (Mundial 2022 en −{{WC22_DELTA}}, Euro 2024 en −{{EURO_DELTA}}, la Copa Oro 2025 en la misma región sede en −{{GOLD_DELTA}}), y la línea base sin pausa queda alrededor de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}. La Copa América 2024 cae menos, en −{{COPA_DELTA}}, pero su intervalo es demasiado ancho para fijar un límite, así que se muestra al lado en vez de incluirla en ese rango. Así que la mayor parte del −{{HERO_DELTA}} es el equipo enfriándose de todos modos. Pero no todo: la pausa todavía queda unos {{GAP}} {{GAP_PTS}} por debajo de los mismos equipos sin silbato, {{GAP_CLAUSE}}.",
-        "S05_CAVEAT_BOX": '''Misma estadística, misma escala. El control de referencia son los mismos equipos de 2026 en minutos tranquilos (−{{P26_DELTA}}), y Euro 2024, el Mundial 2022 y la Copa Oro 2025 de la misma región sede caen justo ahí (−{{EURO_DELTA}}, −{{WC22_DELTA}}, −{{GOLD_DELTA}}): el futbol de selecciones regresa por sí solo alrededor de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}. Los clubes oscilan más (el Mundial de Clubes cae −{{CWC_DELTA}}), y por eso una comparación previa solo con clubes inflaba la idea de «la misma caída». La pausa (−{{HERO_DELTA}}) queda unos {{GAP}} {{GAP_PTS}} por debajo del control con los mismos equipos una vez igualado su nivel previo, {{GAP_CLAUSE}}. La muestra es chica, así que es sugerente, no probado. <span style="color:#5A5547">(Un cruce con xT por evento en 2022 coincide en que la caída es real.)</span>''',
-        "S05_CONCL": '''Por esa misma cautela todavía no hay un titular. Faltan dos cosas: aún hay pocos partidos, y una prueba más estricta —que toma en cuenta qué tan arriba iba ya el equipo— por ahora no encuentra una diferencia clara entre una pausa de hidratación y cualquier otra interrupción. Lo que queda es la brecha de ~{{GAP}} {{GAP_PTS}} entre pausa y no-pausa: demasiado chica, por ahora, para distinguirla del azar. Ese es el número que el proyecto sigue observando conforme entran más partidos. El modelo completo está en la <a class="src" href="method.es.html#findings">metodología</a>.''',
-        "GAP_CLAUSE_OPEN": "pero con los partidos disponibles hasta ahora, el intervalo del 95% de esa brecha ({{GAP_LO}} a {{GAP_HI}} puntos) todavía incluye el cero, aún no se distingue de un efecto nulo",
-        "GAP_CLAUSE_SIG": "y el intervalo del 95% de esa brecha ({{GAP_LO}} a {{GAP_HI}} puntos) ya queda lejos del cero",
+        "S05_CAVEAT_BOX": '''Misma estadística, misma escala. El control de referencia son los mismos equipos de 2026 en minutos tranquilos (−{{P26_DELTA}}), y Euro 2024, el Mundial 2022 y la Copa Oro 2025 de la misma región sede caen justo ahí (−{{EURO_DELTA}}, −{{WC22_DELTA}}, −{{GOLD_DELTA}}): el futbol de selecciones regresa por sí solo alrededor de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}. Los clubes oscilan más (el Mundial de Clubes cae −{{CWC_DELTA}}), y por eso una comparación previa solo con clubes inflaba la idea de «la misma caída». La pausa (−{{HERO_DELTA}}) queda unos {{GAP}} {{GAP_PTS}} por debajo del control con los mismos equipos una vez igualado su nivel previo, {{GAP_CLAUSE}}. Aun con el torneo completo, esa brecha se queda dentro del ruido: sugerente, no probada. <span style="color:#5A5547">(Un cruce con xT por evento en 2022 coincide en que la caída es real.)</span>''',
+        "S05_CONCL": '''Por esa misma cautela no hay un titular causal. Faltan dos cosas: ni siquiera la muestra del torneo completo cierra los intervalos, y una prueba más estricta —que toma en cuenta qué tan arriba iba ya el equipo— no encuentra una diferencia clara entre una pausa de hidratación y cualquier otra interrupción. Lo que queda es la brecha de ~{{GAP}} {{GAP_PTS}} entre pausa y no-pausa: demasiado chica para distinguirla del azar, incluso a lo largo de los 104 partidos. Ahí es donde deja las cosas el dato final. El modelo completo está en la <a class="src" href="method.es.html#findings">metodología</a>.''',
+        "GAP_CLAUSE_OPEN": "pero incluso con el torneo completo, el intervalo del 95% de esa brecha ({{GAP_LO}} a {{GAP_HI}} puntos) todavía incluye el cero, no se distingue de un efecto nulo",
+        "GAP_CLAUSE_SIG": "y el intervalo del 95% de esa brecha ({{GAP_LO}} a {{GAP_HI}} puntos) queda lejos del cero",
         "GAP_PTS_ONE": "punto",
         "GAP_PTS_MANY": "puntos",
-        "TWFE_CLAUSE_NULL": '''El modelo de efectos fijos acordado coincide en que aún no hay nada que declarar: la interacción hidratación&#215;momentum-previo (el término «asesino del momentum») es <strong>{{TWFE_COEF}}</strong> (IC 95% {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}), indistinguible de cero. Es el estado honesto actual, no un resultado guardado.''',
-        "TWFE_CLAUSE_SIG": '''El modelo de efectos fijos acordado ahora estima la interacción hidratación&#215;momentum-previo (el término «asesino del momentum») en <strong>{{TWFE_COEF}}</strong> (IC 95% {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}).''',
-        "TWFE_CLAUSE_HELD": "El modelo de efectos fijos acordado se mantiene en pausa hasta que la muestra en vivo sea lo bastante grande para una estimación estable.",
+        "TWFE_CLAUSE_NULL": '''El modelo de efectos fijos acordado coincide en que no hay nada que declarar: a lo largo del torneo la interacción hidratación&#215;momentum-previo (el término «asesino del momentum») es <strong>{{TWFE_COEF}}</strong> (IC 95% {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}), indistinguible de cero. Es el resultado final honesto, no uno guardado.''',
+        "TWFE_CLAUSE_SIG": '''El modelo de efectos fijos acordado estima la interacción hidratación&#215;momentum-previo (el término «asesino del momentum») en <strong>{{TWFE_COEF}}</strong> (IC 95% {{TWFE_CI}}, p&nbsp;=&nbsp;{{TWFE_P}}, n&nbsp;=&nbsp;{{TWFE_N}}).''',
+        "TWFE_CLAUSE_HELD": "El modelo de efectos fijos acordado corre sobre la muestra completa de 104 partidos.",
         "S06_HEAD": "06 — ¿Acaso hacían falta?",
         "S06_LEAD": '''Si el argumento del momentum en contra de las pausas es flojo, el del calor <em style="font-style:italic">a favor</em> es casi inexistente. La FIFA exige una pausa en cada partido, pero las pausas de hidratación se diseñaron para un estrés térmico real, y la mayoría de estos partidos no se acercan a ese nivel de estrés.''',
         "HEAT_DESC32": 'partidos alcanzaron <strong style="font-weight:600">WBGT 32°C</strong>, el nivel que tradicionalmente justifica una pausa de enfriamiento',
@@ -568,15 +568,15 @@ STRINGS = {
         "S06_ALT": '''Y la altitud es otro argumento: {{HEAT_ALT}} partidos se jugaron por encima de los 1,500 m (Ciudad de México, Guadalajara), donde el aire más delgado es su propia carga de fatiga. Eso quizá justifique un respiro, pero es un factor aparte que este análisis de momentum no mide, y no es para lo que sirve una pausa de <em style="font-style:italic">enfriamiento</em>.''',
         "S06_ACCL": '''Otra objeción es el calor mismo: tal vez el momentum se mueve tanto porque jugadores de ligas frescas se derriten en el verano de Estados Unidos, y no por un silbatazo. Así que se revisó, ligando a cada jugador con la ciudad de su club y comparando ese calor con el del partido. Los equipos más lejos de su clima de casa no cayeron más; entre clubes y entre selecciones, la relación salió plana o ligeramente al revés. Las caídas grandes no son aclimatación: son regresión a la media. <a class="src" href="method.es.html#heat">Cómo se probó →</a>''',
         "S06_FOOTNOTE": "El WBGT (temperatura de globo y bulbo húmedo) se aproxima a partir de la temperatura + humedad de Open-Meteo en cada sede y horario de inicio. La altitud (Ciudad de México y Guadalajara están por encima de los 1,500 m) moldea la fatiga, no la necesidad de hidratación; la señal para una pausa de enfriamiento son el calor y la humedad.",
-        "BOTTOM_HEAD": "La conclusión, por ahora",
-        "BOTTOM_LEAD_OPEN": "A primera vista parece matar el momentum. Pero el equipo que domina se desinfla casi lo mismo sin pausa alguna, así que el plus de la pausa aún no está probado.",
-        "BOTTOM_LEAD_SIG": "El equipo que domina se desinfla casi lo mismo sin pausa alguna, pero el plus de la pausa ya es real, no solo ruido.",
+        "BOTTOM_HEAD": "La conclusión",
+        "BOTTOM_LEAD_OPEN": "A primera vista parece matar el momentum. Pero el equipo que domina se desinfla casi lo mismo sin pausa alguna, y aun con el torneo completo, el plus de la pausa nunca se separó del ruido.",
+        "BOTTOM_LEAD_SIG": "El equipo que domina se desinfla casi lo mismo sin pausa alguna, pero el plus de la pausa es real, no solo ruido.",
         "BOTTOM_T1_LABEL": "Momentum",
         "BOTTOM_T1": "El líder se desinfla unos −{{HERO_DELTA}} tras una pausa, pero los mismos equipos caen −{{P26_DELTA}} en minutos tranquilos, sin silbatazo. Eso deja una brecha de {{GAP}} (IC 95% {{GAP_LO}} a {{GAP_HI}}).",
         "BOTTOM_T2_LABEL": "Calor",
         "BOTTOM_T2": "La mayoría de los partidos nunca alcanzó el calor para el que sirve una pausa de enfriamiento, así que una pausa obligatoria en cada juego es difícil de justificar solo por el calor.",
-        "BOTTOM_T3_LABEL": "Lo que sigue",
-        "BOTTOM_T3": "Las eliminatorias dirán si esa brecha se afirma o se desvanece. El veredicto sigue abierto hasta la final del 19 de julio.",
+        "BOTTOM_T3_LABEL": "El veredicto",
+        "BOTTOM_T3": "El torneo terminó. A lo largo de los 104 partidos la brecha nunca se afirmó — se quedó dentro del ruido, así que el plus de momentum de una pausa queda sin probar.",
         "FOOT_OUTCOME_H": "RESULTADO MEDIDO",
         "FOOT_OUTCOME_T": "El índice de momentum por minuto de FotMob: su modelo de qué equipo domina, a partir del flujo de ataques y ocasiones. Se lee, no se calcula. Reformulado por equipo, en ventanas de 5 minutos a cada lado de cada pausa.",
         "FOOT_ID_H": "IDENTIFICACIÓN",
@@ -584,12 +584,12 @@ STRINGS = {
         "FOOT_CAV_H": "ADVERTENCIAS CONTROLADAS",
         "FOOT_CAV_T": "Regresión a la media (placebo histórico de 2022), asimetría según el marcador, sustituciones en la pausa, intervalos de confianza agrupados por partido.",
         "FOOT_REPRO_H": "REPRODUCIR",
-        "FOOT_REPRO_T": "El conjunto de datos se actualiza a diario y el informe en vivo se regenera a partir del parquet versionado, hasta la final del 19 de julio.",
+        "FOOT_REPRO_T": "El conjunto de datos final y el informe se regeneran a partir del parquet versionado — los 104 partidos hasta la final del 19 de julio.",
         "FOOT_REPRO_LINK": "github.com/valternunez/wc2026-momentum ↗",
         "FOOT_STAMP1": "ESTUDIO WC2026 DE MOMENTUM EN PAUSAS · INSTANTÁNEA {{SNAPSHOT_DATE}}",
-        "FOOT_STAMP2": "ANÁLISIS EN VIVO · CIFRAS CALCULADAS A PARTIR DEL CONJUNTO DE DATOS VERSIONADO",
+        "FOOT_STAMP2": "ANÁLISIS FINAL · CIFRAS CALCULADAS A PARTIR DEL CONJUNTO DE DATOS VERSIONADO",
         "CI_CAPTION": "INTERVALO 95% (BOOTSTRAP POR PARTIDO)",
-        "INTERVAL_NOTE": "Las barras muestran el margen de error del 95%, calculado partido por partido; todas caen del lado negativo. El efecto no depende de la ventana elegida (aparece igual con 4, 5 o 6 minutos), pero con pocos partidos hasta ahora conviene leerlo como una señal, no como una prueba. Y mirar solo al equipo que dominaba no descarta que ese equipo simplemente volviera a su nivel normal por sí solo; eso lo controla la comparación sin pausa de abajo. La conclusión causal espera a tener más partidos.",
+        "INTERVAL_NOTE": "Las barras muestran el margen de error del 95%, calculado partido por partido; todas caen del lado negativo. El efecto no depende de la ventana elegida (aparece igual con 4, 5 o 6 minutos), pero incluso con el torneo completo el intervalo sigue ancho, así que conviene leerlo como una señal, no como una prueba. Y mirar solo al equipo que dominaba no descarta que ese equipo simplemente volviera a su nivel normal por sí solo; eso lo controla la comparación sin pausa de abajo. La conclusión causal queda sin hacerse: la brecha nunca superó el azar.",
         "MODAL_KICKER": "Momentum del partido",
         "MODAL_CLOSE": "CERRAR ✕",
         "MODAL_CLOSE_ARIA": "Cerrar",
@@ -620,7 +620,7 @@ STRINGS = {
         "STORY_OF": "de",
         # diapositiva 1 — gancho
         "STORY_HOOK_H": "¿Las pausas de hidratación de verdad matan el momentum?",
-        "STORY_HOOK_SUB": "La FIFA las volvió obligatorias en el Mundial 2026. Los técnicos las llaman asesinas del momentum. Esto es lo que dicen los datos de {{N_MATCHES}} partidos.",
+        "STORY_HOOK_SUB": "La FIFA las volvió obligatorias en el Mundial 2026. Los técnicos las llaman asesinas del momentum. Esto es lo que dicen los datos de los {{N_MATCHES}} partidos.",
         # diapositiva 2 — la afirmación
         "STORY_CLAIM_LABEL": "LA AFIRMACIÓN",
         "STORY_CLAIM_H": "Frena a un equipo que vuela y se rompe el hechizo.",
@@ -636,10 +636,10 @@ STRINGS = {
         # diapositiva 5 — el veredicto
         "STORY_VERDICT_LABEL": "LO QUE SOBRA",
         "STORY_VERDICT_UNIT": "puntos por debajo de no tener pausa",
-        "STORY_VERDICT_SUB": "La pausa todavía queda unos {{GAP}} {{GAP_PTS}} por debajo de los mismos equipos sin silbatazo, {{GAP_CLAUSE}}.",
+        "STORY_VERDICT_SUB": "La pausa queda unos {{GAP}} {{GAP_PTS}} por debajo de los mismos equipos sin silbatazo, {{GAP_CLAUSE}}.",
         # diapositiva 6 — CTA
-        "STORY_CTA_H": "Un análisis en vivo.",
-        "STORY_CTA_SUB": "Se actualiza a diario hasta la final del 19 de julio. Cada cifra se rastrea al conjunto de datos versionado.",
+        "STORY_CTA_H": "El análisis terminado.",
+        "STORY_CTA_SUB": "Los 104 partidos, del 11 de junio a la final del 19 de julio. Cada cifra se rastrea al conjunto de datos versionado.",
         "STORY_CTA_URL": "valternunez.github.io/wc2026-momentum",
         # --- Barra de compartir ---
         "SHARE_LABEL": "Compartir",
@@ -650,7 +650,7 @@ STRINGS = {
         "SHARE_COPIED": "¡Copiado!",
         "SHARE_NATIVE": "Compartir…",
         "SHARE_TITLE": "WC2026 · Momentum en Pausas",
-        "SHARE_TEXT": "¿Las pausas de hidratación de verdad matan el momentum? Un análisis en vivo, basado en datos, del Mundial 2026:",
+        "SHARE_TEXT": "¿Las pausas de hidratación de verdad matan el momentum? Una mirada basada en datos al Mundial 2026 ya terminado:",
         # --- Reel / TikTok (video kinético de ~15s, derribando el mito) ---
         "REEL_META_TITLE": "Reel · WC2026 Momentum en Pausas",
         "REEL_KICKER": "WC2026 · MOMENTUM EN PAUSAS",
@@ -664,9 +664,9 @@ STRINGS = {
         "REEL_TWIST_LABEL": "SIN pausa",
         "REEL_TWIST_LINE": "es casi toda regresión a la media.",
         "REEL_VERDICT_KICKER": "la brecha real",
-        "REEL_VERDICT_OPEN": "aún incluye el cero, sin probar todavía.",
+        "REEL_VERDICT_OPEN": "aún incluye el cero: sin probar.",
         "REEL_VERDICT_SIG": "ya lejos del cero: la pausa sí pega.",
-        "REEL_CTA": "{{N_MATCHES}} partidos · actualizado a diario",
+        "REEL_CTA": "{{N_MATCHES}} partidos · final",
         "REEL_CTA_URL": "valternunez.github.io/wc2026-momentum",
         "REEL_LINK": "Reel",
         # --- Página de metodología / informe completo ---
@@ -680,10 +680,10 @@ STRINGS = {
         "METHOD_FOOT": "WC2026 ESTUDIO DE MOMENTUM EN PAUSAS · METODOLOGÍA · CADA CIFRA SE CALCULA DESDE EL CONJUNTO DE DATOS VERSIONADO",
         "METHOD_FINDINGS": '''<h2>00 — Los hallazgos, en breve</h2>
 <p>El equipo que va arriba en el momentum pierde alrededor de <strong>−{{HERO_DELTA}}</strong> puntos en los cinco minutos después de una pausa de hidratación obligatoria. Pero los <em style="font-style:italic">mismos</em> equipos pierden alrededor de <strong>−{{P26_DELTA}}</strong> en minutos tranquilos, sin pausa, así que la mayor parte de la caída es regresión a la media, el enfriamiento natural tras un buen rato, no el silbatazo.</p>
-<p>Lo que queda es una diferencia de unos <strong>{{GAP}}</strong> {{GAP_PTS}} entre pausa y no pausa para los mismos equipos; {{GAP_CLAUSE}}, y la muestra todavía es chica, así que es sugerente, no comprobado. Una mirada aparte al clima sugiere que la mayoría de los partidos nunca llegó al calor para el que sirve una pausa de enfriamiento. Nada de esto es todavía un veredicto causal. La eliminatoria lo afinará.</p>''',
+<p>Lo que queda es una diferencia de unos <strong>{{GAP}}</strong> {{GAP_PTS}} entre pausa y no pausa para los mismos equipos; {{GAP_CLAUSE}}, y ni siquiera la muestra del torneo completo lo saca de sugerente, no comprobado. Una mirada aparte al clima sugiere que la mayoría de los partidos nunca llegó al calor para el que sirve una pausa de enfriamiento. Nada de esto es un veredicto causal: a lo largo de los 104 partidos la brecha nunca superó el azar.</p>''',
         "METHOD_WHAT": '''<h2>01 — Qué se mide aquí</h2>
 <p>La pregunta es acotada y comprobable: ¿las pausas de hidratación obligatorias de la FIFA mueven el momentum en contra del equipo que iba arriba? La variable es el índice de momentum por minuto de <strong>FotMob</strong>, su modelo de qué lado domina, armado con el flujo de ataques y ocasiones, no con el marcador. Aquí se <em style="font-style:italic">lee</em> ese número; no se calcula uno propio. Positivo es que el local aprieta, negativo el visitante.</p>
-<p>Es un análisis en vivo: la página se reconstruye desde el conjunto de datos versionado cada jornada hasta la final del 19 de julio, así que las cifras se mueven conforme entran datos.</p>''',
+<p>Corrió como un análisis en vivo durante el torneo; la página ahora refleja el conjunto de datos final — los 104 partidos hasta la final del 19 de julio.</p>''',
         "METHOD_DATA": '''<h2>02 — De dónde salen los datos</h2>
 <p>Tres fuentes, cada una con un trabajo:</p>
 <ul>
@@ -706,7 +706,7 @@ STRINGS = {
 </ul>
 <p>El futbol de selecciones regresa por su cuenta alrededor de −{{NOBREAK_LO}} a −{{NOBREAK_HI}}. La pausa (−{{HERO_DELTA}}) queda unos {{GAP}} {{GAP_PTS}} por debajo del control de mismos equipos una vez igualado su nivel previo, {{GAP_CLAUSE}}.</p>''',
         "METHOD_CI": '''<h2>05 — Intervalos de confianza</h2>
-<p>Varias pausas dentro de un mismo partido no son independientes, así que los intervalos se calculan por bootstrap remuestreando <em style="font-style:italic">partidos</em>, no filas (un bootstrap por conglomerados). Temprano en el torneo hay pocos conglomerados, así que el intervalo del 95% es ancho; léelo como indicativo, no como un valor p preciso. El efecto se sostiene con ventanas de 4, 5 o 6 minutos. Por ahora el titular descansa en {{HYD_N}} pausas de hidratación con equipo arriba, y la gráfica de la estimación a lo largo del torneo, en la página principal, muestra si se está estabilizando o desvaneciendo.</p>
+<p>Varias pausas dentro de un mismo partido no son independientes, así que los intervalos se calculan por bootstrap remuestreando <em style="font-style:italic">partidos</em>, no filas (un bootstrap por conglomerados). Incluso con los {{N_MATCHES}} conglomerados del torneo completo el intervalo del 95% sigue ancho; léelo como indicativo, no como un valor p preciso. El efecto se sostiene con ventanas de 4, 5 o 6 minutos. El titular descansa en {{HYD_N}} pausas de hidratación con equipo arriba, y la gráfica de la estimación a lo largo del torneo, en la página principal, muestra cómo se asentó.</p>
 <p>{{TWFE_CLAUSE}}</p>''',
         "METHOD_HEAT": '''<h2>06 — La prueba de calor y aclimatación</h2>
 <p>La objeción intuitiva es que los vaivenes son por el calor, no por el silbatazo: jugadores de ligas frescas derritiéndose en el verano de Estados Unidos. Se probó directo. Para cada equipo se armó una <em style="font-style:italic">brecha de aclimatación</em>: el WBGT del día del partido menos el WBGT al que está acostumbrado el plantel en casa, ligando a cada jugador con la ciudad de su club ({{ACCL_CLUBS}} clubes ubicados). Si el calor por desplazamiento moviera las caídas, los equipos más lejos de casa deberían caer más fuerte.</p>
@@ -723,11 +723,11 @@ STRINGS = {
 <p>La altitud es un factor distinto del calor (aire delgado, no termorregulación), y solo dos sedes son altas (Ciudad de México y Guadalajara, ambas por encima de los 1,500 m). Son muy pocas para probarlo, y una pausa de enfriamiento no es para eso, así que se anota y se deja.</p>''',
         "METHOD_LIMITS": '''<h2>08 — Lo que se puede y no se puede decir</h2>
 <ul>
-<li><strong>Muestra chica, por ahora.</strong> Temprano en el torneo los intervalos son anchos; la gráfica de la estimación a lo largo del tiempo muestra si el efecto se estabiliza o se desvanece.</li>
-<li><strong>Duraciones de pausa, ahora medidas.</strong> Las marcas de inicio/fin de ESPN dan una duración exacta para {{DUR_N}} de {{DUR_N_ALL}} pausas de hidratación con equipo arriba (mediana {{DUR_MEDIAN}}, {{DUR_MIN}}–{{DUR_MAX}}); la cobertura de VAR y lesión es más delgada. Si las pausas <em style="font-style:italic">más largas</em> pegan más fuerte es inconcluso con la muestra actual (el intervalo de la pendiente incluye el cero), así que el análisis no se apoya en eso.</li>
+<li><strong>Muestra finita.</strong> Incluso con los 104 partidos los intervalos son anchos; la gráfica de la estimación a lo largo del tiempo muestra cómo se asentó el efecto.</li>
+<li><strong>Duraciones de pausa, ahora medidas.</strong> Las marcas de inicio/fin de ESPN dan una duración exacta para {{DUR_N}} de {{DUR_N_ALL}} pausas de hidratación con equipo arriba (mediana {{DUR_MEDIAN}}, {{DUR_MIN}}–{{DUR_MAX}}); la cobertura de VAR y lesión es más delgada. Si las pausas <em style="font-style:italic">más largas</em> pegan más fuerte es inconcluso con la muestra completa (el intervalo de la pendiente incluye el cero), así que el análisis no se apoya en eso.</li>
 <li><strong>El WBGT es una estimación a la sombra</strong> a partir de temperatura y humedad; el calor real en la cancha bajo el sol es mayor.</li>
 <li><strong>La brecha de aclimatación es colineal</strong> con el continente, la liga y el calendario, así que es sugerente, no un instrumento limpio.</li>
-<li><strong>Todavía no hay titular causal.</strong> El modelo causal acordado (una regresión de efectos fijos a dos vías, con errores por conglomerado de partido y la interacción hidratación×momentum-previo) se mantiene en pausa hasta que la muestra viva sea lo bastante grande para estimaciones estables.</li>
+<li><strong>No hay titular causal.</strong> El modelo causal acordado (una regresión de efectos fijos a dos vías, con errores por conglomerado de partido y la interacción hidratación×momentum-previo) se mantiene indistinguible de cero en la muestra completa de 104 partidos.</li>
 </ul>''',
         "METHOD_REPRO": '''<h2>09 — Reproducibilidad</h2>
 <p>Cada cifra de aquí y de la página principal se calcula de forma determinista desde un solo archivo (el conjunto de datos procesado y versionado) con el código del repositorio. Nada se captura a mano. El código completo, los datos y este informe son públicos.</p>

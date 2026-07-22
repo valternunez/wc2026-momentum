@@ -2,9 +2,9 @@
   "gap": 3,
   "gap_excl0": false,
   "gap_hi": 7,
-  "gap_lo": -1,
-  "hero": 23,
-  "n_matches": 90,
+  "gap_lo": 0,
+  "hero": 22,
+  "n_matches": 104,
   "p26": 17,
-  "snap": "2026-07-04"
+  "snap": "2026-07-22"
 }
